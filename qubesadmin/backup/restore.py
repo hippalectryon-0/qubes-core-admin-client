@@ -939,8 +939,8 @@ class BackupRestore(object):
                 self.username = os.path.basename(subdir)
 
     def __init__(self, app: QubesBase, backup_location, backup_vm: QubesVM, passphrase: str, *,
-                 location_is_service: bool=False, force_compression_filter: bool=None,
-                 tmpdir: str=None):
+                 location_is_service: bool=False, force_compression_filter: str | None=None,
+                 tmpdir: str | None=None):
         super().__init__()
 
         #: qubes.Qubes instance
@@ -1129,6 +1129,7 @@ class BackupRestore(object):
 
             return hmac_text
         if algorithm is None:
+            assert self.header_data.hmac_algorithm is not None  # TODO see comment below
             algorithm = self.header_data.hmac_algorithm
         passphrase = self.passphrase.encode('utf-8')
         self.log.debug("Verifying file %s", filename)
@@ -1157,7 +1158,7 @@ class BackupRestore(object):
 
         with open(os.path.join(self.tmpdir, filename), 'rb') as f_input:
             with subprocess.Popen(
-                    ["openssl", "dgst", "-" + algorithm, "-hmac", passphrase],
+                    ["openssl", "dgst", "-" + algorithm, "-hmac", passphrase],  # TODO what guarantees that `algorithm` (=e.g. self.header_data.hmac_algorithm) is not None ?
                     stdin=f_input,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE) as hmac_proc:
@@ -1354,28 +1355,27 @@ class BackupRestore(object):
         # Setup worker to extract encrypted data chunks to the restore dirs
         # Create the process here to pass it options extracted from
         # backup header
-        extractor_params = {
-            'queue': queue,
-            'base_dir': self.tmpdir,
-            'passphrase': self.passphrase,
-            'encrypted': self.header_data.encrypted,
-            'compressed': self.header_data.compressed,
-            'crypto_algorithm': self.header_data.crypto_algorithm,
-            'verify_only': self.options.verify_only,
-            'progress_callback': self.progress_callback,
-            'handlers': handlers,
-        }
         self.log.debug(
             'Starting extraction worker in %s, file handlers map: %s',
             self.tmpdir, repr(handlers))
         format_version = self.header_data.version
         if format_version in [3, 4]:
-            extractor_params['compression_filter'] = \
-                self.header_data.compression_filter
+            assert self.header_data.crypto_algorithm is not None  # TODO see comment below
+            assert self.header_data.compressed is not None  # TODO same
+            assert self.progress_callback is not None  # TODO same
+            assert self.header_data.encrypted is not None  # TODO same
+            assert self.header_data.compression_filter is not None  # TODO same
+            encrypted = self.header_data.encrypted
             if format_version == 4:
                 # encryption already handled
-                extractor_params['encrypted'] = False
-            extract_proc = ExtractWorker3(**extractor_params)
+                encrypted=False
+            extract_proc = ExtractWorker3(queue, self.tmpdir,
+                                          self.passphrase, encrypted,
+                                          progress_callback=self.progress_callback,
+                                          compressed=self.header_data.compressed,
+                                          crypto_algorithm=self.header_data.crypto_algorithm, # TODO what guarantees that crypto_algorithm is not None at this point in time ? ExtractWorker3 expects a non-None argument here.
+                                          compression_filter=self.header_data.compression_filter,
+                                          verify_only=self.options.verify_only, handlers=handlers)
         else:
             raise NotImplementedError(
                 "Backup format version %d not supported" % format_version)
