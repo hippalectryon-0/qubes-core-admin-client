@@ -47,16 +47,20 @@ import concurrent.futures.thread
 
 import collections
 from subprocess import Popen
-from typing import Callable, TypeVar, Iterable, IO, Any, Generator
+from typing import Callable, TypeVar, Iterable, IO, Generator
 
 import qubesadmin
 import qubesadmin.vm
+import qubesadmin.exc
+import qubesadmin.app
+from qubesadmin.app import QubesBase
 from qubesadmin.backup import BackupVM
 from qubesadmin.backup.core2 import Core2Qubes
 from qubesadmin.backup.core3 import Core3Qubes
 from qubesadmin.device_protocol import DeviceAssignment
 from qubesadmin.exc import QubesException
 from qubesadmin.utils import size_to_human
+from qubesadmin.vm import QubesVM
 
 T = TypeVar('T')
 
@@ -154,11 +158,11 @@ class BackupHeader(object):
             header_data=None,
             *,
             version=None,
-            encrypted=None,
-            compressed=None,
-            compression_filter=None,
-            hmac_algorithm=None,
-            crypto_algorithm=None,
+            encrypted: bool | None=None,
+            compressed: bool | None=None,
+            compression_filter: str | None=None,
+            hmac_algorithm: str | None=None,
+            crypto_algorithm: str | None=None,
             backup_id=None):
         # repeat the list to help code completion...
         self.version = version
@@ -351,10 +355,10 @@ def _fix_threading_after_fork() -> None:
 class ExtractWorker3(Process):
     '''Process for handling inner tar layer of backup archive'''
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, queue, base_dir, passphrase, encrypted, *,
-                 progress_callback, vmproc=None,
-                 compressed=False, crypto_algorithm=DEFAULT_CRYPTO_ALGORITHM,
-                 compression_filter=None, verify_only=False, handlers=None):
+    def __init__(self, queue: Queue, base_dir: str, passphrase: str, encrypted: bool, *,
+                 progress_callback: Callable, vmproc: Popen | None =None,
+                 compressed: bool=False, crypto_algorithm: str=DEFAULT_CRYPTO_ALGORITHM,
+                 compression_filter: str | None=None, verify_only: bool=False, handlers: dict[str, Callable] | None=None):
         '''Start inner tar extraction worker
 
         The purpose of this class is to process files extracted from outer
@@ -729,13 +733,14 @@ class ExtractWorker3(Process):
                 if inner_name in self.handlers:
                     assert redirect_stdout is subprocess.PIPE
                     data_func = self.handlers[inner_name]
+                    assert input_pipe is not None
                     self.import_process = multiprocessing.Process(
                         target=self._data_import_wrapper,
                         args=([input_pipe.fileno()],
                         data_func, self.tar2_process))
 
                     self.import_process.start()
-                    self.tar2_process.stdout.close()
+                    typing.cast(IO, self.tar2_process.stdout).close()
 
                 self.tar2_stderr = []
             elif not self.tar2_process:
@@ -745,6 +750,7 @@ class ExtractWorker3(Process):
                 continue
             else:
                 # os.path.splitext fails to handle 'something/..000'
+                assert self.tar2_current_file is not None
                 (basename, ext) = self.tar2_current_file.rsplit('.', 1)
                 previous_chunk_number = int(ext)
                 expected_filename = basename + '.%03d' % (
@@ -758,10 +764,12 @@ class ExtractWorker3(Process):
                     continue
 
                 self.log.debug("Releasing next chunk")
+                assert input_pipe is not None
                 self.feed_tar2(filename, input_pipe)
 
             self.tar2_current_file = filename
 
+            assert self.tar2_feeder is not None
             self.tar2_feeder.wait()
             # check if any process failed
             processes = {
@@ -782,6 +790,7 @@ class ExtractWorker3(Process):
             os.remove(filename)
 
         if self.tar2_process is not None:
+            assert input_pipe is not None
             input_pipe.close()
             if filename == QUEUE_ERROR:
                 if self.decryptor_process:
@@ -810,7 +819,7 @@ def get_supported_hmac_algo(hmac_algorithm: str | None=None) -> Generator[str, N
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL) as proc:
-        for algo in proc.stdout.readlines():
+        for algo in typing.cast(IO, proc.stdout).readlines():
             algo = algo.decode('ascii')
             if '=>' in algo:
                 continue
@@ -834,7 +843,7 @@ def get_supported_crypto_algo(crypto_algorithm: str | None=None) -> Generator[st
                           shell=True,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.DEVNULL) as proc:
-        for algo in proc.stdout.readlines():
+        for algo in typing.cast(IO, proc.stdout).readlines():
             algo = algo.decode('ascii')
             if '=>' in algo:
                 continue
@@ -929,9 +938,9 @@ class BackupRestore(object):
                 self.subdir = subdir
                 self.username = os.path.basename(subdir)
 
-    def __init__(self, app, backup_location, backup_vm, passphrase, *,
-                 location_is_service=False, force_compression_filter=None,
-                 tmpdir=None):
+    def __init__(self, app: QubesBase, backup_location, backup_vm: QubesVM, passphrase: str, *,
+                 location_is_service: bool=False, force_compression_filter: bool=None,
+                 tmpdir: str=None):
         super().__init__()
 
         #: qubes.Qubes instance
@@ -979,7 +988,7 @@ class BackupRestore(object):
         #: report restore progress, called with one argument - percents of
         # data restored
         # FIXME: convert to float [0,1]
-        self.progress_callback = None
+        self.progress_callback: Callable | None = None
 
         self.log = logging.getLogger('qubesadmin.backup')
 
@@ -1077,12 +1086,12 @@ class BackupRestore(object):
             # let qfile-dom0-unpacker hold the only open FD to the write end of
             # pipe, otherwise qrexec-client will not receive EOF when
             # qfile-dom0-unpacker terminates
-            vmproc.stdin.close()
+            typing.cast(IO, typing.cast(Popen, vmproc).stdin).close()
         else:
             filelist_pipe = command.stdout
 
         if self.backup_vm:
-            error_pipe = vmproc.stderr
+            error_pipe = typing.cast(IO, typing.cast(Popen, vmproc).stderr)
         else:
             error_pipe = command.stderr
         return command, filelist_pipe, error_pipe
@@ -1208,8 +1217,8 @@ class BackupRestore(object):
             raise QubesException('failed to decrypt {}: {!s}'.format(
                 fullname, err))
         (_, stderr) = p.communicate()
-        if hasattr(p, 'pty'):
-            p.pty.close()
+        if pty := getattr(p, 'pty', None):
+            pty.close()
         if p.returncode != 0:
             with contextlib.suppress(FileNotFoundError):
                 os.unlink(fulloutput)
@@ -1273,7 +1282,7 @@ class BackupRestore(object):
                 )
         return files
 
-    def _retrieve_backup_header(self):
+    def _retrieve_backup_header(self) -> BackupHeader:
         """Retrieve backup header and qubes.xml. Only backup header is
         analyzed, qubes.xml is left as-is
         (not even verified/decrypted/uncompressed)
@@ -1334,7 +1343,7 @@ class BackupRestore(object):
 
         return header_data
 
-    def _start_inner_extraction_worker(self, queue, handlers):
+    def _start_inner_extraction_worker(self, queue: Queue, handlers: dict[str, Callable]):
         """Start a worker process, extracting inner layer of bacup archive,
         extract them to :py:attr:`tmpdir`.
         End the data by pushing QUEUE_FINISHED or QUEUE_ERROR to the queue.
@@ -1758,9 +1767,9 @@ class BackupRestore(object):
         return vms_to_restore
 
     @staticmethod
-    def get_restore_summary(restore_info):
+    def get_restore_summary(restore_info: dict) -> str:
         '''Return a ASCII formatted table with restore info summary'''
-        fields = {
+        fields: dict = {
             "name": {'func': lambda vm: vm.name},
 
             "type": {'func': lambda vm: vm.klass},

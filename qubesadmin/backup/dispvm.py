@@ -35,7 +35,7 @@ import qubesadmin
 import qubesadmin.exc
 import qubesadmin.utils
 import qubesadmin.vm
-from qubesadmin.app import QubesLocal
+from qubesadmin.app import QubesLocal, QubesBase
 from qubesadmin.vm import QubesVM
 
 LOCKFILE = '/var/run/qubes/backup-paranoid-restore.lock'
@@ -117,7 +117,7 @@ class RestoreInDisposableVM:
         'force_root': Option(('--force-root',), skip),
     }
 
-    def __init__(self, app: QubesLocal, args: Namespace):
+    def __init__(self, app: QubesBase, args: Namespace):
         """
 
         :param app: Qubes() instance

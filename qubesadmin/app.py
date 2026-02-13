@@ -32,6 +32,7 @@ import sys
 
 import logging
 from logging import Logger
+from subprocess import Popen
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -651,12 +652,12 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         service,
         user=None,
         *,
-        filter_esc=False,
-        localcmd=None,
-        wait=True,
-        autostart=True,
+        filter_esc: bool=False,
+        localcmd: bool=None,
+        wait: bool=True,
+        autostart: bool=True,
         **kwargs,
-    ):
+    ) -> Popen:
         """Run qrexec service in a given destination
 
         *kwargs* are passed verbatim to :py:meth:`subprocess.Popen`.
@@ -883,12 +884,12 @@ class QubesLocal(QubesBase):
         service,
         user=None,
         *,
-        filter_esc=False,
-        localcmd=None,
-        wait=True,
-        autostart=True,
+        filter_esc: bool=False,
+        localcmd: bool=None,
+        wait: bool=True,
+        autostart: bool=True,
         **kwargs,
-    ):
+    ) -> Popen:
         """Run qrexec service in a given destination
 
         :param str dest: Destination - may be a VM name or empty
