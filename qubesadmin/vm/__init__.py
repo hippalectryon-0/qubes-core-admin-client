@@ -35,6 +35,7 @@ import qubesadmin.devices
 import qubesadmin.device_protocol
 import qubesadmin.firewall
 import qubesadmin.tags
+from qubesadmin.storage import Volume
 
 
 class QubesVM(qubesadmin.base.PropertyHolder):
@@ -52,7 +53,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
     def __init__(self, app, name, klass=None, power_state=None):
         super().__init__(app, "admin.vm.property.", name)
-        self._volumes = None
+        self._volumes: dict[str, Volume] | None = None
         self._klass = klass
         # the cache is maintained by EventsDispatcher(),
         # through helper functions in QubesBase()
@@ -285,7 +286,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return self.netvm is not None
 
     @property
-    def volumes(self):
+    def volumes(self) -> dict[str, Volume]:
         """VM disk volumes"""
         if self._volumes is None:
             volumes_list = self.qubesd_call(

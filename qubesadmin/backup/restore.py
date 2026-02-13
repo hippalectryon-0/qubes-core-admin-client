@@ -30,7 +30,7 @@ import inspect
 import logging
 import multiprocessing
 import typing
-from io import FileIO
+from io import FileIO, BytesIO
 from multiprocessing import Queue, Process
 import os
 import pwd
@@ -59,6 +59,7 @@ from qubesadmin.backup.core2 import Core2Qubes
 from qubesadmin.backup.core3 import Core3Qubes
 from qubesadmin.device_protocol import DeviceAssignment
 from qubesadmin.exc import QubesException
+from qubesadmin.storage import Volume
 from qubesadmin.utils import size_to_human
 from qubesadmin.vm import QubesVM
 
@@ -155,7 +156,7 @@ class BackupHeader(object):  # TODO isn't this some old python2 artefact ? Can w
     }
 
     def __init__(self,
-            header_data=None,
+            header_data: bytes | None=None,
             *,
             version: int | None=None,
             encrypted: bool | None=None,
@@ -163,7 +164,7 @@ class BackupHeader(object):  # TODO isn't this some old python2 artefact ? Can w
             compression_filter: str | None=None,
             hmac_algorithm: str | None=None,
             crypto_algorithm: str | None=None,
-            backup_id: str | int=None):
+            backup_id: str | int | None=None):
         # repeat the list to help code completion...
         self.version = version
         self.encrypted = encrypted
@@ -273,14 +274,14 @@ class BackupHeader(object):  # TODO isn't this some old python2 artefact ? Can w
                     continue
                 f_header.write("{!s}={!s}\n".format(key, getattr(self, attr)))
 
-def launch_proc_with_pty(args, stdin=None, stdout=None, stderr=None, echo: bool=True) -> tuple[Popen, FileIO]:
+def launch_proc_with_pty(args: list[str], stdin: int | None=None, stdout: int | None=None, stderr: int | None=None, echo: bool=True) -> tuple[Popen, FileIO]:
     """Similar to pty.fork, but handle stdin/stdout according to parameters
     instead of connecting to the pty
 
     :return tuple (subprocess.Popen, pty_master)
     """
 
-    def set_ctty(ctty_fd, master_fd):
+    def set_ctty(ctty_fd: int, master_fd: int) -> None:
         '''Set controlling terminal'''
         os.setsid()
         os.close(master_fd)
@@ -856,7 +857,7 @@ def get_supported_crypto_algo(crypto_algorithm: str | None=None) -> Generator[st
 class BackupRestoreOptions(object):
     '''Options for restore operation'''
     # pylint: disable=too-few-public-methods
-    def __init__(self):
+    def __init__(self) -> None:
         #: use default NetVM if the one referenced in backup do not exists on
         #  the host
         self.use_default_netvm = True
@@ -909,7 +910,7 @@ class BackupRestore(object):
         #: Kernel used by the VM does not exists on the host
         MISSING_KERNEL = object()
 
-        def __init__(self, vm):
+        def __init__(self, vm: QubesVM):
             assert isinstance(vm, BackupVM)
             self.vm = vm
             self.name = vm.name
@@ -925,7 +926,7 @@ class BackupRestore(object):
             self.restored_vm = None
 
         @property
-        def good_to_go(self):
+        def good_to_go(self) -> bool:
             '''Is the VM ready for restore?'''
             return len(self.problems) == 0
 
@@ -935,13 +936,13 @@ class BackupRestore(object):
         #: backup was performed on system with different dom0 username
         USERNAME_MISMATCH = object()
 
-        def __init__(self, vm, subdir=None):
+        def __init__(self, vm: QubesVM, subdir: str | None=None) -> None:
             super().__init__(vm)
             if subdir:
                 self.subdir = subdir
                 self.username = os.path.basename(subdir)
 
-    def __init__(self, app: QubesBase, backup_location, backup_vm: QubesVM, passphrase: str, *,
+    def __init__(self, app: QubesBase, backup_location: str, backup_vm: QubesVM, passphrase: str, *,
                  location_is_service: bool=False, force_compression_filter: str | None=None,
                  tmpdir: str | None=None):
         super().__init__()
@@ -1001,7 +1002,7 @@ class BackupRestore(object):
         #: VMs included in the backup
         self.backup_app = self._process_qubes_xml()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Since deleting tmp directory in `restore_do` does not work properly
         (this is confirmed by the unittests), we check for its existence again
         once more and delete it if it still exists.
@@ -1010,7 +1011,7 @@ class BackupRestore(object):
             if os.path.exists(self.tmpdir):
                 shutil.rmtree(self.tmpdir)
 
-    def _start_retrieval_process(self, filelist, limit_count, limit_bytes):
+    def _start_retrieval_process(self, filelist: list[str], limit_count: int | str, limit_bytes: int) -> tuple[Popen, IO, IO]:
         """Retrieve backup stream and extract it to :py:attr:`tmpdir`
 
         :param filelist: list of files to extract; listing directory name
@@ -1085,21 +1086,21 @@ class BackupRestore(object):
         # and have stdout connected to the VM), while tar output filelist
         # on stdout
         if self.backup_vm:
-            filelist_pipe = command.stderr
+            filelist_pipe = typing.cast(IO, command.stderr)
             # let qfile-dom0-unpacker hold the only open FD to the write end of
             # pipe, otherwise qrexec-client will not receive EOF when
             # qfile-dom0-unpacker terminates
             typing.cast(IO, typing.cast(Popen, vmproc).stdin).close()
         else:
-            filelist_pipe = command.stdout
+            filelist_pipe = typing.cast(IO, command.stdout)
 
         if self.backup_vm:
             error_pipe = typing.cast(IO, typing.cast(Popen, vmproc).stderr)
         else:
-            error_pipe = command.stderr
+            error_pipe = typing.cast(IO, command.stderr)
         return command, filelist_pipe, error_pipe
 
-    def _verify_hmac(self, filename, hmacfile, algorithm=None):
+    def _verify_hmac(self, filename: str, hmacfile: str, algorithm: str | None=None) -> bool:
         '''Verify hmac of a file using given algorithm.
 
         If algorithm is not specified, use the one from backup header (
@@ -1115,7 +1116,7 @@ class BackupRestore(object):
         :param hmacfile: path to hmac file for *filename*
         :param algorithm: override algorithm
         '''
-        def load_hmac(hmac_text):
+        def load_hmac(hmac_text: str) -> str:
             '''Parse hmac output by openssl.
 
             Return just hmac, without filename and other metadata.
@@ -1123,9 +1124,9 @@ class BackupRestore(object):
             if any(ord(x) not in range(128) for x in hmac_text):
                 raise QubesException(
                     "Invalid content of {}".format(hmacfile))
-            hmac_text = hmac_text.strip().split("=")
-            if len(hmac_text) > 1:
-                hmac_text = hmac_text[1].strip()
+            hmac_text_list = hmac_text.strip().split("=")
+            if len(hmac_text_list) > 1:
+                hmac_text = hmac_text_list[1].strip()
             else:
                 raise QubesException(
                     "ERROR: invalid hmac file content")
@@ -1187,7 +1188,7 @@ class BackupRestore(object):
             "Is the passphrase correct?".
             format(filename, load_hmac(hmac_stdout.decode('ascii'))))
 
-    def _verify_and_decrypt(self, filename, output=None):
+    def _verify_and_decrypt(self, filename: str, output: str | None=None) -> str:
         '''Handle scrypt-wrapped file
 
         Decrypt the file, and verify its integrity - both tasks handled by
@@ -1232,7 +1233,7 @@ class BackupRestore(object):
         os.unlink(fullname)
         return origname
 
-    def _retrieve_backup_header_files(self, files, allow_none=False):
+    def _retrieve_backup_header_files(self, files: list[str], allow_none: bool=False) -> list[str] | None:
         '''Retrieve backup header.
 
         Start retrieval process (possibly involving network access from
@@ -1347,7 +1348,7 @@ class BackupRestore(object):
 
         return header_data
 
-    def _start_inner_extraction_worker(self, queue: Queue, handlers: dict[str, Callable]):
+    def _start_inner_extraction_worker(self, queue: Queue, handlers: dict[str, Callable]) -> ExtractWorker3:
         """Start a worker process, extracting inner layer of bacup archive,
         extract them to :py:attr:`tmpdir`.
         End the data by pushing QUEUE_FINISHED or QUEUE_ERROR to the queue.
@@ -1386,12 +1387,12 @@ class BackupRestore(object):
         return extract_proc
 
     @staticmethod
-    def _save_qubes_xml(path, stream):
+    def _save_qubes_xml(path: str, stream: BytesIO) -> None:
         '''Handler for qubes.xml.000 content - just save the data to a file'''
         with open(path, 'wb') as f_qubesxml:
             f_qubesxml.write(stream.read())
 
-    def _process_qubes_xml(self):
+    def _process_qubes_xml(self) -> Core2Qubes | Core3Qubes:
         """Verify, unpack and load qubes.xml. Possibly convert its format if
         necessary. It expect that :py:attr:`header_data` is already populated,
         and :py:meth:`retrieve_backup_header` was called.
@@ -1433,7 +1434,7 @@ class BackupRestore(object):
         os.unlink(qubes_xml_path)
         return backup_app
 
-    def _restore_vm_data(self, vms_dirs, vms_size, handlers):
+    def _restore_vm_data(self, vms_dirs: list[str], vms_size: int, handlers: dict[str, Callable]) -> None:
         '''Restore data of VMs
 
         :param vms_dirs: list of directories to extract (skip others)
@@ -1469,9 +1470,9 @@ class BackupRestore(object):
             to_extract, handlers)
 
         try:
-            filename = None
-            hmacfile = None
-            nextfile = None
+            filename: str | None = None
+            hmacfile: str | None = None
+            nextfile: str | None = None
             while True:
                 if self.canceled:
                     break
@@ -1531,6 +1532,7 @@ class BackupRestore(object):
                     continue
 
                 if self.header_data.version in [2, 3]:
+                    assert hmacfile is not None
                     self._verify_hmac(filename, hmacfile)
                 else:
                     # _verify_and_decrypt will write output to a file with
@@ -1601,7 +1603,7 @@ class BackupRestore(object):
                 "unable to extract the qubes backup. "
                 "Check extracting process errors.")
 
-    def new_name_for_conflicting_vm(self, orig_name, restore_info):
+    def new_name_for_conflicting_vm(self, orig_name: str, restore_info: dict) -> str | None:
         '''Generate new name for conflicting VM
 
         Add a number suffix, until the name is unique. If no unique name can
@@ -1621,7 +1623,7 @@ class BackupRestore(object):
                 return None
         return new_name
 
-    def restore_info_verify(self, restore_info):
+    def restore_info_verify(self, restore_info: dict) -> dict:
         '''Verify restore info - validate VM dependencies, name conflicts
         etc.
         '''
@@ -1721,7 +1723,7 @@ class BackupRestore(object):
 
         return restore_info
 
-    def get_restore_info(self):
+    def get_restore_info(self) -> dict:
         '''Get restore info
 
         Return information about what is included in the backup.
@@ -1866,9 +1868,9 @@ class BackupRestore(object):
         return summary
 
     @staticmethod
-    def _templates_first(vms):
+    def _templates_first(vms: Iterable[QubesVM]) -> list[QubesVM]:
         '''Sort templates before other VM types'''
-        def key_function(instance):
+        def key_function(instance: QubesVM) -> int:
             '''Key function for :py:func:`sorted`'''
             if isinstance(instance, BackupVM):
                 if instance.klass == 'TemplateVM':
@@ -1881,7 +1883,7 @@ class BackupRestore(object):
             return 9
         return sorted(vms, key=key_function)
 
-    def _handle_dom0(self, stream):
+    def _handle_dom0(self, stream: BytesIO) -> None:
         '''Extract dom0 home'''
         try:
             local_user = grp.getgrnam('qubes').gr_mem[0]
@@ -1905,7 +1907,7 @@ class BackupRestore(object):
         if retcode != 0:
             self.log.error("*** Error while setting restore directory owner")
 
-    def _handle_appmenus_list(self, vm, stream):
+    def _handle_appmenus_list(self, vm: QubesVM, stream: BytesIO) -> None:
         '''Handle whitelisted-appmenus.list file'''
         try:
             appmenus_list = stream.read().decode('ascii').splitlines()
@@ -1916,7 +1918,7 @@ class BackupRestore(object):
             self.log.error(
                 'Failed to set application list for %s: %s', vm.name, e)
 
-    def _handle_volume_data(self, vm, volume, stream, *, file_size=None):
+    def _handle_volume_data(self, vm: QubesVM, volume: Volume, stream: BytesIO, *, file_size: int | None=None) -> None:
         '''Wrap volume data import with logging'''
         try:
             if file_size is None:
@@ -1927,7 +1929,7 @@ class BackupRestore(object):
             self.log.error('Failed to restore volume %s (size %s) of VM %s: %s',
                 volume.name, file_size, vm.name, err)
 
-    def check_disk_space(self):
+    def check_disk_space(self) -> None:
         """
         Check if there is enough disk space to restore the backup.
 
@@ -1943,7 +1945,7 @@ class BackupRestore(object):
             raise QubesException("Too little space in {}, needs at least 1GB".
                 format(self.tmpdir))
 
-    def restore_do(self, restore_info):
+    def restore_do(self, restore_info: dict) -> None:
         '''
 
         High level workflow:
@@ -1970,7 +1972,7 @@ class BackupRestore(object):
         handlers = {}
         vms_size = 0
         for vm_info in self._templates_first(restore_info.values()):
-            vm = vm_info.restored_vm
+            vm: QubesVM = vm_info.restored_vm
             if vm and vm_info.subdir:
                 if isinstance(vm_info, self.Dom0ToRestore) and \
                         vm_info.good_to_go:
@@ -2021,7 +2023,7 @@ class BackupRestore(object):
             self.log.info("-> Please install updates for all the restored "
                           "templates.")
 
-    def _restore_property(self, vm, prop, value):
+    def _restore_property(self, vm: QubesVM, prop: str, value: typing.Any) -> None:  # noqa: ANN401
         '''Restore a single VM property, logging exceptions'''
         try:
             setattr(vm, prop, value)
@@ -2029,7 +2031,7 @@ class BackupRestore(object):
             self.log.error('Error setting %s.%s to %s: %s',
                 vm.name, prop, value, err)
 
-    def _restore_vms_metadata(self, restore_info):
+    def _restore_vms_metadata(self, restore_info: dict) -> None:
         '''Restore VM metadata
 
         Create VMs, set their properties etc.

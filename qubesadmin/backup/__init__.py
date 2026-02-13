@@ -28,7 +28,7 @@ from qubesadmin.vm import QubesVM
 class BackupApp(object):
     '''Interface for backup collection'''
     # pylint: disable=too-few-public-methods
-    def __init__(self, qubes_xml):
+    def __init__(self, qubes_xml: str | None):
         '''Initialize BackupApp object and load qubes.xml into it'''
         self.store = qubes_xml
         self.domains = {}
@@ -42,7 +42,7 @@ class BackupApp(object):
 class BackupVM(object):
     '''Interface for a single VM in the backup'''
     # pylint: disable=too-few-public-methods
-    def __init__(self):
+    def __init__(self) -> None:
         '''Initialize empty BackupVM object'''
         #: VM class
         self.klass = 'AppVM'
