@@ -181,13 +181,13 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     #: storage pools
     pools = qubesadmin.base.WrapperObjectsCollection
     #: type of qubesd connection: either 'socket' or 'qrexec'
-    qubesd_connection_type = None
+    qubesd_connection_type: str
     #: logger
     log: Logger
     #: do not check for object (VM, label etc) existence before really needed
-    blind_mode = False
+    blind_mode: bool = False
     #: cache retrieved properties values
-    cache_enabled = False
+    cache_enabled: bool = False
 
     def __init__(self):
         super().__init__(self, "admin.property.", "dom0")
@@ -712,7 +712,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             stdout, stderr = proc.communicate()
         return proc, stdout, stderr
 
-    def _invalidate_cache(self, subject, event, name, **kwargs):
+    def _invalidate_cache(self, subject: QubesVM | None, event: str, name: str, **kwargs) -> None:
         """Invalidate cached value of a property.
 
         This method is designed to be hooked as an event handler for:

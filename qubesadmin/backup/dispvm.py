@@ -27,6 +27,7 @@ import os
 import string
 
 import subprocess
+import typing
 from argparse import Namespace
 from typing import Any
 
@@ -223,7 +224,7 @@ class RestoreInDisposableVM:
         assert self.storage_access_proc is not None
 
         self.backup_storage_vm.tags.discard(self.storage_tag)
-        self.storage_access_proc.stdin.close()
+        typing.cast(typing.IO, self.storage_access_proc.stdin).close()
         self.storage_access_proc.wait()
 
     def prepare_inner_args(self) -> list:

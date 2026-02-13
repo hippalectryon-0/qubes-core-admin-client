@@ -356,6 +356,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
             vm.devices['pci'][('dom0', port_id)] = options
 
     def load(self) -> bool | None:
+        assert self.store is not None
         with open(self.store, encoding='utf-8') as fh:
             try:
                 # pylint: disable=no-member
