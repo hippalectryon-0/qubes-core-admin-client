@@ -54,15 +54,15 @@ class Core3VM(qubesadmin.backup.BackupVM):
                 rules.append(qubesadmin.firewall.Rule(None, **rule_opts))
 
             vm.firewall.rules = rules
-        except:  # pylint: disable=bare-except
-            vm.log.exception('Failed to set firewall')
+        except Exception as e:
+            vm.log.exception(f'Failed to set firewall: {e}')
 
     def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
         '''Load new (Qubes >= 4.2) notes'''
         try:
             vm.set_notes(stream.read().decode())
-        except:  # pylint: disable=bare-except
-            vm.log.exception('Failed to set notes')
+        except Exception as e:
+            vm.log.exception(f'Failed to set notes: {e}')
 
 class Core3Qubes(qubesadmin.backup.BackupApp):
     '''Parsed qubes.xml'''

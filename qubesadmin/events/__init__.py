@@ -317,7 +317,6 @@ class EventsDispatcher(object):
         for handler in handlers:
             try:
                 handler(subject, event, **kwargs)
-            except:  # pylint: disable=bare-except
-                self.app.log.exception(
-                    'Failed to handle event: %s, %s, %s',
-                    subject, event, kwargs)
+            except Exception as e:
+                self.app.log.exception(f'Failed to handle event: '
+                                       f'{subject}, {event}, {kwargs} ({e})')

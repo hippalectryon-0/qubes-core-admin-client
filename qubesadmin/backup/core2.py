@@ -141,8 +141,8 @@ class Core2VM(qubesadmin.backup.BackupVM):
                 rules.append(Rule(None, action='drop'))
 
             vm.firewall.rules = rules
-        except:  # pylint: disable=bare-except
-            vm.log.exception('Failed to set firewall')
+        except Exception as e:
+            vm.log.exception(f'Failed to set firewall: {e}')
 
     def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
         '''Qube notes did not exist at this time'''
