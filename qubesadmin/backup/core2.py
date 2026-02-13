@@ -190,6 +190,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
                 if clockvm != "None" else None
 
         default_template = element.get("default_template")
+        assert default_template is not None  # TODO or should it be `if is not None: ... ?`
         self.globals['default_template'] = self.qid_map[int(default_template)] \
             if default_template.lower() != "none" else None
 
