@@ -29,20 +29,18 @@ import string
 import subprocess
 import typing
 from argparse import Namespace
-from typing import Any
 
-#import typing
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.utils
 import qubesadmin.vm
-from qubesadmin.app import QubesLocal, QubesBase
+from qubesadmin.app import QubesBase
 from qubesadmin.vm import QubesVM
 
 LOCKFILE = '/var/run/qubes/backup-paranoid-restore.lock'
 
 Option = collections.namedtuple('Option', ('opts', 'handler'))
-type ValidArgValue = str | bool | int | list[str] | None
+ValidArgValue: typing.TypeAlias = str | bool | int | list[str] | None
 
 # Convenient functions for 'handler' value of Option object
 #  (see RestoreInDisposableVM.arguments):
