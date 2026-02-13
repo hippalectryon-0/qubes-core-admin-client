@@ -25,6 +25,8 @@ import datetime
 import socket
 import string
 
+from qubesadmin.vm import QubesVM
+
 
 class RuleOption(object):
     '''Base class for a single rule element'''
@@ -413,23 +415,23 @@ class Rule(object):
 
 class Firewall(object):
     '''Firewal manager for a VM'''
-    def __init__(self, vm):
+    def __init__(self, vm: QubesVM):
         self.vm = vm
-        self._rules = []
+        self._rules: list[Rule] = []
         self._policy = None
         self._loaded = False
 
-    def load_rules(self):
+    def load_rules(self) -> None:
         '''Force (re-)loading firewall rules'''
         rules_str = self.vm.qubesd_call(None, 'admin.vm.firewall.Get')
-        rules = []
+        rules: list[Rule] = []
         for rule_str in rules_str.decode().splitlines():
             rules.append(Rule(rule_str))
         self._rules = rules
         self._loaded = True
 
     @property
-    def rules(self):
+    def rules(self) -> list[Rule]:
         '''Firewall rules
 
         You can either copy them, edit and then assign new rules list to this
@@ -446,7 +448,7 @@ class Firewall(object):
         self.save_rules(value)
         self._rules = value
 
-    def save_rules(self, rules=None):
+    def save_rules(self, rules: list[Rule] | None=None) -> None:
         '''Save firewall rules. Needs to be called after in-place editing
         :py:attr:`rules`.
         '''
@@ -457,11 +459,11 @@ class Firewall(object):
                 for rule in rules)).encode('ascii'))
 
     @property
-    def policy(self):
+    def policy(self) -> Action:
         '''Default action to take if no rule matches'''
         return Action('drop')
 
-    def reload(self):
+    def reload(self) -> None:
         '''Force reload the same firewall rules.
 
         Can be used for example to force again names resolution.

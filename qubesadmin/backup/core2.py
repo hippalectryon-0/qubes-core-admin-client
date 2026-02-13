@@ -21,21 +21,17 @@
 '''Parser for core2 qubes.xml'''
 
 import ast
+import io
+import typing
 import xml.parsers
 import logging
-from typing import TypeVar, Any
 
 import lxml.etree
 from lxml.etree import _Element
 
 from qubesadmin.firewall import Rule, Action, Proto, DstHost, SpecialTarget
 import qubesadmin.backup
-
-class VM:
-    firewall: Any
-    log: Any
-
-TODO = TypeVar("TODO")
+from qubesadmin.vm import QubesVM
 
 service_to_feature = {
     'ntpd': 'service.ntpd',
@@ -46,7 +42,7 @@ service_to_feature = {
 class Core2VM(qubesadmin.backup.BackupVM):
     '''VM object'''
     # pylint: disable=too-few-public-methods
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.backup_content = False
 
@@ -108,7 +104,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         return Rule(None, **kwargs)
 
 
-    def handle_firewall_xml(self, vm: VM, stream: str | bytes) -> None:
+    def handle_firewall_xml(self, vm: QubesVM, stream: io.BytesIO) -> None:
         '''Load old (Qubes < 4.0) firewall XML format'''
         try:
             tree = lxml.etree.parse(stream)  # pylint: disable=no-member
@@ -116,9 +112,9 @@ class Core2VM(qubesadmin.backup.BackupVM):
             policy_v1 = xml_root.get('policy')
             assert policy_v1 in ('allow', 'deny')
             default_policy_is_accept = (policy_v1 == 'allow')
-            rules = []
+            rules: list[Rule] = []
 
-            def _translate_action(key):
+            def _translate_action(key: str) -> str:
                 '''Translate action name'''
                 if xml_root.get(key, policy_v1) == 'allow':
                     return Action.accept
@@ -149,7 +145,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         except:  # pylint: disable=bare-except
             vm.log.exception('Failed to set firewall')
 
-    def handle_notes_txt(self, vm: VM, stream: str | bytes):
+    def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
         '''Qube notes did not exist at this time'''
         raise NotImplementedError  # pragma: no cover
 
@@ -260,7 +256,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
         (other than template). VM connections are set later.
         :param element: XML node
         '''
-        vm_class_name = element.tag
+        vm_class_name = typing.cast(str, element.tag)
         vm = Core2VM()
         vm.name = element.get('name')
         vm.label = element.get('label', 'red')

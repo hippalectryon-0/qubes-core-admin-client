@@ -29,6 +29,8 @@ import grp
 import inspect
 import logging
 import multiprocessing
+import typing
+from io import FileIO
 from multiprocessing import Queue, Process
 import os
 import pwd
@@ -44,6 +46,8 @@ import threading
 import concurrent.futures.thread
 
 import collections
+from subprocess import Popen
+from typing import Callable, TypeVar, Iterable, IO, Any, Generator
 
 import qubesadmin
 import qubesadmin.vm
@@ -54,6 +58,7 @@ from qubesadmin.device_protocol import DeviceAssignment
 from qubesadmin.exc import QubesException
 from qubesadmin.utils import size_to_human
 
+T = TypeVar('T')
 
 # Python 3.14 in Fedora 43 changes the default start method away from fork
 if multiprocessing.get_start_method(allow_none=True) != "fork":
@@ -95,7 +100,7 @@ class BackupCanceledError(QubesException):
         super().__init__(msg)
         self.tmpdir = tmpdir
 
-def init_supported_hmac_and_crypto():
+def init_supported_hmac_and_crypto() -> None:
     """Collect supported hmac and crypto algorithms.
 
     This calls openssl to list actual supported algos.
@@ -106,7 +111,7 @@ def init_supported_hmac_and_crypto():
     if not KNOWN_CRYPTO_ALGORITHMS:
         KNOWN_CRYPTO_ALGORITHMS.extend(get_supported_crypto_algo())
 
-def validate_compression_filter(compressor: str):
+def validate_compression_filter(compressor: str) -> bool:
     '''Check if the compression algorithm is available on the system'''
     if compressor in KNOWN_COMPRESSION_FILTERS:
         return True
@@ -171,7 +176,7 @@ class BackupHeader(object):
         if header_data is not None:
             self.load(header_data)
 
-    def load(self, untrusted_header_text):
+    def load(self, untrusted_header_text: bytes) -> None:
         """Parse backup header file.
 
         :param untrusted_header_text: header content
@@ -182,12 +187,12 @@ class BackupHeader(object):
             so is security critical.
         """
         try:
-            untrusted_header_text = untrusted_header_text.decode('ascii')
+            untrusted_header_text_str = untrusted_header_text.decode('ascii')
         except UnicodeDecodeError:
             raise QubesException(
                 "Non-ASCII characters in backup header")
         seen = set()
-        for untrusted_line in untrusted_header_text.splitlines():
+        for untrusted_line in untrusted_header_text_str.splitlines():
             if untrusted_line.count('=') != 1:
                 raise QubesException("Invalid backup header")
             key, value = untrusted_line.strip().split('=', 1)
@@ -229,7 +234,7 @@ class BackupHeader(object):
 
         self.validate()
 
-    def validate(self):
+    def validate(self) -> None:
         '''Validate header data, according to header version'''
         if self.version == 1:
             # header not really present
@@ -251,7 +256,7 @@ class BackupHeader(object):
             raise QubesException(
                 "Unsupported backup version {}".format(self.version))
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         '''Save backup header into a file'''
         with open(filename, "w", encoding='utf-8') as f_header:
             # make sure 'version' is the first key
@@ -264,7 +269,7 @@ class BackupHeader(object):
                     continue
                 f_header.write("{!s}={!s}\n".format(key, getattr(self, attr)))
 
-def launch_proc_with_pty(args, stdin=None, stdout=None, stderr=None, echo=True):
+def launch_proc_with_pty(args, stdin=None, stdout=None, stderr=None, echo: bool=True) -> tuple[Popen, FileIO]:
     """Similar to pty.fork, but handle stdin/stdout according to parameters
     instead of connecting to the pty
 
@@ -289,7 +294,7 @@ def launch_proc_with_pty(args, stdin=None, stdout=None, stderr=None, echo=True):
     os.close(pty_slave)
     return p, open(pty_master, 'wb+', buffering=0)
 
-def launch_scrypt(action, input_name, output_name, passphrase):
+def launch_scrypt(action: str, input_name: str, output_name: str, passphrase: str) -> Popen:
     '''
     Launch 'scrypt' process, pass passphrase to it and return
     subprocess.Popen object.
@@ -311,7 +316,7 @@ def launch_scrypt(action, input_name, output_name, passphrase):
     else:
         prompts = (b'Please enter passphrase: ',)
     for prompt in prompts:
-        actual_prompt = p.stderr.read(len(prompt))
+        actual_prompt = typing.cast(IO, p.stderr).read(len(prompt))
         if actual_prompt != prompt:
             raise QubesException(
                 'Unexpected prompt from scrypt: {}'.format(actual_prompt))
@@ -319,14 +324,14 @@ def launch_scrypt(action, input_name, output_name, passphrase):
         pty.flush()
     # save it here, so garbage collector would not close it (which would kill
     #  the child)
-    p.pty = pty
+    setattr(p, 'pty', pty)
     return p
 
-def _fix_threading_after_fork():
+def _fix_threading_after_fork() -> None:
     """
     HACK
     Clear thread queues after fork (threads are gone at this point),
-    otherwise atexit callback will crash.
+    otherwise at exit callback will crash.
 
     https://github.com/python/cpython/issues/88110
 
@@ -334,12 +339,12 @@ def _fix_threading_after_fork():
     https://github.com/python/cpython/issues/102512
     """
     # pylint: disable=protected-access
-    concurrent.futures.thread._threads_queues.clear()
+    typing.cast(dict, concurrent.futures.thread._threads_queues).clear()
     thread = threading.current_thread()
     if isinstance(thread, threading._DummyThread) and \
             getattr(thread, '_tstate_lock', "missing") is None:
         # mimic threading._after_fork()
-        thread._set_tstate_lock()
+        getattr(thread, '_set_tstate_lock')()
 
 
 
@@ -400,7 +405,7 @@ class ExtractWorker3(Process):
         #: progress
         self.blocks_backedup = 0
         #: inner tar layer extraction (subprocess.Popen instance)
-        self.tar2_process = None
+        self.tar2_process: Popen | None = None
         #: current inner tar archive name
         self.tar2_current_file = None
         #: cat process feeding tar2_process
@@ -410,7 +415,7 @@ class ExtractWorker3(Process):
         #: decryptor subprocess.Popen instance
         self.decryptor_process = None
         #: data import multiprocessing.Process instance
-        self.import_process = None
+        self.import_process: Process | None = None
         #: callback reporting progress to UI
         self.progress_callback = progress_callback
         #: process (subprocess.Popen instance) feeding the data into
@@ -422,12 +427,14 @@ class ExtractWorker3(Process):
         self.tar2_stderr = []
         self.compression_filter = compression_filter
 
-    def collect_tar_output(self):
+    def collect_tar_output(self) -> None:
         '''Retrieve tar stderr and handle it appropriately
 
         Log errors, process file size if requested.
         This use :py:attr:`tar2_process`.
         '''
+        assert self.tar2_process is not None
+
         if not self.tar2_process.stderr:
             return
 
@@ -449,7 +456,7 @@ class ExtractWorker3(Process):
         new_lines = [msg for msg in new_lines if not _tar_msg_re.match(msg)]
         self.tar2_stderr += new_lines
 
-    def run(self):
+    def run(self) -> None:
         try:
             _fix_threading_after_fork()
             self.__run__()
@@ -467,12 +474,13 @@ class ExtractWorker3(Process):
             self.log.exception('ERROR')
             raise
 
-    def handle_dir(self, dirname):
+    def handle_dir(self, dirname: str) -> None:
         ''' Relocate files in given director when it's already extracted
 
         :param dirname: directory path to handle (relative to backup root),
             without trailing slash
         '''
+        assert self.handlers is not None
         for fname, data_func in self.handlers.items():
             if not fname.startswith(dirname + '/'):
                 continue
@@ -488,7 +496,7 @@ class ExtractWorker3(Process):
             os.unlink(fname)
         shutil.rmtree(dirname)
 
-    def cleanup_tar2(self, wait=True, terminate=False):
+    def cleanup_tar2(self, wait: bool=True, terminate: bool=False) -> None:
         '''Cleanup running :py:attr:`tar2_process`
 
         :param wait: wait for it termination, otherwise method exit early if
@@ -528,7 +536,7 @@ class ExtractWorker3(Process):
             self.tar2_current_file = None
         self.tar2_process = None
 
-    def _data_import_wrapper(self, close_fds, data_func, tar2_process):
+    def _data_import_wrapper(self, close_fds: Iterable[int], data_func: Callable[..., T], tar2_process: Popen) -> T:
         '''Close not needed file descriptors, handle output size reported
         by tar (if needed) then call data_func(tar2_process.stdout).
 
@@ -576,7 +584,7 @@ class ExtractWorker3(Process):
 
         return data_func(tar2_process.stdout, **data_func_kwargs)
 
-    def feed_tar2(self, filename, input_pipe):
+    def feed_tar2(self, filename: str, input_pipe: IO) -> None:
         '''Feed data from *filename* to *input_pipe*
 
         Start a cat process to do that (do not block this process). Cat
@@ -588,7 +596,7 @@ class ExtractWorker3(Process):
         self.tar2_feeder = subprocess.Popen(['cat', filename],
             stdout=input_pipe)
 
-    def check_processes(self, processes):
+    def check_processes(self, processes: dict[str, None | Process | Popen]) -> None:
         '''Check if any process failed.
 
         And if so, wait for other relevant processes to cleanup.
@@ -620,7 +628,7 @@ class ExtractWorker3(Process):
                 self.tar2_current_file, details)
             self.cleanup_tar2(wait=True, terminate=True)
 
-    def __run__(self):
+    def __run__(self) -> None:
         self.log.debug("Started sending thread")
         self.log.debug("Moving to dir %s", self.base_dir)
         os.chdir(self.base_dir)
@@ -785,7 +793,7 @@ class ExtractWorker3(Process):
         self.log.debug('Finished extracting thread')
 
 
-def get_supported_hmac_algo(hmac_algorithm=None):
+def get_supported_hmac_algo(hmac_algorithm: str | None=None) -> Generator[str, None, None]:
     '''Generate a list of supported hmac algorithms
 
     :param hmac_algorithm: default algorithm, if given, it is placed as a
@@ -809,7 +817,7 @@ def get_supported_hmac_algo(hmac_algorithm=None):
             yield algo.strip().lower()
 
 
-def get_supported_crypto_algo(crypto_algorithm=None):
+def get_supported_crypto_algo(crypto_algorithm: str | None=None) -> Generator[str, None, None]:
     '''Generate a list of supported hmac algorithms
 
     :param crypto_algorithm: default algorithm, if given, it is placed as a

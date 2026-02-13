@@ -31,6 +31,7 @@ import subprocess
 import sys
 
 import logging
+from logging import Logger
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -40,6 +41,7 @@ import qubesadmin.utils
 import qubesadmin.vm
 import qubesadmin.config
 import qubesadmin.device_protocol
+from qubesadmin.vm import QubesVM
 
 try:
     import qubesdb
@@ -57,7 +59,7 @@ class VMCollection(object):
         self._vm_list = None
         self._vm_objects = {}
 
-    def clear_cache(self, invalidate_name=None):
+    def clear_cache(self, invalidate_name: str | None=None) -> None:
         """Clear cached list of VMs
         If *invalidate_name* is given, remove that object from cache
         explicitly too.
@@ -66,7 +68,7 @@ class VMCollection(object):
         if invalidate_name:
             self._vm_objects.pop(invalidate_name, None)
 
-    def refresh_cache(self, force=False):
+    def refresh_cache(self, force: bool=False) -> None:
         """Refresh cached list of VMs"""
         if not force and self._vm_list is not None:
             return
@@ -101,14 +103,14 @@ class VMCollection(object):
                 self._vm_objects[vm.name] = vm
                 del self._vm_objects[name]
 
-    def __getitem__(self, item):
-        if isinstance(item, qubesadmin.vm.QubesVM):
+    def __getitem__(self, item: str | QubesVM) -> QubesVM:
+        if isinstance(item, QubesVM):
             item = item.name
         if not self.app.blind_mode and item not in self:
             raise KeyError(item)
         return self.get_blind(item)
 
-    def get_blind(self, item):
+    def get_blind(self, item: str) -> QubesVM:
         """
         Get a vm without downloading the list
         and checking if exists
@@ -128,7 +130,7 @@ class VMCollection(object):
             )
         return self._vm_objects[item]
 
-    def get(self, item, default=None):
+    def get(self, item, default=None) -> QubesVM:
         """
         Get a VM object, or return *default* if it can't be found.
         """
@@ -172,15 +174,15 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     """
 
     #: domains (VMs) collection
-    domains = None
+    domains: VMCollection
     #: labels collection
-    labels = None
+    labels: qubesadmin.base.WrapperObjectsCollection
     #: storage pools
-    pools = None
+    pools = qubesadmin.base.WrapperObjectsCollection
     #: type of qubesd connection: either 'socket' or 'qrexec'
     qubesd_connection_type = None
     #: logger
-    log = None
+    log: Logger
     #: do not check for object (VM, label etc) existence before really needed
     blind_mode = False
     #: cache retrieved properties values
@@ -319,8 +321,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         return clsname
 
     def add_new_vm(
-        self, cls, name, label, template=None, pool=None, pools=None
-    ):
+        self, cls, name: str, label: str, template=None, pool=None, pools=None
+    ) -> QubesVM:
         """Create new Virtual Machine
 
         Example usage with custom storage pools:
