@@ -267,14 +267,17 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
         elif element.get('qid') == '0':
             kwargs['dir_path'] = element.get('dir_path')
             vm.klass = "AdminVM"
-        elif element.get('template_qid').lower() == "none":
-            kwargs['dir_path'] = element.get('dir_path')
-            vm.klass = "StandaloneVM"
         else:
-            kwargs['dir_path'] = element.get('dir_path')
-            vm.template = \
-                self.qid_map[int(element.get('template_qid'))]
-            vm.klass = "AppVM"
+            template_qid = element.get('template_qid')
+            assert template_qid is not None  # TODO should that be a .get(..., 'none') ? Or should we be performing explicit XML validation ?
+            if template_qid.lower() == "none":
+                kwargs['dir_path'] = element.get('dir_path')
+                vm.klass = "StandaloneVM"
+            else:
+                kwargs['dir_path'] = element.get('dir_path')
+                vm.template = \
+                    self.qid_map[int(template_qid)]
+                vm.klass = "AppVM"
 
         vm.backup_content = element.get('backup_content', False) == 'True'
         vm.backup_path = element.get('backup_path', None)
