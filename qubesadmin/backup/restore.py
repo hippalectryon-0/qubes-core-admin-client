@@ -123,7 +123,7 @@ def validate_compression_filter(compressor: str) -> bool:
         return True
     return False
 
-class BackupHeader(object):
+class BackupHeader(object):  # TODO isn't this some old python2 artefact ? Can we cleanup ?
     '''Structure describing backup-header file included as the first file in
     backup archive
     '''
