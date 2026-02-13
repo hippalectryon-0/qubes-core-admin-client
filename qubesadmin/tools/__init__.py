@@ -32,6 +32,8 @@ import os
 import subprocess
 import sys
 import textwrap
+import typing
+from argparse import Namespace
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -45,7 +47,7 @@ class QubesAction(argparse.Action):
         `namespace.app` is instantiated.
     '''
     # pylint: disable=too-few-public-methods
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
         ''' This method is called by :py:class:`qubes.tools.QubesArgumentParser`
             after the `namespace.app` is instantiated. Oerwrite this method when
             extending :py:class:`qubes.tools.QubesAction` to initialized values
@@ -58,16 +60,16 @@ class PropertyAction(argparse.Action):
     '''Action for argument parser that stores a property.'''
     # pylint: disable=redefined-builtin,too-few-public-methods
     def __init__(self,
-            option_strings,
-            dest,
+            option_strings: list[str],
+            dest: str,
             *,
-            metavar='NAME=VALUE',
-            required=False,
-            help='set property to a value'):
+            metavar: str='NAME=VALUE',
+            required: bool=False,
+            help: str='set property to a value'):
         super().__init__(option_strings, 'properties',
             metavar=metavar, default={}, help=help)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: str, option_string: list[str] | None=None) -> None:
         try:
             prop, value = values.split('=', 1)
         except ValueError:
@@ -86,14 +88,14 @@ class SinglePropertyAction(argparse.Action):
 
     # pylint: disable=redefined-builtin,too-few-public-methods
     def __init__(self,
-            option_strings,
-            dest,
+            option_strings: list[str],
+            dest: str,
             *,
-            metavar='VALUE',
-            const=None,
-            nargs=None,
-            required=False,
-            help=None):
+            metavar: str='VALUE',
+            const: typing.Any=None,  # noqa: ANN401
+            nargs: int | None=None,
+            required: bool=False,
+            help: str | None=None):
         if help is None:
             help = 'set {!r} property to a value'.format(dest)
             if const is not None:
@@ -109,7 +111,7 @@ class SinglePropertyAction(argparse.Action):
         self.name = dest
 
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: typing.Any, option_string: list[str] | None=None) -> None:  # noqa: ANN401
         if values is self.default and self.default == {}:
             return
 
@@ -126,7 +128,7 @@ class VmNameAction(QubesAction):
     """ Action for parsing one or multiple domains from provided VMNAMEs """
 
     # pylint: disable=too-few-public-methods,redefined-builtin
-    def __init__(self, option_strings, nargs=1, dest='vmnames', help=None,
+    def __init__(self, option_strings: list[str], nargs: int=1, dest: str='vmnames', help: str | None=None,
                  **kwargs):
         if help is None:
             if nargs == argparse.OPTIONAL:
@@ -147,11 +149,11 @@ class VmNameAction(QubesAction):
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: typing.Any, option_string: list[str] | None=None) -> None:  # noqa: ANN401
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
         ''' Set ``namespace.domains`` to ``values`` '''
         # pylint: disable=too-many-nested-blocks
         assert hasattr(namespace, 'app')
@@ -198,7 +200,7 @@ class RunningVmNameAction(VmNameAction):
     ''' Action for argument parser that gets a running domain from VMNAME '''
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, option_strings, nargs=1, dest='vmnames', help=None,
+    def __init__(self, option_strings: list[str], nargs: int=1, dest: str='vmnames', help: str | None=None,
                  **kwargs):
         # pylint: disable=redefined-builtin
         if help is None:
@@ -219,7 +221,7 @@ class RunningVmNameAction(VmNameAction):
         super().__init__(
             option_strings, dest=dest, help=help, nargs=nargs, **kwargs)
 
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
         super().parse_qubes_app(parser, namespace)
         for vm in namespace.domains:
             if not vm.is_running():
