@@ -100,7 +100,7 @@ _tar_file_size_re = re.compile(r"^[^ ]+ [^ ]+/[^ ]+ *([0-9]+) .*")
 
 class BackupCanceledError(QubesException):
     '''Exception raised when backup/restore was cancelled'''
-    def __init__(self, msg, tmpdir=None):
+    def __init__(self, msg: str, tmpdir: str | None=None):
         super().__init__(msg)
         self.tmpdir = tmpdir
 
@@ -157,13 +157,13 @@ class BackupHeader(object):
     def __init__(self,
             header_data=None,
             *,
-            version=None,
+            version: int | None=None,
             encrypted: bool | None=None,
             compressed: bool | None=None,
             compression_filter: str | None=None,
             hmac_algorithm: str | None=None,
             crypto_algorithm: str | None=None,
-            backup_id=None):
+            backup_id: str | int=None):
         # repeat the list to help code completion...
         self.version = version
         self.encrypted = encrypted
@@ -532,6 +532,7 @@ class ExtractWorker3(Process):
             # Finished extracting the tar file
             # if that was whole-directory archive, handle
             # relocated files now
+            assert self.tar2_current_file is not None
             inner_name = self.tar2_current_file.rsplit('.', 1)[0] \
                 .replace(self.base_dir + '/', '')
             if os.path.basename(inner_name) == '.':
@@ -548,8 +549,8 @@ class ExtractWorker3(Process):
         preventing EOF transfer.
         '''
         for fd in close_fds:
-            if fd in (tar2_process.stdout.fileno(),
-                    tar2_process.stderr.fileno()):
+            if fd in (typing.cast(IO, tar2_process.stdout).fileno(),
+                    typing.cast(IO, tar2_process.stderr).fileno()):
                 continue
             try:
                 os.close(fd)
@@ -571,7 +572,7 @@ class ExtractWorker3(Process):
             # size (at this point nothing is retrieving data from tar stdout
             # yet, so it will hang on write() when the output pipe fill up).
             while True:
-                line = tar2_process.stderr.readline()
+                line = typing.cast(IO, tar2_process.stderr).readline()
                 if not line:
                     self.log.warning('EOF from tar before got file size info')
                     break
@@ -633,13 +634,14 @@ class ExtractWorker3(Process):
             self.cleanup_tar2(wait=True, terminate=True)
 
     def __run__(self) -> None:
+        assert self.handlers is not None
         self.log.debug("Started sending thread")
         self.log.debug("Moving to dir %s", self.base_dir)
         os.chdir(self.base_dir)
 
         filename = None
 
-        input_pipe = None
+        input_pipe: IO | None = None
         for filename in iter(self.queue.get, None):
             if filename in (QUEUE_FINISHED, QUEUE_ERROR):
                 break
@@ -651,6 +653,7 @@ class ExtractWorker3(Process):
             if filename.endswith('.000'):
                 # next file
                 if self.tar2_process is not None:
+                    assert input_pipe is not None
                     input_pipe.close()
                     self.cleanup_tar2(wait=True, terminate=False)
 
@@ -718,8 +721,8 @@ class ExtractWorker3(Process):
                         stdin=self.decryptor_process.stdout,
                         stdout=redirect_stdout,
                         stderr=subprocess.PIPE)
-                    self.decryptor_process.stdout.close()
-                    input_pipe = self.decryptor_process.stdin
+                    typing.cast(IO, self.decryptor_process.stdout).close()
+                    input_pipe = typing.cast(IO, self.decryptor_process.stdin)
                 else:
                     self.tar2_process = subprocess.Popen(
                         tar2_cmdline,
@@ -728,7 +731,7 @@ class ExtractWorker3(Process):
                         stderr=subprocess.PIPE)
                     input_pipe = self.tar2_process.stdin
 
-                self.feed_tar2(filename, input_pipe)
+                self.feed_tar2(filename, typing.cast(IO, input_pipe))
 
                 if inner_name in self.handlers:
                     assert redirect_stdout is subprocess.PIPE

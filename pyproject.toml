@@ -17,6 +17,9 @@ dev = [
 
 [tool.ty.rules]
 
+[tool.ruff]
+preview = true
+
 [tool.ruff.lint]
 select = ["ANN", "RUF045"]  # Require type annotations for every function
 
