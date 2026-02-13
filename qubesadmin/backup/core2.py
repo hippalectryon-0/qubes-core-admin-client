@@ -345,10 +345,11 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
             vm.features[feature] = value
 
         pci_strictreset = element.get('pci_strictreset', True)
-        pcidevs = element.get('pcidevs')
+        pcidevs = element.get('pcidevs')  # TODO there should be some kind of XML validation
+        pcidevs_list = []
         if pcidevs:
-            pcidevs = ast.literal_eval(pcidevs)
-        for pcidev in pcidevs:
+            pcidevs_list = ast.literal_eval(pcidevs)
+        for pcidev in pcidevs_list:
             port_id = pcidev.replace(':', '_')
             options = {'no-strict-reset': True} if not pci_strictreset else {}
             options['required'] = True
