@@ -244,7 +244,8 @@ class EventsDispatcher(object):
                        'domain-paused', 'domain-unpaused',
                        'domain-start-failed'):
             self.app._update_power_state_cache(subject, event, **kwargs)
-            subject.devices.clear_cache()
+            assert subject is not None
+            subject.devices.clear_cache()  # TODO won't that error if subject=None ?
         elif event == 'connection-established':
             # on (re)connection, clear cache completely - we don't have
             # guarantee about not missing any events before this point
@@ -255,18 +256,21 @@ class EventsDispatcher(object):
             "device-assignment-changed"
         ):
             devclass = event.split(":")[1]
-            subject.devices[devclass]._assignment_cache = None
+            assert subject is not None
+            subject.devices[devclass]._assignment_cache = None  # TODO same as above
         elif event.split(":")[0] in (
             "device-attach",
             "device-detach",
             "device-removed"
         ):
             devclass = event.split(":")[1]
-            subject.devices[devclass]._attachment_cache = None
+            assert subject is not None
+            subject.devices[devclass]._attachment_cache = None  # TODO same as above
         elif event.split(":")[0] in ("device-removed",):
             devclass = event.split(":")[1]
             try:
-                subject.devices[devclass]._dev_cache[kwargs["port"]]
+                assert subject is not None
+                subject.devices[devclass]._dev_cache[kwargs["port"]]  # TODO same as above
             except KeyError:
                 pass
 
