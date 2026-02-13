@@ -23,10 +23,19 @@
 import ast
 import xml.parsers
 import logging
+from typing import TypeVar, Any
+
 import lxml.etree
+from lxml.etree import _Element
 
 from qubesadmin.firewall import Rule, Action, Proto, DstHost, SpecialTarget
 import qubesadmin.backup
+
+class VM:
+    firewall: Any
+    log: Any
+
+TODO = TypeVar("TODO")
 
 service_to_feature = {
     'ntpd': 'service.ntpd',
@@ -42,11 +51,11 @@ class Core2VM(qubesadmin.backup.BackupVM):
         self.backup_content = False
 
     @property
-    def included_in_backup(self):
+    def included_in_backup(self) -> bool:
         return self.backup_content
 
     @staticmethod
-    def rule_from_xml_v1(node, action):
+    def rule_from_xml_v1(node: _Element, action: str) -> Rule:
         '''Parse single rule in old XML format (pre Qubes 4.0)
 
         :param node: XML node for the rule
@@ -99,7 +108,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         return Rule(None, **kwargs)
 
 
-    def handle_firewall_xml(self, vm, stream):
+    def handle_firewall_xml(self, vm: VM, stream: str | bytes) -> None:
         '''Load old (Qubes < 4.0) firewall XML format'''
         try:
             tree = lxml.etree.parse(stream)  # pylint: disable=no-member
@@ -140,21 +149,21 @@ class Core2VM(qubesadmin.backup.BackupVM):
         except:  # pylint: disable=bare-except
             vm.log.exception('Failed to set firewall')
 
-    def handle_notes_txt(self, vm, stream):
+    def handle_notes_txt(self, vm: VM, stream: str | bytes):
         '''Qube notes did not exist at this time'''
         raise NotImplementedError  # pragma: no cover
 
 
 class Core2Qubes(qubesadmin.backup.BackupApp):
     '''Parsed qubes.xml'''
-    def __init__(self, store=None):
+    def __init__(self, store: str | None=None):
         if store is None:
             raise ValueError("store path required")
         self.qid_map = {}
         self.log = logging.getLogger('qubesadmin.backup.core2')
         super().__init__(store)
 
-    def load_globals(self, element):
+    def load_globals(self, element: _Element) -> None:
         '''Load global settings
 
         :param element: XML element containing global settings (root node)
@@ -185,7 +194,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
             if default_template.lower() != "none" else None
 
 
-    def set_netvm_dependency(self, element):
+    def set_netvm_dependency(self, element: _Element) -> None:
         '''Set dependencies between VMs'''
         kwargs = {}
         attr_list = ("name", "uses_default_netvm", "netvm_qid")
@@ -243,7 +252,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
                 # TODO: add support for #2075
             # TODO: set qrexec policy based on dispvm_netvm value
 
-    def import_core2_vm(self, element):
+    def import_core2_vm(self, element: _Element) -> None:
         '''Parse a single VM from given XML node
 
         This method load only VM properties not depending on other VMs
@@ -345,7 +354,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
             options['required'] = True
             vm.devices['pci'][('dom0', port_id)] = options
 
-    def load(self):
+    def load(self) -> bool | None:
         with open(self.store, encoding='utf-8') as fh:
             try:
                 # pylint: disable=no-member
