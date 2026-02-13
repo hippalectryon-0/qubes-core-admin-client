@@ -49,8 +49,6 @@ import collections
 from subprocess import Popen
 from typing import Callable, TypeVar, Iterable, IO, Generator
 
-import qubesadmin
-import qubesadmin.vm
 import qubesadmin.exc
 import qubesadmin.app
 from qubesadmin.app import QubesBase

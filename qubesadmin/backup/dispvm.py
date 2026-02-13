@@ -30,10 +30,8 @@ import subprocess
 import typing
 from argparse import Namespace
 
-import qubesadmin
 import qubesadmin.exc
 import qubesadmin.utils
-import qubesadmin.vm
 from qubesadmin.app import QubesBase
 from qubesadmin.vm import QubesVM
 
@@ -357,7 +355,9 @@ class RestoreInDisposableVM:
                 )
             try:
                 backup_log = self.extract_log()
-            except:  # pylint: disable=bare-except
+            except Exception as err:
+                print(f"Failed to extract logs, defaulting to backup_log=None."
+                      f"({err})")
                 backup_log = None
             raise qubesadmin.exc.BackupRestoreError(
                 'qvm-backup-restore failed with {}'.format(e.returncode),
