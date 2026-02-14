@@ -39,15 +39,13 @@ from typing import Any, Callable
 import qubesadmin.exc
 from qubesadmin.app import VMCollection
 from qubesadmin.exc import QubesValueError
+from qubesadmin.vm import QubesVM
 
 
 class ProtocolError(AssertionError):
     """
     Raised when something is wrong with data received.
     """
-
-# TODO why the f.. are we shadowing an existing type with a string ???!!
-QubesVM_str: str = 'qubesadmin.vm.QubesVM'
 
 
 class UnexpectedDeviceProperty(qubesadmin.exc.QubesException, ValueError):
@@ -284,7 +282,7 @@ class Port:
 
     def __init__(
         self,
-        backend_domain: QubesVM_str | None,
+        backend_domain: QubesVM | None,
         port_id: str | None,
         devclass: str | None,
     ):
@@ -380,7 +378,7 @@ class Port:
         return "*"
 
     @property
-    def backend_domain(self) -> QubesVM_str | None:
+    def backend_domain(self) -> QubesVM | None:
         """Which domain exposed this port. (immutable)"""
         return self.__backend_domain
 
@@ -428,7 +426,7 @@ class VirtualDevice:
         device_id: str | None = None,
     ):
         assert not isinstance(port, AnyPort) or device_id is not None
-        self.port: Port | None = port  # type: ignore
+        self.port: Port | None = port
         self._device_id = device_id
 
     def clone(self, **kwargs) -> "VirtualDevice":
@@ -474,7 +472,7 @@ class VirtualDevice:
         return self._device_id is not None
 
     @property
-    def backend_domain(self) -> QubesVM_str | None:
+    def backend_domain(self) -> QubesVM | None:
         # pylint: disable=missing-function-docstring
         return self.port.backend_domain
 
@@ -570,7 +568,7 @@ class VirtualDevice:
         devclass: str | None,
         domains: VMCollection,
         blind: bool = False,
-        backend: QubesVM_str | None = None,
+        backend: QubesVM | None = None,
     ) -> "VirtualDevice":
         """
         Parse qrexec argument <back_vm>+<port_id>:<device_id> to get device info
@@ -589,14 +587,15 @@ class VirtualDevice:
         cls,
         representation: str,
         devclass: str | None,
-        domains: VMCollection,
+        domains: VMCollection | None,
         blind: bool = False,
-        backend: QubesVM_str | None = None,
+        backend: QubesVM | None = None,
     ) -> "VirtualDevice":
         """
         Parse string <back_vm>+<port_id>:<device_id> to get device info
         """
         if backend is None:
+            assert domains is not None
             if blind:
                 get_domain = domains.get_blind
             else:
@@ -610,14 +609,15 @@ class VirtualDevice:
         cls,
         representation: str,
         devclass: str | None,
-        get_domain: Callable,
-        backend: QubesVM_str | None,
+        get_domain: Callable | None,
+        backend: QubesVM | None,
         sep: str,
     ) -> "VirtualDevice":
         """
         Parse string representation and return instance of VirtualDevice.
         """
         if backend is None:
+            assert get_domain is not None
             backend_name, identity = representation.split(sep, 1)
             if backend_name == "_":
                 backend_name = "*"
@@ -925,7 +925,7 @@ class DeviceInfo(VirtualDevice):
         serial: str | None = None,
         interfaces: list[DeviceInterface] | None = None,
         parent: "DeviceInfo | None" = None,
-        attachment: QubesVM_str | None = None,
+        attachment: QubesVM | None = None,
         device_id: str | None = None,
         **kwargs,
     ):
@@ -1087,7 +1087,7 @@ class DeviceInfo(VirtualDevice):
         ]
 
     @property
-    def attachment(self) -> QubesVM_str | None:
+    def attachment(self) -> QubesVM | None:
         """
         VM to which device is attached (frontend domain).
         """
@@ -1139,7 +1139,7 @@ class DeviceInfo(VirtualDevice):
     def deserialize(
         cls,
         serialization: bytes,
-        expected_backend_domain: QubesVM_str,
+        expected_backend_domain: QubesVM,
         expected_devclass: str | None = None,
     ) -> "DeviceInfo":
         """
@@ -1275,13 +1275,13 @@ class DeviceAssignment:
     @classmethod
     def new(
         cls,
-        backend_domain: QubesVM_str,
+        backend_domain: QubesVM,
         port_id: str,
         devclass: str,
         device_id: str | None = None,
         *,
-        frontend_domain: QubesVM_str | None = None,
-        options: dict[str, str]=None,
+        frontend_domain: QubesVM | None = None,
+        options: dict[str, str] | None=None,
         mode: str | AssignmentMode = AssignmentMode.MANUAL,
     ) -> "DeviceAssignment":
         """Helper method to create a DeviceAssignment object."""
@@ -1303,7 +1303,7 @@ class DeviceAssignment:
             "frontend_domain": self.frontend_domain,
         }
         attr.update(kwargs)
-        return self.__class__(**attr)
+        return self.__class__(**attr)  # type: ignore
 
     def __repr__(self) -> str:
         return f"{self.virtual_device!r}"
@@ -1338,7 +1338,7 @@ class DeviceAssignment:
         )
 
     @property
-    def backend_domain(self) -> QubesVM_str | None:
+    def backend_domain(self) -> QubesVM | None:
         # pylint: disable=missing-function-docstring
         return self.virtual_device.backend_domain
 
@@ -1405,17 +1405,17 @@ class DeviceAssignment:
         return Port(self.backend_domain, self.port_id, self.devclass)
 
     @property
-    def frontend_domain(self) -> QubesVM_str | None:
+    def frontend_domain(self) -> QubesVM | None:
         """Which domain the device is attached/assigned to."""
         return self.__frontend_domain
 
     @frontend_domain.setter
-    def frontend_domain(self, frontend_domain: str | QubesVM_str | None) -> None:
+    def frontend_domain(self, frontend_domain: str | QubesVM | None) -> None:
         """Which domain the device is attached/assigned to."""
         if isinstance(frontend_domain, str):
             if not self.backend_domain:
                 raise ProtocolError("Cannot determine backend domain")
-            self.__frontend_domain: QubesVM_str | None = (
+            self.__frontend_domain: QubesVM | None = (
                 self.backend_domain.app.domains[frontend_domain]
             )
         else:
