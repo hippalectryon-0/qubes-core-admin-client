@@ -77,11 +77,11 @@ class Label(object):
     def __str__(self) -> str:
         return self._name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Label):
             return self.name == other.name
         # TODO should be raise ?
-        return NotImplemented
+        raise NotImplementedError
 
     def __hash__(self) -> int:
         return hash(self.name)
