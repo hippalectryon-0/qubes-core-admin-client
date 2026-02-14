@@ -643,7 +643,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         return dst_vm
 
     def qubesd_call(
-        self, dest: str, method: str, arg: str | None=None,
+        self, dest: str | None, method: str, arg: str | None=None,
             payload: bytes | None=None, payload_stream: BinaryIO | None=None
     ) -> bytes:
         """
@@ -843,7 +843,7 @@ class QubesLocal(QubesBase):
     qubesd_connection_type = "socket"
 
     def qubesd_call(
-        self, dest: str, method: str, arg: str | None=None,
+        self, dest: str | None, method: str, arg: str | None=None,
             payload: bytes | None=None, payload_stream: BinaryIO | None=None
     ) -> bytes:
         """
@@ -874,6 +874,7 @@ class QubesLocal(QubesBase):
                     "{} not found".format(method_path)
                 )
             assert arg is not None
+            assert dest is not None
             # TODO won't this error if arg=None ? _call_with_stream excepts a
             #  list[str] not list[str|None]
             command = [
@@ -1020,7 +1021,7 @@ class QubesRemote(QubesBase):
     qubesd_connection_type = "qrexec"
 
     def qubesd_call(
-        self, dest: str, method: str, arg: str | None=None,
+        self, dest: str | None, method: str, arg: str | None=None,
             payload: bytes | None=None, payload_stream: BinaryIO | None=None
     ) -> bytes:
         """
@@ -1039,6 +1040,7 @@ class QubesRemote(QubesBase):
         .. warning:: *payload_stream* will get closed by this function
         """
         service_name = method
+        assert dest is not None
         if arg is not None:
             service_name += "+" + arg
         command = [qubesadmin.config.QREXEC_CLIENT_VM, dest, service_name]

@@ -64,7 +64,7 @@ class PropertyHolder(object):
         """
         self._properties_cache = {}
 
-    def qubesd_call(self, dest: str, method: str,
+    def qubesd_call(self, dest: str | None, method: str,
                     arg: str | None=None, payload: bytes | None=None,
             payload_stream: BinaryIO | None=None) -> bytes:
         '''
@@ -81,8 +81,7 @@ class PropertyHolder(object):
         :return: Data returned by qubesd (string)
         '''
         # TODO I removed this because self.app should never be None
-        if dest is None:
-            dest: str = self._method_dest
+        dest: str = dest or self._method_dest
         if (
             getattr(self, "_redirect_dispvm_calls", False)
             and dest.startswith("@dispvm")
