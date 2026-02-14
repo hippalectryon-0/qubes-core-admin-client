@@ -30,7 +30,10 @@ if typing.TYPE_CHECKING:
 
 DEFAULT = object()
 
-VMProperty: TypeAlias = str | bool | int | None | QubesVM
+class NamedObject(typing.Protocol):
+    name: str
+
+VMProperty: TypeAlias = str | bool | int | None | QubesVM | NamedObject
 
 
 class PropertyHolder(object):
@@ -80,7 +83,7 @@ class PropertyHolder(object):
         '''
         # TODO I removed this because self.app should never be None
         if dest is None:
-            dest = self._method_dest
+            dest: str = self._method_dest
         if (
             getattr(self, "_redirect_dispvm_calls", False)
             and dest.startswith("@dispvm")
@@ -88,9 +91,13 @@ class PropertyHolder(object):
             if dest.startswith("@dispvm:"):
                 dest = dest[len("@dispvm:") :]
             else:
-                dest = getattr(self.app, "default_dispvm", None)
+                # TODO what if `dest` remains None here ?
+                #  qubesd_call expects a non-None `dest` arg
+                dest: QubesVM | None = getattr(self.app, "default_dispvm", None)
+                assert dest is not None
                 if dest:
-                    dest = dest.name
+                    dest: str = dest.name
+        assert isinstance(dest, str)
         # have the actual implementation at Qubes() instance
         return self.app.qubesd_call(dest, method, arg, payload,
             payload_stream)
@@ -288,21 +295,21 @@ class PropertyHolder(object):
         :return: parsed value
         '''
         # pylint: disable=too-many-return-statements
-        prop_type = prop_type.decode('ascii')
+        prop_type: str = prop_type.decode('ascii')
         if not prop_type.startswith('type='):
             raise qubesadmin.exc.QubesDaemonCommunicationError(
                 'Invalid type prefix received: {}'.format(prop_type))
         (_, prop_type) = prop_type.split('=', 1)
-        value = value.decode()
+        value: str = value.decode()
         if prop_type == 'str':
             return str(value)
         if prop_type == 'bool':
             if value == '':
-                return AttributeError  # TODO should likely be `raise` ?
+                raise AttributeError  # TODO should likely be `raise` ?
             return value == "True"
         if prop_type == 'int':
             if value == '':
-                return AttributeError  # TODO same as above
+                raise AttributeError  # TODO same as above
             return int(value)
         if prop_type == 'vm':
             if value == '':
@@ -325,7 +332,7 @@ class PropertyHolder(object):
         :return: None
         """
 
-        def unescape(line: bytes) -> Generator[int | str, None, None]:
+        def unescape(line: bytes) -> Generator[int, None, None]:
             """Handle \\-escaped values, generates a list of character codes"""
             escaped = False
             for char in line:
@@ -334,7 +341,9 @@ class PropertyHolder(object):
                     if char == ord('n'):
                         yield ord('\n')
                     elif char == ord('\\'):
-                        yield char
+                        raise ValueError
+                        # v TODO see comment below
+                        # yield char
                     escaped = False
                 elif char == ord('\\'):
                     escaped = True
@@ -352,8 +361,11 @@ class PropertyHolder(object):
             return
         for line in properties_str.splitlines():
             # decode newlines
-            line = bytes(unescape(line))
-            name, property_str = line.split(b' ', 1)
+            # TODO this will fail if unescape returns some `str` ??
+            #  Did we maybe copy-paste `unescape` from somewhere else
+            #  but we only use it for ints ?
+            line_bytes = bytes(unescape(line))
+            name, property_str = line_bytes.split(b' ', 1)
             name = name.decode()
             is_default, value = self._deserialize_property(property_str)
             self._properties_cache[name] = (is_default, value)
@@ -435,7 +447,7 @@ class WrapperObjectsCollection(object):
         #: names cache
         self._names_list: list[str] | None = None
         #: returned objects cache
-        self._objects: dict[str, VMProperty] = {}
+        self._objects: dict[str, NamedObject] = {}
 
     def clear_cache(self, invalidate_name: str | None=None) -> None:
         """Clear cached list of names.
@@ -455,17 +467,18 @@ class WrapperObjectsCollection(object):
         assert list_data[-1] == '\n'
         self._names_list = [str(name) for name in list_data[:-1].splitlines()]
 
+        # TODO why cast to list here ?
         for name, obj in list(self._objects.items()):
             if obj.name not in self._names_list:
                 # Object no longer exists
                 del self._objects[name]
 
-    def __getitem__(self, item: str) -> VMProperty:
+    def __getitem__(self, item: str) -> NamedObject:
         if not self.app.blind_mode and item not in self:
             raise KeyError(item)
         return self.get_blind(item)
 
-    def get_blind(self, item: str) -> VMProperty:
+    def get_blind(self, item: str) -> NamedObject:
         '''
         Get a property without downloading the list
         and checking if it's present
@@ -476,23 +489,28 @@ class WrapperObjectsCollection(object):
 
     def __contains__(self, item: str) -> bool:
         self.refresh_cache()
+        assert self._names_list is not None
         return item in self._names_list
 
     def __iter__(self) -> Generator[str, None, None]:
         self.refresh_cache()
+        assert self._names_list is not None
         yield from self._names_list
 
     def keys(self) -> list[str]:
         '''Get list of names.'''
         self.refresh_cache()
+        assert self._names_list is not None
         return list(self._names_list)
 
-    def items(self) -> list[tuple[str, VMProperty]]:
+    def items(self) -> list[tuple[str, NamedObject]]:
         '''Get list of (key, value) pairs'''
         self.refresh_cache()
+        assert self._names_list is not None
         return [(key, self.get_blind(key)) for key in self._names_list]
 
-    def values(self) -> list[VMProperty]:
+    def values(self) -> list[NamedObject]:
         '''Get list of objects'''
         self.refresh_cache()
+        assert self._names_list is not None
         return [self.get_blind(key) for key in self._names_list]

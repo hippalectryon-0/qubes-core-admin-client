@@ -36,6 +36,7 @@ import qubesadmin.exc
 import qubesadmin.utils
 import qubesadmin.vm
 from qubesadmin.app import QubesBase
+from qubesadmin.base import NamedObject
 from qubesadmin.vm import QubesVM
 
 LOCKFILE = '/var/run/qubes/backup-paranoid-restore.lock'
@@ -169,8 +170,10 @@ class RestoreInDisposableVM:
 
     def create_dispvm(self) -> None:
         """Create DisposableVM used to restore"""
-        self.dispvm = self.app.add_new_vm('DispVM', self.dispvm_name, 'red',
-                                          template=self.app.management_dispvm)
+        self.dispvm =(
+            self.app.add_new_vm(
+                'DispVM', self.dispvm_name, 'red',
+                template=typing.cast(str, self.app.management_dispvm)))
         self.dispvm.auto_cleanup = True
         self.dispvm.features['tag-created-vm-with'] = self.restored_tag
 
@@ -308,9 +311,9 @@ class RestoreInDisposableVM:
                     'qvm-backup-restore tool '
                     'missing in {} template, install qubes-core-admin-client '
                     'package there'.format(
-                        getattr(self.dispvm.template,
+                        typing.cast(NamedObject, getattr(self.dispvm.template,
                                 'template',
-                                self.dispvm.template).name)
+                                self.dispvm.template)).name)
                 )
             self.app.log.info("When operation completes, close its window "
                               "manually.")
@@ -341,9 +344,9 @@ class RestoreInDisposableVM:
                     'qvm-backup-restore tool '
                     'missing in {} template, install qubes-core-admin-client '
                     'package there'.format(
-                        getattr(self.dispvm.template,
+                        typing.cast(NamedObject, getattr(self.dispvm.template,
                                 'template',
-                                self.dispvm.template).name)
+                                self.dispvm.template)).name)
                 )
             if exit_code != 0:
                 raise qubesadmin.exc.BackupRestoreError(
@@ -354,8 +357,9 @@ class RestoreInDisposableVM:
             if e.returncode == 127:
                 raise qubesadmin.exc.QubesException(
                     '{} missing in {} template, install it there '
-                    'package there'.format(self.terminal_app[0],
-                                           self.dispvm.template.template.name)
+                    'package there'.format(
+                        self.terminal_app[0],
+                        typing.cast(QubesVM, typing.cast(QubesVM, self.dispvm.template).template).name)
                 )
             try:
                 backup_log = self.extract_log()

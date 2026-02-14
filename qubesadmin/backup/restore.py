@@ -57,6 +57,7 @@ from qubesadmin.app import QubesBase
 from qubesadmin.backup import BackupVM
 from qubesadmin.backup.core2 import Core2Qubes
 from qubesadmin.backup.core3 import Core3Qubes
+from qubesadmin.base import NamedObject
 from qubesadmin.device_protocol import DeviceAssignment
 from qubesadmin.exc import QubesException
 from qubesadmin.storage import Volume
@@ -1713,9 +1714,9 @@ class BackupRestore(object):
 
                 if not present_on_host and not present_in_backup:
                     if vm_info.vm.klass == 'DispVM':
-                        default_template = self.app.default_dispvm
+                        default_template = typing.cast(QubesVM, self.app.default_dispvm)
                     else:
-                        default_template = self.app.default_template
+                        default_template = typing.cast(QubesVM,  self.app.default_template)
 
                     if (self.options.use_default_template
                             and default_template is not None):
@@ -1911,7 +1912,7 @@ class BackupRestore(object):
                     return 1
                 return 2
             if hasattr(instance, 'vm'):
-                return key_function(instance.vm)
+                return key_function(typing.cast(QubesVM, instance.vm))
             return 9
         return sorted(vms, key=key_function)
 
@@ -2006,7 +2007,7 @@ class BackupRestore(object):
         handlers = {}
         vms_size = 0
         for vm_info in self._templates_first(restore_info.values()):
-            vm: QubesVM = vm_info.restored_vm
+            vm = typing.cast(QubesVM, vm_info.restored_vm)
             if vm and vm_info.subdir:
                 if isinstance(vm_info, self.Dom0ToRestore) and \
                         vm_info.good_to_go:

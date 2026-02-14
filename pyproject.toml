@@ -1,4 +1,3 @@
-
 # Note: we're not using a "standard" pyproject.toml with a [project] section to avoid
 # clashing with the old-school setup.py build (for now... hopefully will be upgraded later ?)
 [dependency-groups]

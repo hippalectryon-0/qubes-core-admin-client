@@ -338,8 +338,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         return clsname
 
     def add_new_vm(
-        self, cls: str | type["QubesVM"], name: str, label: str,
-            template: str | None=None, pool: str | None=None,
+        self, cls: str | type[QubesVM], name: str, label: str,
+            template: str | QubesVM | None=None, pool: str | None=None,
             pools: dict | None=None
     ) -> QubesVM:
         """Create new Virtual Machine
