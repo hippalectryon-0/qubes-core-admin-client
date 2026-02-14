@@ -33,7 +33,9 @@ DEFAULT = object()
 class NamedObject(typing.Protocol):
     name: str
 
-VMProperty: TypeAlias = str | bool | int | None | QubesVM | NamedObject
+# We use Any because the dynamic metatada handling of the current code
+# is too complex for type checkers otherwise
+VMProperty: TypeAlias = Any  # noqa: ANN401
 
 
 class PropertyHolder(object):

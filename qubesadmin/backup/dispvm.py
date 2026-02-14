@@ -359,7 +359,7 @@ class RestoreInDisposableVM:
                     '{} missing in {} template, install it there '
                     'package there'.format(
                         self.terminal_app[0],
-                        typing.cast(QubesVM, typing.cast(QubesVM, self.dispvm.template).template).name)
+                        self.dispvm.template.template.name)
                 )
             try:
                 backup_log = self.extract_log()
