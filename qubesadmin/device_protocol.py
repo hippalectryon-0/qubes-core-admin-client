@@ -34,9 +34,10 @@ should be moved to one place.
 import string
 import sys
 from enum import Enum
-from typing import Optional, Dict, Any, List, Union, Tuple, Callable
+from typing import Any, Callable
 
 import qubesadmin.exc
+from qubesadmin.app import VMCollection
 from qubesadmin.exc import QubesValueError
 
 
@@ -45,8 +46,8 @@ class ProtocolError(AssertionError):
     Raised when something is wrong with data received.
     """
 
-
-QubesVM = 'qubesadmin.vm.QubesVM'
+# TODO why the f.. are we shadowing an existing type with a string ???!!
+QubesVM_str: str = 'qubesadmin.vm.QubesVM'
 
 
 class UnexpectedDeviceProperty(qubesadmin.exc.QubesException, ValueError):
@@ -55,7 +56,8 @@ class UnexpectedDeviceProperty(qubesadmin.exc.QubesException, ValueError):
     """
 
 
-def qbool(value):
+# TODO should be moved somewhere else, not used here
+def qbool(value: str | int | bool) -> bool:
     """
     Property setter for boolean properties.
 
@@ -82,15 +84,16 @@ class DeviceSerializer:
     Group of method for serialization of device properties.
     """
 
-    ALLOWED_CHARS_KEY = set(
+    ALLOWED_CHARS_KEY: set[str] = set(
         string.digits + string.ascii_letters + r"!#$%&()*+,-./:;<>?@[\]^_{|}~"
     )
-    ALLOWED_CHARS_PARAM = ALLOWED_CHARS_KEY.union(set(string.punctuation + " "))
+    ALLOWED_CHARS_PARAM: set[str]\
+        = ALLOWED_CHARS_KEY.union(set(string.punctuation + " "))
 
     @classmethod
     def unpack_properties(
         cls, untrusted_serialization: bytes
-    ) -> Tuple[Dict, Dict]:
+    ) -> tuple[dict, dict]:
         """
         Unpacks basic port properties from a serialized encoded string.
 
@@ -106,8 +109,8 @@ class DeviceSerializer:
             "ascii", errors="strict"
         ).strip()
 
-        properties: Dict[str, str] = {}
-        options: Dict[str, str] = {}
+        properties: dict[str, str] = {}
+        options: dict[str, str] = {}
 
         if not ut_decoded:
             return properties, options
@@ -155,7 +158,7 @@ class DeviceSerializer:
         return properties, options
 
     @classmethod
-    def pack_property(cls, key: str, value: Optional[str]):
+    def pack_property(cls, key: str, value: str | None) -> bytes:
         """
         Add property `key=value` to serialization.
         """
@@ -175,8 +178,8 @@ class DeviceSerializer:
 
     @staticmethod
     def parse_basic_device_properties(
-        expected_device: "VirtualDevice", properties: Dict[str, Any]
-    ):
+            expected_device: "VirtualDevice", properties: dict
+    ) -> None:
         """
         Validates properties against an expected port configuration.
 
@@ -245,7 +248,7 @@ class DeviceSerializer:
     def sanitize_str(
         untrusted_value: str,
         allowed_chars: set,
-        replace_char: Optional[str] = None,
+        replace_char: str | None = None,
         error_message: str = "",
     ) -> str:
         """
@@ -281,18 +284,18 @@ class Port:
 
     def __init__(
         self,
-        backend_domain: Optional[QubesVM],
-        port_id: Optional[str],
-        devclass: Optional[str],
+        backend_domain: QubesVM_str | None,
+        port_id: str | None,
+        devclass: str | None,
     ):
         self.__backend_domain = backend_domain
         self.__port_id = port_id
         self.__devclass = devclass
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.backend_name, self.port_id, self.devclass))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:  # noqa: ANN401
         if isinstance(other, Port):
             return (
                 self.backend_name == other.backend_name
@@ -301,7 +304,7 @@ class Port:
             )
         return False
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:  # noqa: ANN401
         if isinstance(other, Port):
             return (self.backend_name, self.devclass, self.port_id) < (
                 other.backend_name,
@@ -313,10 +316,10 @@ class Port:
             "is not supported"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.backend_name}+{self.port_id}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.backend_name}:{self.port_id}"
 
     @property
@@ -328,7 +331,8 @@ class Port:
 
     @classmethod
     def from_qarg(
-        cls, representation: str, devclass, domains, blind=False
+        cls, representation: str, devclass: str,
+            domains: VMCollection, blind: bool=False
     ) -> "Port":
         """
         Parse qrexec argument <back_vm>+<port_id> to retrieve Port.
@@ -341,7 +345,8 @@ class Port:
 
     @classmethod
     def from_str(
-        cls, representation: str, devclass, domains, blind=False
+        cls, representation: str, devclass: str,
+            domains: VMCollection, blind: bool=False
     ) -> "Port":
         """
         Parse string <back_vm>:<port_id> to retrieve Port.
@@ -375,7 +380,7 @@ class Port:
         return "*"
 
     @property
-    def backend_domain(self) -> Optional[QubesVM]:
+    def backend_domain(self) -> QubesVM_str | None:
         """Which domain exposed this port. (immutable)"""
         return self.__backend_domain
 
@@ -390,7 +395,7 @@ class Port:
         return "peripheral"
 
     @property
-    def has_devclass(self):
+    def has_devclass(self) -> bool:
         """Returns True if devclass is set."""
         return self.__devclass is not None
 
@@ -401,10 +406,10 @@ class AnyPort(Port):
     def __init__(self, devclass: str):
         super().__init__(None, "*", devclass)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "*"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "*"
 
 
@@ -419,18 +424,18 @@ class VirtualDevice:
 
     def __init__(
         self,
-        port: Optional[Port] = None,
-        device_id: Optional[str] = None,
+        port: Port | None = None,
+        device_id: str | None = None,
     ):
         assert not isinstance(port, AnyPort) or device_id is not None
-        self.port: Optional[Port] = port  # type: ignore
+        self.port: Port | None = port  # type: ignore
         self._device_id = device_id
 
     def clone(self, **kwargs) -> "VirtualDevice":
         """
         Clone object and substitute attributes with explicitly given.
         """
-        attr: Dict[str, Any] = {
+        attr: dict[str, Any] = {  # noqa:ANN401
             "port": self.port,
             "device_id": self.device_id,
         }
@@ -443,7 +448,7 @@ class VirtualDevice:
         return self._port
 
     @port.setter
-    def port(self, value: Union[Port, str, None]):
+    def port(self, value: Port | str | None) -> None:
         # pylint: disable=missing-function-docstring
         if isinstance(value, Port):
             self._port = value
@@ -469,7 +474,7 @@ class VirtualDevice:
         return self._device_id is not None
 
     @property
-    def backend_domain(self) -> Optional[QubesVM]:
+    def backend_domain(self) -> QubesVM_str | None:
         # pylint: disable=missing-function-docstring
         return self.port.backend_domain
 
@@ -499,10 +504,10 @@ class VirtualDevice:
             return "any device"
         return self.device_id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.port, self.device_id))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, (VirtualDevice, DeviceAssignment)):
             result = (
                 self.port == other.port and self.device_id == other.device_id
@@ -512,7 +517,7 @@ class VirtualDevice:
             return self.port == other and self.device_id == "*"
         return super().__eq__(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:
         """
         Desired order (important for auto-attachment):
 
@@ -543,11 +548,11 @@ class VirtualDevice:
             "is not supported"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.port!r}:{self.device_id}"
 
     @property
-    def repr_for_qarg(self):
+    def repr_for_qarg(self) -> str:
         """Object representation for qrexec argument"""
         res = repr(self).replace(":", "+")
         # replace '?' in category
@@ -555,17 +560,17 @@ class VirtualDevice:
         res = res.replace(unknown_dev, "_" * len(unknown_dev))
         return res.replace("*", "_")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.port}:{self.device_id}"
 
     @classmethod
     def from_qarg(
         cls,
         representation: str,
-        devclass: Optional[str],
-        domains,
+        devclass: str | None,
+        domains: VMCollection,
         blind: bool = False,
-        backend: Optional[QubesVM] = None,
+        backend: QubesVM_str | None = None,
     ) -> "VirtualDevice":
         """
         Parse qrexec argument <back_vm>+<port_id>:<device_id> to get device info
@@ -583,10 +588,10 @@ class VirtualDevice:
     def from_str(
         cls,
         representation: str,
-        devclass: Optional[str],
-        domains,
+        devclass: str | None,
+        domains: VMCollection,
         blind: bool = False,
-        backend: Optional[QubesVM] = None,
+        backend: QubesVM_str | None = None,
     ) -> "VirtualDevice":
         """
         Parse string <back_vm>+<port_id>:<device_id> to get device info
@@ -604,9 +609,9 @@ class VirtualDevice:
     def _parse(
         cls,
         representation: str,
-        devclass: Optional[str],
+        devclass: str | None,
         get_domain: Callable,
-        backend: Optional[QubesVM],
+        backend: QubesVM_str | None,
         sep: str,
     ) -> "VirtualDevice":
         """
@@ -721,7 +726,7 @@ class DeviceInterface:
     Peripheral device interface wrapper.
     """
 
-    def __init__(self, interface_encoding: str, devclass: Optional[str] = None):
+    def __init__(self, interface_encoding: str, devclass: str | None = None):
         ifc_padded = interface_encoding.ljust(6, "*")
         if devclass:
             if len(ifc_padded) > 6:
@@ -762,7 +767,7 @@ class DeviceInterface:
         self._category = DeviceCategory.from_str(self._interface_encoding)
 
     @property
-    def devclass(self) -> Optional[str]:
+    def devclass(self) -> str | None:
         """Immutable Device class such like: 'usb', 'pci' etc."""
         return self._devclass
 
@@ -777,7 +782,7 @@ class DeviceInterface:
         return cls("?******")
 
     @staticmethod
-    def from_str_bulk(interfaces: Optional[str]) -> List["DeviceInterface"]:
+    def from_str_bulk(interfaces: str | None) -> list["DeviceInterface"]:
         """Interprets string of interfaces as list of `DeviceInterface`.
 
         Examples:
@@ -796,18 +801,18 @@ class DeviceInterface:
             for i in range(0, len(interfaces), 7)
         ]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._interface_encoding
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(repr(self))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, DeviceInterface):
             return False
         return repr(self) == repr(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.devclass == "block":
             return "Block Device"
         if self.devclass in ("usb", "pci"):
@@ -848,7 +853,7 @@ class DeviceInterface:
         return repr(self)
 
     @staticmethod
-    def _load_classes(bus: str):
+    def _load_classes(bus: str) -> dict:
         """
         List of known device classes, subclasses and programming interfaces.
         """
@@ -913,15 +918,15 @@ class DeviceInfo(VirtualDevice):
         self,
         port: Port,
         *,
-        vendor: Optional[str] = None,
-        product: Optional[str] = None,
-        manufacturer: Optional[str] = None,
-        name: Optional[str] = None,
-        serial: Optional[str] = None,
-        interfaces: Optional[List[DeviceInterface]] = None,
-        parent: Optional["DeviceInfo"] = None,
-        attachment: Optional[QubesVM] = None,
-        device_id: Optional[str] = None,
+        vendor: str | None = None,
+        product: str | None = None,
+        manufacturer: str | None = None,
+        name: str | None = None,
+        serial: str | None = None,
+        interfaces: list[DeviceInterface] | None = None,
+        parent: "DeviceInfo | None" = None,
+        attachment: QubesVM_str | None = None,
+        device_id: str | None = None,
         **kwargs,
     ):
         super().__init__(port, device_id)
@@ -1044,7 +1049,7 @@ class DeviceInfo(VirtualDevice):
         return f"{cat}: {vendor} {prod}"
 
     @property
-    def interfaces(self) -> List[DeviceInterface]:
+    def interfaces(self) -> list[DeviceInterface]:
         """
         Non-empty list of device interfaces.
 
@@ -1055,7 +1060,7 @@ class DeviceInfo(VirtualDevice):
         return self._interfaces
 
     @property
-    def parent_device(self) -> Optional[VirtualDevice]:
+    def parent_device(self) -> VirtualDevice | None:
         """
         The parent device, if any.
 
@@ -1065,7 +1070,7 @@ class DeviceInfo(VirtualDevice):
         return self._parent
 
     @property
-    def subdevices(self) -> List[VirtualDevice]:
+    def subdevices(self) -> list[VirtualDevice]:
         """
         The list of children devices if any.
 
@@ -1082,7 +1087,7 @@ class DeviceInfo(VirtualDevice):
         ]
 
     @property
-    def attachment(self) -> Optional[QubesVM]:
+    def attachment(self) -> QubesVM_str | None:
         """
         VM to which device is attached (frontend domain).
         """
@@ -1134,8 +1139,8 @@ class DeviceInfo(VirtualDevice):
     def deserialize(
         cls,
         serialization: bytes,
-        expected_backend_domain: QubesVM,
-        expected_devclass: Optional[str] = None,
+        expected_backend_domain: QubesVM_str,
+        expected_devclass: str | None = None,
     ) -> "DeviceInfo":
         """
         Recovers a serialized object, see: :py:meth:`serialize`.
@@ -1217,7 +1222,7 @@ class DeviceInfo(VirtualDevice):
         return self._device_id
 
     @device_id.setter
-    def device_id(self, value):
+    def device_id(self, value: str) -> None:
         # Do not auto-override value like in super class
         self._device_id = value
 
@@ -1253,9 +1258,9 @@ class DeviceAssignment:
     def __init__(
         self,
         device: VirtualDevice,
-        frontend_domain=None,
-        options=None,
-        mode: Union[str, AssignmentMode] = "manual",
+        frontend_domain: QubesVM | None=None,
+        options: dict[str, str] | None=None,
+        mode: str | AssignmentMode = AssignmentMode.MANUAL,
     ):
         if isinstance(device, DeviceInfo):
             device = VirtualDevice(device.port, device.device_id)
@@ -1270,14 +1275,14 @@ class DeviceAssignment:
     @classmethod
     def new(
         cls,
-        backend_domain: QubesVM,
+        backend_domain: QubesVM_str,
         port_id: str,
         devclass: str,
-        device_id: Optional[str] = None,
+        device_id: str | None = None,
         *,
-        frontend_domain: Optional[QubesVM] = None,
-        options=None,
-        mode: Union[str, AssignmentMode] = "manual",
+        frontend_domain: QubesVM_str | None = None,
+        options: dict[str, str]=None,
+        mode: str | AssignmentMode = AssignmentMode.MANUAL,
     ) -> "DeviceAssignment":
         """Helper method to create a DeviceAssignment object."""
         return cls(
@@ -1287,7 +1292,7 @@ class DeviceAssignment:
             mode,
         )
 
-    def clone(self, **kwargs):
+    def clone(self, **kwargs) -> "DeviceAssignment":
         """
         Clone object and substitute attributes with explicitly given.
         """
@@ -1300,21 +1305,21 @@ class DeviceAssignment:
         attr.update(kwargs)
         return self.__class__(**attr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.virtual_device!r}"
 
     @property
-    def repr_for_qarg(self):
+    def repr_for_qarg(self) -> str:
         """Object representation for qrexec argument"""
         return self.virtual_device.repr_for_qarg
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.virtual_device}"
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.virtual_device)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, (VirtualDevice, DeviceAssignment)):
             result = (
                 self.port == other.port and self.device_id == other.device_id
@@ -1322,7 +1327,7 @@ class DeviceAssignment:
             return result
         return False
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:
         if isinstance(other, DeviceAssignment):
             return self.virtual_device < other.virtual_device
         if isinstance(other, VirtualDevice):
@@ -1333,7 +1338,7 @@ class DeviceAssignment:
         )
 
     @property
-    def backend_domain(self) -> Optional[QubesVM]:
+    def backend_domain(self) -> QubesVM_str | None:
         # pylint: disable=missing-function-docstring
         return self.virtual_device.backend_domain
 
@@ -1358,9 +1363,9 @@ class DeviceAssignment:
         return self.virtual_device.device_id
 
     @property
-    def devices(self) -> List[DeviceInfo]:
+    def devices(self) -> list[DeviceInfo]:
         """Get DeviceInfo objects corresponding to this DeviceAssignment"""
-        result: List[DeviceInfo] = []
+        result: list[DeviceInfo] = []
         if not self.backend_domain:
             return result
         if self.port_id != "*":
@@ -1400,17 +1405,17 @@ class DeviceAssignment:
         return Port(self.backend_domain, self.port_id, self.devclass)
 
     @property
-    def frontend_domain(self) -> Optional[QubesVM]:
+    def frontend_domain(self) -> QubesVM_str | None:
         """Which domain the device is attached/assigned to."""
         return self.__frontend_domain
 
     @frontend_domain.setter
-    def frontend_domain(self, frontend_domain: Optional[Union[str, QubesVM]]):
+    def frontend_domain(self, frontend_domain: str | QubesVM_str | None) -> None:
         """Which domain the device is attached/assigned to."""
         if isinstance(frontend_domain, str):
             if not self.backend_domain:
                 raise ProtocolError("Cannot determine backend domain")
-            self.__frontend_domain: Optional[QubesVM] = (
+            self.__frontend_domain: QubesVM_str | None = (
                 self.backend_domain.app.domains[frontend_domain]
             )
         else:
@@ -1449,12 +1454,12 @@ class DeviceAssignment:
         )
 
     @property
-    def options(self) -> Dict[str, Any]:
+    def options(self) -> dict[str, Any]: # noqa:ANN401
         """Device options (same as in the legacy API)."""
         return self.__options
 
     @options.setter
-    def options(self, options: Optional[Dict[str, Any]]):
+    def options(self, options: dict[str, Any] | None) -> None: # noqa:ANN401
         """Device options (same as in the legacy API)."""
         self.__options = options or {}
 
