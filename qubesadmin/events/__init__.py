@@ -24,9 +24,8 @@ import asyncio
 import fnmatch
 import subprocess
 import typing
+from typing import Callable, Any
 from asyncio import StreamWriter, StreamReader
-from collections.abc import Callable
-from typing import Any
 
 import qubesadmin.config
 import qubesadmin.exc
@@ -34,12 +33,13 @@ from qubesadmin.app import QubesBase
 from qubesadmin.device_protocol import VirtualDevice, Port, UnknownDevice
 from qubesadmin.vm import QubesVM
 
-type Handler = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
+Handler: typing.TypeAlias = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
 
 class EventsDispatcher(object):
     ''' Events dispatcher, responsible for receiving events and calling
     appropriate handlers'''
-    def __init__(self, app: QubesBase, api_method: str='admin.Events', enable_cache: bool=True):
+    def __init__(self, app: QubesBase, api_method: str='admin.Events',
+                 enable_cache: bool=True):
         """Initialize EventsDispatcher
 
         :param app :py:class:`qubesadmin.Qubes` object
@@ -88,7 +88,8 @@ class EventsDispatcher(object):
         '''
         self.handlers[event].remove(handler)
 
-    async def _get_events_reader(self, vm: QubesVM | None =None) -> tuple[asyncio.StreamReader, Callable]:
+    async def _get_events_reader(self, vm: QubesVM | None =None)\
+            -> tuple[asyncio.StreamReader, Callable]:
         '''Make connection to qubesd and return stream to read events from
 
         :param vm: Specific VM for which events should be handled, use None
@@ -130,7 +131,8 @@ class EventsDispatcher(object):
                                       + self.app.qubesd_connection_type)
         return reader, cleanup_func
 
-    async def listen_for_events(self, vm: QubesVM | None=None, reconnect: bool=True) -> None:
+    async def listen_for_events(self, vm: QubesVM | None=None,
+                                reconnect: bool=True) -> None:
         '''
         Listen for events and call appropriate handlers.
         This function do not exit until manually terminated.
@@ -243,9 +245,9 @@ class EventsDispatcher(object):
         elif event in ('domain-pre-start', 'domain-start', 'domain-shutdown',
                        'domain-paused', 'domain-unpaused',
                        'domain-start-failed'):
-            self.app._update_power_state_cache(subject, event, **kwargs)
             assert subject is not None
-            subject.devices.clear_cache()  # TODO won't that error if subject=None ?
+            self.app._update_power_state_cache(subject, event, **kwargs)
+            subject.devices.clear_cache()
         elif event == 'connection-established':
             # on (re)connection, clear cache completely - we don't have
             # guarantee about not missing any events before this point
@@ -255,22 +257,22 @@ class EventsDispatcher(object):
             "device-unassign",
             "device-assignment-changed"
         ):
-            devclass = event.split(":")[1]
             assert subject is not None
-            subject.devices[devclass]._assignment_cache = None  # TODO same as above
+            devclass = event.split(":")[1]
+            subject.devices[devclass]._assignment_cache = None
         elif event.split(":")[0] in (
             "device-attach",
             "device-detach",
             "device-removed"
         ):
-            devclass = event.split(":")[1]
             assert subject is not None
-            subject.devices[devclass]._attachment_cache = None  # TODO same as above
+            devclass = event.split(":")[1]
+            subject.devices[devclass]._attachment_cache = None
         elif event.split(":")[0] in ("device-removed",):
+            assert subject is not None
             devclass = event.split(":")[1]
             try:
-                assert subject is not None
-                subject.devices[devclass]._dev_cache[kwargs["port"]]  # TODO same as above
+                subject.devices[devclass]._dev_cache[kwargs["port"]]
             except KeyError:
                 pass
 

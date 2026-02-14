@@ -24,12 +24,12 @@ import functools
 from typing import Iterable
 
 import qubesadmin.events
-import qubesadmin.exc
 from qubesadmin.events import EventsDispatcher
 from qubesadmin.vm import QubesVM
 
 
-def interrupt_on_vm_shutdown(vms: set[QubesVM], dispatcher: EventsDispatcher, subject: QubesVM, event: str) -> None:
+def interrupt_on_vm_shutdown(vms: set[QubesVM], dispatcher: EventsDispatcher,
+                             subject: QubesVM, event: str) -> None:
     """Interrupt events processing when given VM was shutdown"""
     # pylint: disable=unused-argument
     if event == 'connection-established':
