@@ -61,24 +61,28 @@ class VMCollection(object):
     def __init__(self, app: "QubesBase"):
         self.app = app
         # TODO why is that called "list" if it's a dict ??!
-        self._vm_list: dict[str, dict] | None = None
+        # TODO also we should properly document what's inside
+        self._vm_list: dict[str, dict[str, str]] = {}
         self._vm_objects: dict[str, QubesVM] = {}
+        self._vm_list_initialized: bool = False
 
     def clear_cache(self, invalidate_name: str | None=None) -> None:
         """Clear cached list of VMs
         If *invalidate_name* is given, remove that object from cache
         explicitly too.
         """
-        self._vm_list = None
+        self._vm_list_initialized = False
+        self._vm_list = {}
         if invalidate_name:
             self._vm_objects.pop(invalidate_name, None)
 
     def refresh_cache(self, force: bool=False) -> None:
         """Refresh cached list of VMs"""
-        if not force and self._vm_list is not None:
+        if not force and self._vm_list_initialized:
             return
         vm_list_data = self.app.qubesd_call("dom0", "admin.vm.List")
         new_vm_list = {}
+        self._vm_list_initialized = True
         # FIXME: this will probably change
         for vm_data in vm_list_data.splitlines():
             vm_name, props = vm_data.decode("ascii").split(" ", 1)
@@ -121,13 +125,13 @@ class VMCollection(object):
         and checking if exists
         """
         if item not in self._vm_objects:
-            cls = qubesadmin.vm.QubesVM
+            cls = qubesadmin.vm.QubesVM  # TODO why put it here ?
             # provide class name to constructor, if already cached (which can be
             # done by 'item not in self' check above, unless blind_mode is
             # enabled
             klass = None
             power_state = None
-            if self._vm_list and item in self._vm_list:
+            if item in self._vm_list:
                 klass = self._vm_list[item]["class"]
                 power_state = self._vm_list[item].get("state")
             self._vm_objects[item] = cls(
