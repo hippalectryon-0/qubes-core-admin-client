@@ -215,7 +215,7 @@ class Expire(RuleOption):
     '''Rule expire time'''
     def __init__(self, value: SupportsInt) -> None:
         super().__init__(value)
-        self.datetime = datetime.datetime.utcfromtimestamp(int(value))
+        self.datetime = datetime.datetime.fromtimestamp(int(value))
 
     @property
     def rule(self) -> str:
@@ -225,12 +225,12 @@ class Expire(RuleOption):
     @property
     def expired(self) -> bool:
         '''Has this rule expired already?'''
-        return self.datetime < datetime.datetime.utcnow()
+        return self.datetime < datetime.datetime.now()
 
     @property
     def pretty_value(self) -> str:
         '''Human readable representation'''
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
         duration = (self.datetime - now).total_seconds()
         return "{:+.0f}s".format(duration)
 
