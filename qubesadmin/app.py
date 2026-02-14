@@ -324,6 +324,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             for i in self.labels.values():
                 if i.index == int(label):
                     return i
+        assert isinstance(label, str)
         raise qubesadmin.exc.QubesLabelNotFoundError(label)
 
     @staticmethod
