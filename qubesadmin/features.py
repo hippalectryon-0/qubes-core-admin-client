@@ -19,6 +19,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''VM features interface'''
+from typing import Iterator, Any, Generator
+
+from qubesadmin.vm import QubesVM
 
 
 class Features(object):
@@ -34,14 +37,14 @@ class Features(object):
     '''
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, vm):
+    def __init__(self, vm: QubesVM):
         super().__init__()
         self.vm = vm
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         self.vm.qubesd_call(self.vm.name, 'admin.vm.feature.Remove', key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: object) -> None:
         if isinstance(value, bool):
             # False value needs to be serialized as empty string
             self.vm.qubesd_call(self.vm.name, 'admin.vm.feature.Set', key,
@@ -50,25 +53,25 @@ class Features(object):
             self.vm.qubesd_call(self.vm.name, 'admin.vm.feature.Set', key,
                 str(value).encode())
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> str:
         return self.vm.qubesd_call(
             self.vm.name, 'admin.vm.feature.Get', item).decode('utf-8')
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         qubesd_response = self.vm.qubesd_call(self.vm.name,
             'admin.vm.feature.List')
         return iter(qubesd_response.decode('utf-8').splitlines())
 
     keys = __iter__
 
-    def items(self):
+    def items(self) -> Generator[tuple[str, str], None, None]:
         '''Return iterable of pairs (feature, value)'''
         for key in self:
             yield key, self[key]
 
     NO_DEFAULT = object()
 
-    def get(self, item, default=None):
+    def get(self, item: str, default: object = None) -> str | object:
         '''Get a feature, return default value if missing.'''
         try:
             return self[item]
@@ -77,7 +80,8 @@ class Features(object):
                 raise
             return default
 
-    def check_with_template(self, feature, default=None):
+    def check_with_template(self, feature: str,
+                            default: object | None = None) -> str | object:
         ''' Check if the vm's template has the specified feature. '''
         try:
             qubesd_response = self.vm.qubesd_call(
