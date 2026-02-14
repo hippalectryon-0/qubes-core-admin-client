@@ -19,8 +19,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''Base classes for managed objects'''
+import typing
 
 import qubesadmin.exc
+if typing.TYPE_CHECKING:
+    from qubesadmin.app import QubesBase
 
 DEFAULT = object()
 
@@ -34,9 +37,9 @@ class PropertyHolder(object):
     '''
     #: a place for appropriate Qubes() object (QubesLocal or QubesRemote),
     # use None for self
-    app = None
+    app: QubesBase
 
-    def __init__(self, app, method_prefix, method_dest):
+    def __init__(self, app: QubesBase, method_prefix: str, method_dest: str):
         #: appropriate Qubes() object (QubesLocal or QubesRemote), use None
         # for self
         self.app = app
@@ -69,8 +72,7 @@ class PropertyHolder(object):
         :param payload_stream: file-like object to read payload from
         :return: Data returned by qubesd (string)
         '''
-        if not self.app:
-            raise NotImplementedError
+        # TODO I removed this because self.app should never be None
         if dest is None:
             dest = self._method_dest
         if (

@@ -27,7 +27,7 @@ import subprocess
 import warnings
 from logging import Logger
 from subprocess import Popen
-from typing import Literal, AnyStr, Any, Generator, Self
+from typing import Literal, AnyStr, Generator
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -99,7 +99,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         #  Nowhere in the code do we handle `NotImplemented`
         return NotImplemented
 
-    def __eq__(self, other: "QubesVM | str") -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, QubesVM):
             return self.name == other.name
         if isinstance(other, str):
@@ -327,7 +327,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
     def run_service_for_stdio(
         self, service: str, input: AnyStr | None=None,
             timeout: float | None=None, **kwargs
-    ) -> tuple[AnyStr, AnyStr]:
+    ) -> tuple[bytes, bytes]:
         """Run a service, pass an optional input and return (stdout, stderr).
 
         Raises an exception if return code != 0.
@@ -353,7 +353,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return stdouterr
 
     def prepare_input_for_vmshell(self, command: str,
-                                  input: AnyStr | None=None)\
+                                  input: bytes | None=None)\
             -> bytes:
         """Prepare shell input for the given command and optional (real)
         input"""
@@ -367,8 +367,8 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             (command.rstrip("\n").encode("utf-8"), close_shell_suffix, input)
         )
 
-    def run(self, command: str, input: AnyStr | None=None, **kwargs)\
-            -> tuple[AnyStr, AnyStr]:
+    def run(self, command: str, input: bytes | None=None, **kwargs)\
+            -> tuple[bytes, bytes]:
         """Run a shell command inside the domain using qubes.VMShell qrexec."""
         # pylint: disable=redefined-builtin
         try:
@@ -385,7 +385,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             e.cmd = command
             raise e
 
-    def run_with_args(self, *args, **kwargs) -> tuple[AnyStr, AnyStr]:
+    def run_with_args(self, *args, **kwargs) -> tuple[bytes, bytes]:
         """Run a single command inside the domain. Use the qubes.VMExec qrexec,
         if available.
 
@@ -525,7 +525,7 @@ class DispVMWrapper(QubesVM):
             self.create_disposable()
         super().start()
 
-    def create_disposable(self) -> Self:
+    def create_disposable(self) -> "DispVM":
         """Create disposable."""
         if self._method_dest.startswith("@dispvm"):
             if self._method_dest.startswith("@dispvm:"):
