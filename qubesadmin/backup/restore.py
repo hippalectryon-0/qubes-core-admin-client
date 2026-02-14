@@ -57,7 +57,6 @@ from qubesadmin.app import QubesBase
 from qubesadmin.backup import BackupVM
 from qubesadmin.backup.core2 import Core2Qubes
 from qubesadmin.backup.core3 import Core3Qubes
-from qubesadmin.base import NamedObject
 from qubesadmin.device_protocol import DeviceAssignment
 from qubesadmin.exc import QubesException
 from qubesadmin.storage import Volume

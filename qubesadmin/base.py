@@ -20,7 +20,7 @@
 
 '''Base classes for managed objects'''
 import typing
-from typing import BinaryIO, TypeAlias, Any, Generator, Callable
+from typing import BinaryIO, TypeAlias, Any, Generator
 
 import qubesadmin.exc
 from qubesadmin.vm import QubesVM
@@ -29,9 +29,6 @@ if typing.TYPE_CHECKING:
     from qubesadmin.app import QubesBase
 
 DEFAULT = object()
-
-class NamedObject(typing.Protocol):
-    name: str
 
 # We use Any because the dynamic metatada handling of the current code
 # is too complex for type checkers otherwise
@@ -429,11 +426,15 @@ class PropertyHolder(object):
                 qubesadmin.exc.QubesVMNotFoundError):
             raise qubesadmin.exc.QubesPropertyAccessError(name)
 
+T = typing.TypeVar('T')
 
-class WrapperObjectsCollection(object):
+
+WrapperObjectsCollectionKey: TypeAlias = int | str
+
+class WrapperObjectsCollection(typing.Generic[T], object):
     '''Collection of simple named objects'''
     def __init__(self, app: QubesBase,
-                 list_method: str, object_class: Callable):
+                 list_method: str, object_class: type[T]):
         '''
         Construct manager of named wrapper objects.
 
@@ -447,11 +448,13 @@ class WrapperObjectsCollection(object):
         self._list_method = list_method
         self._object_class = object_class
         #: names cache
-        self._names_list: list[str] | None = None
+        self._names_list: list[WrapperObjectsCollectionKey] | None = None
         #: returned objects cache
-        self._objects: dict[str, NamedObject] = {}
+        self._objects: dict[WrapperObjectsCollectionKey, T] = {}
 
-    def clear_cache(self, invalidate_name: str | None=None) -> None:
+    def clear_cache(self,
+                    invalidate_name: WrapperObjectsCollectionKey | None=None)\
+            -> None:
         """Clear cached list of names.
         If *invalidate_name* is given, remove that object from cache
         explicitly too.
@@ -471,16 +474,17 @@ class WrapperObjectsCollection(object):
 
         # TODO why cast to list here ?
         for name, obj in list(self._objects.items()):
+            assert hasattr(obj, "name")
             if obj.name not in self._names_list:
                 # Object no longer exists
                 del self._objects[name]
 
-    def __getitem__(self, item: str) -> NamedObject:
+    def __getitem__(self, item: WrapperObjectsCollectionKey) -> T:
         if not self.app.blind_mode and item not in self:
             raise KeyError(item)
         return self.get_blind(item)
 
-    def get_blind(self, item: str) -> NamedObject:
+    def get_blind(self, item: WrapperObjectsCollectionKey) -> T:
         '''
         Get a property without downloading the list
         and checking if it's present
@@ -489,29 +493,29 @@ class WrapperObjectsCollection(object):
             self._objects[item] = self._object_class(self.app, item)
         return self._objects[item]
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, item: WrapperObjectsCollectionKey) -> bool:
         self.refresh_cache()
         assert self._names_list is not None
         return item in self._names_list
 
-    def __iter__(self) -> Generator[str, None, None]:
+    def __iter__(self) -> Generator[WrapperObjectsCollectionKey, None, None]:
         self.refresh_cache()
         assert self._names_list is not None
         yield from self._names_list
 
-    def keys(self) -> list[str]:
+    def keys(self) -> list[WrapperObjectsCollectionKey]:
         '''Get list of names.'''
         self.refresh_cache()
         assert self._names_list is not None
         return list(self._names_list)
 
-    def items(self) -> list[tuple[str, NamedObject]]:
+    def items(self) -> list[tuple[WrapperObjectsCollectionKey, T]]:
         '''Get list of (key, value) pairs'''
         self.refresh_cache()
         assert self._names_list is not None
         return [(key, self.get_blind(key)) for key in self._names_list]
 
-    def values(self) -> list[NamedObject]:
+    def values(self) -> list[T]:
         '''Get list of objects'''
         self.refresh_cache()
         assert self._names_list is not None

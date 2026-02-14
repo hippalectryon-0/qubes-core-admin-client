@@ -42,6 +42,7 @@ import qubesadmin.label
 import qubesadmin.storage
 import qubesadmin.utils
 import qubesadmin.vm
+from qubesadmin.label import Label
 from qubesadmin.vm import Klass, PowerState
 import qubesadmin.config
 import qubesadmin.device_protocol
@@ -187,7 +188,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     #: domains (VMs) collection
     domains: VMCollection
     #: labels collection
-    labels: qubesadmin.base.WrapperObjectsCollection
+    labels: qubesadmin.base.WrapperObjectsCollection[Label]
     #: storage pools
     pools = qubesadmin.base.WrapperObjectsCollection
     #: type of qubesd connection: either 'socket' or 'qrexec'
@@ -306,7 +307,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
         return self._local_name
 
-    def get_label(self, label: str | int) -> str:
+    def get_label(self, label: str | int) -> Label:
         """Get label as identified by index or name
 
         :throws QubesLabelNotFoundError: when label is not found

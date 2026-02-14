@@ -36,7 +36,6 @@ import qubesadmin.exc
 import qubesadmin.utils
 import qubesadmin.vm
 from qubesadmin.app import QubesBase
-from qubesadmin.base import NamedObject
 from qubesadmin.vm import QubesVM
 
 LOCKFILE = '/var/run/qubes/backup-paranoid-restore.lock'
@@ -311,9 +310,9 @@ class RestoreInDisposableVM:
                     'qvm-backup-restore tool '
                     'missing in {} template, install qubes-core-admin-client '
                     'package there'.format(
-                        typing.cast(NamedObject, getattr(self.dispvm.template,
+                        getattr(self.dispvm.template,
                                 'template',
-                                self.dispvm.template)).name)
+                                self.dispvm.template).name)
                 )
             self.app.log.info("When operation completes, close its window "
                               "manually.")
@@ -344,9 +343,9 @@ class RestoreInDisposableVM:
                     'qvm-backup-restore tool '
                     'missing in {} template, install qubes-core-admin-client '
                     'package there'.format(
-                        typing.cast(NamedObject, getattr(self.dispvm.template,
+                        getattr(self.dispvm.template,
                                 'template',
-                                self.dispvm.template)).name)
+                                self.dispvm.template).name)
                 )
             if exit_code != 0:
                 raise qubesadmin.exc.BackupRestoreError(
