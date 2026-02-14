@@ -26,6 +26,8 @@ import shlex
 import subprocess
 import warnings
 from logging import Logger
+from subprocess import Popen
+from typing import Literal, AnyStr, Any, Generator, Self
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -35,23 +37,26 @@ import qubesadmin.devices
 import qubesadmin.device_protocol
 import qubesadmin.firewall
 import qubesadmin.tags
+from qubesadmin.app import QubesBase
 from qubesadmin.storage import Volume
+
+Klass = Literal["AppVM", "AdminVM", "TemplateVM", "DispVM"]
+PowerState = Literal["Transient", "Running", "Halted", "Paused",
+"Suspended", "Halting", "Dying", "Crashed", "NA"]
 
 
 class QubesVM(qubesadmin.base.PropertyHolder):
     """Qubes domain."""
 
+    # Below: local-only properties (see PropertyHolder._local_properties)
     log: Logger
-
     tags: qubesadmin.tags.Tags
-
     features: qubesadmin.features.Features
-
     devices: qubesadmin.devices.DeviceManager
-
     firewall: qubesadmin.firewall.Firewall
 
-    def __init__(self, app, name, klass=None, power_state=None):
+    def __init__(self, app: QubesBase, name: str, klass: Klass | None=None,
+                 power_state: PowerState | None=None):
         super().__init__(app, "admin.vm.property.", name)
         self._volumes: dict[str, Volume] | None = None
         self._klass = klass
@@ -65,12 +70,15 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         self.firewall = qubesadmin.firewall.Firewall(self)
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Domain name"""
         return self._method_dest
 
     @name.setter
-    def name(self, new_value):
+    def name(self, new_value: str) -> None:
+        # TODO why are we calling str() below ?
+        #  Do we expect new_value to NOT be a string ?
+        #  Can we be explicit about it ?
         self.qubesd_call(
             self._method_dest,
             self._method_prefix + "Set",
@@ -81,25 +89,28 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         self._volumes = None
         self.app.domains.clear_cache()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._method_dest
 
-    def __lt__(self, other):
+    def __lt__(self, other: "QubesVM") -> bool:
         if isinstance(other, QubesVM):
             return self.name < other.name
+        # TODO shouldn't we raise a NotImplementedError instead ?
+        #  Nowhere in the code do we handle `NotImplemented`
         return NotImplemented
 
-    def __eq__(self, other):
+    def __eq__(self, other: "QubesVM | str") -> bool:
         if isinstance(other, QubesVM):
             return self.name == other.name
         if isinstance(other, str):
             return self.name == other
+        # TODO same as above
         return NotImplemented
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
-    def start(self):
+    def start(self) -> None:
         """
         Start domain.
 
@@ -107,7 +118,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Start")
 
-    def shutdown(self, force=False):
+    def shutdown(self, force: bool=False) -> None:
         """
         Shutdown domain.
 
@@ -119,7 +130,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         else:
             self.qubesd_call(self._method_dest, "admin.vm.Shutdown")
 
-    def kill(self):
+    def kill(self) -> None:
         """
         Kill domain (forcefuly shutdown).
 
@@ -127,16 +138,16 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Kill")
 
-    def force_shutdown(self):
+    def force_shutdown(self) -> None:
         """Deprecated alias for :py:meth:`kill`"""
         warnings.warn(
             "Call to deprecated function force_shutdown(), use kill() instead",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.kill()
+        return self.kill()  # TODO why return here ?
 
-    def pause(self):
+    def pause(self) -> None:
         """
         Pause domain.
 
@@ -146,7 +157,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Pause")
 
-    def unpause(self):
+    def unpause(self) -> None:
         """
         Unpause domain.
 
@@ -156,7 +167,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Unpause")
 
-    def suspend(self):
+    def suspend(self) -> None:
         """
         Suspend domain.
 
@@ -166,7 +177,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Suspend")
 
-    def resume(self):
+    def resume(self) -> None:
         """
         Resume domain (from S3).
 
@@ -176,7 +187,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         self.qubesd_call(self._method_dest, "admin.vm.Resume")
 
-    def get_power_state(self):
+    def get_power_state(self) -> PowerState:
         """Return power state description string.
 
         Return value may be one of those:
@@ -219,12 +230,12 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         ):
             return "NA"
 
-    def get_mem(self):
+    def get_mem(self) -> int:
         """Get current memory usage from VM."""
 
         return int(self._get_current_state()["mem"])
 
-    def _get_current_state(self):
+    def _get_current_state(self) -> dict:
         """Call admin.vm.CurrentState, and return the result as a dict."""
 
         state = {}
@@ -234,7 +245,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             state[name] = value
         return state
 
-    def is_halted(self):
+    def is_halted(self) -> bool:
         """ Check whether this domain's state is 'Halted'
             :returns: :py:obj:`True` if this domain is halted, \
                 :py:obj:`False` otherwise.
@@ -242,7 +253,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """
         return self.get_power_state() == "Halted"
 
-    def is_paused(self):
+    def is_paused(self) -> bool:
         """Check whether this domain is paused.
 
         :returns: :py:obj:`True` if this domain is paused, \
@@ -252,7 +263,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
         return self.get_power_state() == "Paused"
 
-    def is_suspended(self):
+    def is_suspended(self) -> bool:
         """Check whether this domain is suspended.
 
         :returns: :py:obj:`True` if this domain is suspended, \
@@ -262,7 +273,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
         return self.get_power_state() == "Suspended"
 
-    def is_running(self):
+    def is_running(self) -> bool:
         """Check whether this domain is running.
 
         :returns: :py:obj:`True` if this domain is started, \
@@ -272,7 +283,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
         return self.get_power_state() not in ("Halted", "NA")
 
-    def is_networked(self):
+    def is_networked(self) -> bool:
         """Check whether this VM can reach network (firewall notwithstanding).
 
         :returns: :py:obj:`True` if is machine can reach network, \
@@ -301,11 +312,11 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 )
         return self._volumes
 
-    def get_disk_utilization(self):
+    def get_disk_utilization(self) -> int:
         """Get total disk usage of the VM"""
         return sum(vol.usage for vol in self.volumes.values())
 
-    def run_service(self, service, **kwargs):
+    def run_service(self, service: str, **kwargs) -> Popen:
         """Run service on this VM
 
         :param str service: service name
@@ -314,8 +325,9 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return self.app.run_service(self._method_dest, service, **kwargs)
 
     def run_service_for_stdio(
-        self, service, input=None, timeout=None, **kwargs
-    ):
+        self, service: str, input: AnyStr | None=None,
+            timeout: float | None=None, **kwargs
+    ) -> tuple[AnyStr, AnyStr]:
         """Run a service, pass an optional input and return (stdout, stderr).
 
         Raises an exception if return code != 0.
@@ -340,7 +352,9 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
         return stdouterr
 
-    def prepare_input_for_vmshell(self, command, input=None):
+    def prepare_input_for_vmshell(self, command: str,
+                                  input: AnyStr | None=None)\
+            -> bytes:
         """Prepare shell input for the given command and optional (real)
         input"""
         # pylint: disable=redefined-builtin
@@ -353,7 +367,8 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             (command.rstrip("\n").encode("utf-8"), close_shell_suffix, input)
         )
 
-    def run(self, command, input=None, **kwargs):
+    def run(self, command: str, input: AnyStr | None=None, **kwargs)\
+            -> tuple[AnyStr, AnyStr]:
         """Run a shell command inside the domain using qubes.VMShell qrexec."""
         # pylint: disable=redefined-builtin
         try:
@@ -370,7 +385,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             e.cmd = command
             raise e
 
-    def run_with_args(self, *args, **kwargs):
+    def run_with_args(self, *args, **kwargs) -> tuple[AnyStr, AnyStr]:
         """Run a single command inside the domain. Use the qubes.VMExec qrexec,
         if available.
 
@@ -397,7 +412,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return self.run(" ".join(shlex.quote(arg) for arg in args), **kwargs)
 
     @property
-    def appvms(self):
+    def appvms(self) -> Generator["QubesVM", None, None]:
         """Returns a generator containing all domains based on the current
         TemplateVM.
 
@@ -412,7 +427,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 pass
 
     @property
-    def derived_vms(self):
+    def derived_vms(self) -> list["QubesVM"]:
         """
         Return list of all domains based on the current TemplateVM
         at any level of inheritance.
@@ -420,7 +435,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return list(QubesVM._get_derived_vms(self))
 
     @staticmethod
-    def _get_derived_vms(vm):
+    def _get_derived_vms(vm: "QubesVM") -> set["QubesVM"]:
         """
         Return `set` of all domains based on the current TemplateVM
         at any level of inheritance.
@@ -431,7 +446,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return result
 
     @property
-    def connected_vms(self):
+    def connected_vms(self) -> Generator["QubesVM", None, None]:
         """Return a generator containing all domains connected to the current
         NetVM.
         """
@@ -443,7 +458,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 pass
 
     @property
-    def klass(self):
+    def klass(self) -> Klass:
         """Qube class"""
         # use cached value if available
         if self._klass is None:
@@ -456,7 +471,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         response = self.qubesd_call(self._method_dest, "admin.vm.notes.Get")
         return response.decode()
 
-    def set_notes(self, notes: str):
+    def set_notes(self, notes: str) -> None:
         """Set qube notes"""
         self.qubesd_call(
             self._method_dest,
@@ -473,11 +488,11 @@ class DispVMWrapper(QubesVM):
     after service call ends.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._redirect_dispvm_calls = kwargs.pop("redirect_dispvm_calls", False)
         super().__init__(*args, **kwargs)
 
-    def run_service(self, service, **kwargs):
+    def run_service(self, service: str, **kwargs) -> Popen:
         """Create disposable if absent and run service."""
         if (
             self.app.qubesd_connection_type == "socket"
@@ -489,7 +504,7 @@ class DispVMWrapper(QubesVM):
             kwargs["connect_timeout"] = self.qrexec_timeout
         return super().run_service(service, **kwargs)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """
         Cleanup after disposable usage.
 
@@ -504,13 +519,13 @@ class DispVMWrapper(QubesVM):
             except qubesadmin.exc.QubesVMNotRunningError:
                 pass
 
-    def start(self):
+    def start(self) -> None:
         """Create disposable if absent and start it."""
         if self._method_dest.startswith("@dispvm"):
             self.create_disposable()
         super().start()
 
-    def create_disposable(self):
+    def create_disposable(self) -> Self:
         """Create disposable."""
         if self._method_dest.startswith("@dispvm"):
             if self._method_dest.startswith("@dispvm:"):
@@ -529,7 +544,8 @@ class DispVM(QubesVM):
     """Disposable VM"""
 
     @classmethod
-    def from_appvm(cls, app, appvm, redirect_dispvm_calls=False):
+    def from_appvm(cls, app: QubesBase, appvm: QubesVM,
+                   redirect_dispvm_calls: bool=False) -> DispVMWrapper:
         """Returns a wrapper for calling service in a new DispVM based on given
         AppVM. If *appvm* is none, use default DispVM template
 
