@@ -30,7 +30,7 @@ import inspect
 import logging
 import multiprocessing
 import typing
-from io import FileIO, BytesIO
+from io import FileIO
 from multiprocessing import Queue, Process
 import os
 import pwd
@@ -47,7 +47,7 @@ import concurrent.futures.thread
 
 import collections
 from subprocess import Popen
-from typing import Callable, TypeVar, Iterable, IO, Generator
+from typing import Callable, TypeVar, Iterable, IO, Generator, BinaryIO
 
 import qubesadmin
 import qubesadmin.vm
@@ -1417,7 +1417,7 @@ class BackupRestore(object):
         return extract_proc
 
     @staticmethod
-    def _save_qubes_xml(path: str, stream: BytesIO) -> None:
+    def _save_qubes_xml(path: str, stream: BinaryIO) -> None:
         '''Handler for qubes.xml.000 content - just save the data to a file'''
         with open(path, 'wb') as f_qubesxml:
             f_qubesxml.write(stream.read())
@@ -1915,7 +1915,7 @@ class BackupRestore(object):
             return 9
         return sorted(vms, key=key_function)
 
-    def _handle_dom0(self, stream: BytesIO) -> None:
+    def _handle_dom0(self, stream: BinaryIO) -> None:
         '''Extract dom0 home'''
         try:
             local_user = grp.getgrnam('qubes').gr_mem[0]
@@ -1939,7 +1939,7 @@ class BackupRestore(object):
         if retcode != 0:
             self.log.error("*** Error while setting restore directory owner")
 
-    def _handle_appmenus_list(self, vm: QubesVM, stream: BytesIO) -> None:
+    def _handle_appmenus_list(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Handle whitelisted-appmenus.list file'''
         try:
             appmenus_list = stream.read().decode('ascii').splitlines()
@@ -1951,7 +1951,7 @@ class BackupRestore(object):
                 'Failed to set application list for %s: %s', vm.name, e)
 
     def _handle_volume_data(self, vm: QubesVM, volume: Volume,
-                            stream: BytesIO, *, file_size: int | None=None)\
+                            stream: BinaryIO, *, file_size: int | None=None)\
             -> None:
         '''Wrap volume data import with logging'''
         try:

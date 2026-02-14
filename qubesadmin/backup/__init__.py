@@ -21,6 +21,7 @@
 '''Qubes backup'''
 import collections
 import io
+from typing import BinaryIO
 
 from qubesadmin.vm import QubesVM
 
@@ -71,10 +72,10 @@ class BackupVM(object):
         '''Report whether a VM is included in the backup'''
         return False
 
-    def handle_firewall_xml(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_firewall_xml(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Import appropriate format of firewall.xml'''
         raise NotImplementedError
 
-    def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_notes_txt(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Import qubes notes.txt'''
         raise NotImplementedError  # pragma: no cover

@@ -163,7 +163,7 @@ class QubesTest(qubesadmin.app.QubesBase):
         self.service_calls = []
 
     def qubesd_call(self, dest, method, arg=None, payload=None,
-            payload_stream=None):
+            payload_stream=None) -> bytes:
         if arg:
             assert all(c in QREXEC_ALLOWED_CHARS for c in arg), \
                 f"forbidden char in service arg '{arg}"

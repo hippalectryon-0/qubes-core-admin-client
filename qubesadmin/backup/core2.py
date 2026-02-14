@@ -21,8 +21,8 @@
 '''Parser for core2 qubes.xml'''
 
 import ast
-import io
 import typing
+from typing import BinaryIO
 import xml.parsers
 import logging
 import lxml.etree
@@ -103,7 +103,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         return Rule(None, **kwargs)
 
 
-    def handle_firewall_xml(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_firewall_xml(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Load old (Qubes < 4.0) firewall XML format'''
         try:
             tree = lxml.etree.parse(stream)  # pylint: disable=no-member
@@ -144,7 +144,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         except:  # pylint: disable=bare-except
             vm.log.exception('Failed to set firewall')
 
-    def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_notes_txt(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Qube notes did not exist at this time'''
         raise NotImplementedError  # pragma: no cover
 

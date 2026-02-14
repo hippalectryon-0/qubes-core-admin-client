@@ -22,6 +22,8 @@
 import io
 import xml.parsers.expat
 import logging
+from typing import BinaryIO
+
 import lxml.etree
 
 from lxml.etree import _Element
@@ -41,7 +43,7 @@ class Core3VM(qubesadmin.backup.BackupVM):
     def included_in_backup(self) -> bool:
         return self.backup_path is not None
 
-    def handle_firewall_xml(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_firewall_xml(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Load new (Qubes >= 4.0) firewall XML format'''
         try:
             tree = lxml.etree.parse(stream)  # pylint: disable=no-member
@@ -57,7 +59,7 @@ class Core3VM(qubesadmin.backup.BackupVM):
         except:  # pylint: disable=bare-except
             vm.log.exception('Failed to set firewall')
 
-    def handle_notes_txt(self, vm: QubesVM, stream: io.BytesIO) -> None:
+    def handle_notes_txt(self, vm: QubesVM, stream: BinaryIO) -> None:
         '''Load new (Qubes >= 4.2) notes'''
         try:
             vm.set_notes(stream.read().decode())

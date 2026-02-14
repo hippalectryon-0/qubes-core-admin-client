@@ -31,8 +31,10 @@ import subprocess
 import sys
 
 import logging
+import typing
 from logging import Logger
 from subprocess import Popen
+from typing import Generator, Iterable, BinaryIO, Any
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -40,6 +42,7 @@ import qubesadmin.label
 import qubesadmin.storage
 import qubesadmin.utils
 import qubesadmin.vm
+from qubesadmin.vm import Klass
 import qubesadmin.config
 import qubesadmin.device_protocol
 from qubesadmin.vm import QubesVM
@@ -55,10 +58,11 @@ except ImportError:
 class VMCollection(object):
     """Collection of VMs objects"""
 
-    def __init__(self, app):
+    def __init__(self, app: "QubesBase"):
         self.app = app
-        self._vm_list = None
-        self._vm_objects = {}
+        # TODO why is that called "list" if it's a dict ??!
+        self._vm_list: dict[str, dict] | None = None
+        self._vm_objects: dict[str, QubesVM] = {}
 
     def clear_cache(self, invalidate_name: str | None=None) -> None:
         """Clear cached list of VMs
@@ -131,7 +135,8 @@ class VMCollection(object):
             )
         return self._vm_objects[item]
 
-    def get(self, item, default=None) -> QubesVM:
+    def get(self, item: str | QubesVM, default: QubesVM | None=None)\
+            -> QubesVM | None:
         """
         Get a VM object, or return *default* if it can't be found.
         """
@@ -140,27 +145,27 @@ class VMCollection(object):
         except KeyError:
             return default
 
-    def __contains__(self, item):
+    def __contains__(self, item: QubesVM | str) -> bool:
         if isinstance(item, qubesadmin.vm.QubesVM):
             item = item.name
         self.refresh_cache()
         return item in self._vm_list
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         self.app.qubesd_call(key, "admin.vm.Remove")
         self.clear_cache()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[QubesVM, None, None]:
         self.refresh_cache()
         for vm in sorted(self._vm_list):
             yield self[vm]
 
-    def keys(self):
+    def keys(self) -> Iterable[str]:
         """Get list of VM names."""
         self.refresh_cache()
         return self._vm_list.keys()
 
-    def values(self):
+    def values(self) -> list[QubesVM]:
         """Get list of VM objects."""
         self.refresh_cache()
         return [self[name] for name in self._vm_list]
@@ -189,7 +194,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     #: cache retrieved properties values
     cache_enabled: bool = False
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self, "admin.property.", "dom0")
         self.domains = VMCollection(self)
         self.labels = qubesadmin.base.WrapperObjectsCollection(
@@ -199,18 +204,21 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             self, "admin.pool.List", qubesadmin.storage.Pool
         )
         #: cache for available storage pool drivers and options to create them
-        self._pool_drivers = None
+        self._pool_drivers: dict[str, list[str]] | None = None
         self.log = logging.getLogger("app")
         self._local_name = None
 
-    def list_vmclass(self):
+    def list_vmclass(self) -> list[Klass]:
         """Call Qubesd in order to obtain the vm classes list"""
         vmclass = (
             self.qubesd_call("dom0", "admin.vmclass.List").decode().splitlines()
         )
-        return sorted(vmclass)
+        # TODO ensure we can cast here without breaking anything
+        for e in vmclass:
+            assert e in Klass
+        return typing.cast(list[Klass], sorted(vmclass))
 
-    def list_deviceclass(self):
+    def list_deviceclass(self) -> list[str]:  # TODO make Literal ?
         """Call Qubesd in order to obtain the device classes list"""
         deviceclasses = (
             self.qubesd_call("dom0", "admin.deviceclass.List")
@@ -219,7 +227,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         )
         return sorted(deviceclasses)
 
-    def _refresh_pool_drivers(self):
+    def _refresh_pool_drivers(self) -> None:
         """
         Refresh cached storage pool drivers and their parameters.
 
@@ -239,17 +247,18 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             self._pool_drivers = pool_drivers
 
     @property
-    def pool_drivers(self):
+    def pool_drivers(self) -> Iterable[str]:
         """Available storage pool drivers"""
         self._refresh_pool_drivers()
         return self._pool_drivers.keys()
 
-    def pool_driver_parameters(self, driver):
+    # TODO add a TypeAlias ?
+    def pool_driver_parameters(self, driver: str) -> list[str]:
         """Parameters to initialize storage pool using given driver"""
         self._refresh_pool_drivers()
         return self._pool_drivers[driver]
 
-    def add_pool(self, name, driver, **kwargs):
+    def add_pool(self, name: str, driver: str, **kwargs) -> None:
         """Add a storage pool to config
 
         :param name: name of storage pool to create
@@ -267,12 +276,12 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             "dom0", "admin.pool.Add", driver, payload.encode("utf-8")
         )
 
-    def remove_pool(self, name):
+    def remove_pool(self, name: str) -> None:
         """Remove a storage pool"""
         self.qubesd_call("dom0", "admin.pool.Remove", name, None)
 
     @property
-    def local_name(self):
+    def local_name(self) -> str:
         """Get localhost name"""
         if not self._local_name:
             local_name = None
@@ -290,7 +299,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
         return self._local_name
 
-    def get_label(self, label):
+    def get_label(self, label: str | int) -> str:
         """Get label as identified by index or name
 
         :throws QubesLabelNotFoundError: when label is not found
@@ -310,7 +319,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         raise qubesadmin.exc.QubesLabelNotFoundError(label)
 
     @staticmethod
-    def get_vm_class(clsname):
+    def get_vm_class(clsname: str) -> str:
         """Find the class for a domain.
 
         Compatibility function, client tools use str to identify domain classes.
@@ -322,7 +331,9 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         return clsname
 
     def add_new_vm(
-        self, cls, name: str, label: str, template=None, pool=None, pools=None
+        self, cls: str | type["QubesVM"], name: str, label: str,
+            template: str | None=None, pool: str | None=None,
+            pools: dict=None
     ) -> QubesVM:
         """Create new Virtual Machine
 
@@ -379,16 +390,16 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
     def clone_vm(
         self,
-        src_vm,
-        new_name,
-        new_cls=None,
+        src_vm: str | QubesVM,
+        new_name: str,
+        new_cls: str | None=None,
         *,
-        pool=None,
-        pools=None,
-        ignore_errors=False,
-        ignore_volumes=None,
-        ignore_devices=False,
-    ):
+        pool: str | None=None,
+        pools: dict | None=None,
+        ignore_errors: bool=False,
+        ignore_volumes: list | None=None,
+        ignore_devices: bool=False,
+    ) -> QubesVM:
         # pylint: disable=too-many-statements
         # pylint: disable=too-many-branches
         """Clone Virtual Machine
@@ -624,8 +635,9 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         return dst_vm
 
     def qubesd_call(
-        self, dest, method, arg=None, payload=None, payload_stream=None
-    ):
+        self, dest: str, method: str, arg: str | None=None,
+            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+    ) -> bytes:
         """
         Execute Admin API method.
 
@@ -648,12 +660,12 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
     def run_service(
         self,
-        dest,
-        service,
-        user=None,
+        dest: str,
+        service: str,
+        user: str | None=None,
         *,
         filter_esc: bool=False,
-        localcmd: bool=None,
+        localcmd: str | None=None,
         wait: bool=True,
         autostart: bool=True,
         **kwargs,
@@ -679,7 +691,9 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         )
 
     @staticmethod
-    def _call_with_stream(command, payload, payload_stream):
+    def _call_with_stream(command: str | list[str], payload: bytes | None,
+                          payload_stream: BinaryIO)\
+            -> tuple[Popen, bytes, bytes]:
         """Helper method to pass data to qubesd. Calls a command with
         payload and payload_stream as input.
 
@@ -712,7 +726,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             stdout, stderr = proc.communicate()
         return proc, stdout, stderr
 
-    def _invalidate_cache(self, subject: QubesVM | None, event: str, name: str, **kwargs) -> None:
+    def _invalidate_cache(self, subject: QubesVM | None,
+                          event: str, name: str, **kwargs) -> None:
         """Invalidate cached value of a property.
 
         This method is designed to be hooked as an event handler for:
@@ -741,7 +756,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         except KeyError:
             pass
 
-    def _update_power_state_cache(self, subject, event, **kwargs):
+    def _update_power_state_cache(self, subject: QubesVM,
+                                  event: str, **kwargs) -> None:
         """Update cached VM power state.
 
         This method is designed to be hooked as an event handler for:
@@ -783,7 +799,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         # pylint: disable=protected-access
         subject._power_state_cache = power_state
 
-    def _invalidate_cache_all(self):
+    def _invalidate_cache_all(self) -> None:
         """Invalidate all cached data
 
 
@@ -816,8 +832,9 @@ class QubesLocal(QubesBase):
     qubesd_connection_type = "socket"
 
     def qubesd_call(
-        self, dest, method, arg=None, payload=None, payload_stream=None
-    ):
+        self, dest: str, method: str, arg: str | None=None,
+            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+    ) -> bytes:
         """
         Execute Admin API method.
 
@@ -880,12 +897,12 @@ class QubesLocal(QubesBase):
 
     def run_service(
         self,
-        dest,
-        service,
-        user=None,
+        dest: str,
+        service: str,
+        user: str | None=None,
         *,
         filter_esc: bool=False,
-        localcmd: bool=None,
+        localcmd: str | None=None,
         wait: bool=True,
         autostart: bool=True,
         **kwargs,
@@ -989,8 +1006,9 @@ class QubesRemote(QubesBase):
     qubesd_connection_type = "qrexec"
 
     def qubesd_call(
-        self, dest, method, arg=None, payload=None, payload_stream=None
-    ):
+        self, dest: str, method: str, arg: str | None=None,
+            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+    ) -> bytes:
         """
         Execute Admin API method.
 
@@ -1031,16 +1049,16 @@ class QubesRemote(QubesBase):
 
     def run_service(
         self,
-        dest,
-        service,
-        user=None,
+        dest: str,
+        service: str,
+        user: str | None=None,
         *,
-        filter_esc=False,
-        localcmd=None,
-        wait=True,
-        autostart=True,
+        filter_esc: bool=False,
+        localcmd: str | None=None,
+        wait: bool=True,
+        autostart: bool=True,
         **kwargs,
-    ):
+    ) -> Popen:
         """Run qrexec service in a given destination
 
         :param str dest: Destination - may be a VM name or empty

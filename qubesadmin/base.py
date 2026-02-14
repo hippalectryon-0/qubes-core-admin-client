@@ -90,7 +90,7 @@ class PropertyHolder(object):
             payload_stream)
 
     @staticmethod
-    def _parse_qubesd_response(response_data):
+    def _parse_qubesd_response(response_data) -> bytes:
         '''Parse response from qubesd.
 
         In case of success, return actual data. In case of error,
