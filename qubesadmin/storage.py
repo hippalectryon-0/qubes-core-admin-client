@@ -19,8 +19,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 """Storage subsystem."""
-from builtins import _NotImplementedType
-from typing import BinaryIO, Any, Generator
+from typing import BinaryIO, Generator
 
 import qubesadmin.exc
 from qubesadmin.app import QubesBase
@@ -76,6 +75,8 @@ class Volume(object):
             method = 'admin.pool.volume.' + func_name
             dest = 'dom0'
             arg = self._pool
+            # TODO is the assert safe ?
+            assert self._vid is not None
             if payload is not None:
                 payload = self._vid.encode('ascii') + b' ' + payload
             else:
@@ -97,16 +98,20 @@ class Volume(object):
         info = info.decode('ascii')
         self._info = dict([line.split('=', 1) for line in info.splitlines()])
 
-    def __eq__(self, other: object) -> bool | _NotImplementedType:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Volume):
             return self.pool == other.pool and self.vid == other.vid
         return NotImplemented
 
-    def __lt__(self, other: object) -> bool | _NotImplementedType:
+    def __lt__(self, other: object) -> bool:
         # pylint: disable=protected-access
         if isinstance(other, Volume):
+            # TODO this will fail if self/other._vm_name is None
+            assert self._vm_name is not None and other._vm_name is not None
             if self._vm and other._vm:
                 return (self._vm, self._vm_name) < (other._vm, other._vm_name)
+            # TODO this will fail if self/other._pool is None
+            assert self._pool is not None and other._pool is not None
             if self._vid and other._vid:
                 return (self._pool, self._vid) < (other._pool, other._vid)
         return NotImplemented
@@ -125,6 +130,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('pool')
+        assert self._info is not None
         return str(self._info['pool'])
 
     @property
@@ -136,6 +142,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('vid')
+        assert self._info is not None
         return str(self._info['vid'])
 
     @property
@@ -145,6 +152,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('size')
+        assert self._info is not None
         return int(self._info['size'])
 
     @property
@@ -154,6 +162,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('usage')
+        assert self._info is not None
         return int(self._info['usage'])
 
     @property
@@ -163,6 +172,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('rw')
+        assert self._info is not None
         return self._info['rw'] == 'True'
 
     @rw.setter
@@ -178,6 +188,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('ephemeral')
+        assert self._info is not None
         return self._info.get('ephemeral', 'False') == 'True'
 
     @ephemeral.setter
@@ -193,6 +204,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('snap_on_start')
+        assert self._info is not None
         return self._info['snap_on_start'] == 'True'
 
     @property
@@ -202,6 +214,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('save_on_stop')
+        assert self._info is not None
         return self._info['save_on_stop'] == 'True'
 
     @property
@@ -214,6 +227,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('source')
+        assert self._info is not None
         if self._info['source']:
             return self._info['source']
         return None
@@ -225,6 +239,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('revisions_to_keep')
+        assert self._info is not None
         return int(self._info['revisions_to_keep'])
 
     @revisions_to_keep.setter
@@ -241,6 +256,7 @@ class Volume(object):
             self._fetch_info()
         except qubesadmin.exc.QubesDaemonAccessError:
             raise qubesadmin.exc.QubesPropertyAccessError('is_outdated')
+        assert self._info is not None
         return self._info.get('is_outdated', False) == 'True'
 
     def resize(self, size: object) -> None:
@@ -328,17 +344,21 @@ class Pool(object):
         self._config = None
 
     def __str__(self) -> str:
+        # TODO __str__ should not return None
+        assert self.name is not None
         return self.name
 
-    def __eq__(self, other: object) -> bool | _NotImplementedType:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Pool):
             return self.name == other.name
         if isinstance(other, str):
             return self.name == other
         return NotImplemented
 
-    def __lt__(self, other: object) -> bool | _NotImplementedType:
+    def __lt__(self, other: object) -> bool:
         if isinstance(other, Pool):
+            # TODO this will fail if one of the names is None
+            assert self.name is not None and other.name is not None
             return self.name < other.name
         return NotImplemented
 

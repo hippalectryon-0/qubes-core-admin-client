@@ -459,6 +459,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     continue
                 if ignore_volumes and volume.name in ignore_volumes:
                     continue
+                # TODO is the assert safe ?
+                assert volume.name is not None
                 default_pool = getattr(
                     self.app, "default_pool_" + volume.name, volume.pool
                 )
@@ -618,6 +620,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     continue
                 if ignore_volumes and dst_volume.name in ignore_volumes:
                     continue
+                # TODO safe assert ?
+                assert dst_volume.name is not None
                 src_volume = src_vm.volumes[dst_volume.name]
                 dst_vm.log.info("Cloning {} volume".format(dst_volume.name))
                 dst_volume.clone(src_volume)
