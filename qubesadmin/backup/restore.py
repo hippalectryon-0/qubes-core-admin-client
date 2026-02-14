@@ -1051,17 +1051,18 @@ class BackupRestore(object):
                 vmproc = self.backup_vm.run_service(self.backup_location)
             else:
                 vmproc = self.backup_vm.run_service('qubes.Restore')
-                vmproc.stdin.write(
+                typing.cast(IO, vmproc.stdin).write(
                     (self.backup_location.replace("\r", "").replace("\n",
                         "") + "\n").encode())
-                vmproc.stdin.flush()
+                typing.cast(IO, vmproc.stdin).flush()
 
             # Send to tar2qfile the VMs that should be extracted
-            vmproc.stdin.write((" ".join(filelist) + "\n").encode())
-            vmproc.stdin.flush()
+            typing.cast(IO, vmproc.stdin).write((" ".join(filelist) + "\n")
+                                                .encode())
+            typing.cast(IO, vmproc.stdin).flush()
             self.processes_to_kill_on_cancel.append(vmproc)
 
-            backup_stdin = vmproc.stdout
+            backup_stdin = typing.cast(IO, typing.cast(IO, vmproc.stdout))
             if isinstance(self.app, qubesadmin.app.QubesRemote):
                 qfile_unpacker_path = '/usr/lib/qubes/qfile-unpacker'
             else:

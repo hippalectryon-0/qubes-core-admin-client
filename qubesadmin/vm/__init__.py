@@ -29,6 +29,7 @@ from logging import Logger
 from subprocess import Popen
 from typing import Literal, AnyStr, Generator
 
+import qubesadmin.utils
 import qubesadmin.base
 import qubesadmin.exc
 import qubesadmin.storage
@@ -462,8 +463,8 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         """Qube class"""
         # use cached value if available
         if self._klass is None:
-            # pylint: disable=no-member
-            self._klass = super().klass
+            # `getattr` since `klass` is not an explicit member
+            self._klass = getattr(super(), "klass")
         return self._klass
 
     def get_notes(self) -> str:
@@ -525,7 +526,7 @@ class DispVMWrapper(QubesVM):
             self.create_disposable()
         super().start()
 
-    def create_disposable(self) -> "DispVM":
+    def create_disposable(self) -> "DispVMWrapper":
         """Create disposable."""
         if self._method_dest.startswith("@dispvm"):
             if self._method_dest.startswith("@dispvm:"):

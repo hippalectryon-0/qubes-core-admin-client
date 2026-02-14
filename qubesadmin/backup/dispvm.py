@@ -28,6 +28,7 @@ import string
 
 import subprocess
 import typing
+from typing import IO
 from argparse import Namespace
 
 import qubesadmin
@@ -198,11 +199,12 @@ class RestoreInDisposableVM:
         self.storage_access_proc = self.backup_storage_vm.run_service(
             'qubes.RegisterBackupLocation', stdin=subprocess.PIPE,
             stdout=subprocess.PIPE)
-        self.storage_access_proc.stdin.write(
+        typing.cast(IO, self.storage_access_proc.stdin).write(
             (self.args.backup_location.
              replace("\r", "").replace("\n", "") + "\n").encode())
-        self.storage_access_proc.stdin.flush()
-        storage_access_id = self.storage_access_proc.stdout.readline().strip()
+        typing.cast(IO, self.storage_access_proc.stdin).flush()
+        storage_access_id = (
+            typing.cast(IO, self.storage_access_proc.stdout).readline().strip())
         allowed_chars = (string.ascii_letters + string.digits).encode()
         if not storage_access_id or \
                 not all(c in allowed_chars for c in storage_access_id):
