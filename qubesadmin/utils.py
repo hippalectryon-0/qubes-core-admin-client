@@ -99,7 +99,8 @@ def get_entry_point_one(group: str, name: str) -> Any:  # noqa:ANN401
         raise KeyError(name)
     if len(epoints) > 1:
         raise TypeError('more than 1 implementation of {!r} found: {}'.format(
-            name, ', '.join('{}.{}'.format(ep.module_name, '.'.join(ep.attrs))
+            # TODO see https://github.com/QubesOS/qubes-issues/issues/10680
+            name, ', '.join('{}.{}'.format(ep.module, ep.attr)
                             for ep in epoints)))
     return epoints[0].load()
 
