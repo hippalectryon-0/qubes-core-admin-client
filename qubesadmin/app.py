@@ -34,7 +34,7 @@ import logging
 import typing
 from logging import Logger
 from subprocess import Popen
-from typing import Generator, Iterable, BinaryIO, Any
+from typing import Generator, Iterable, BinaryIO
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -42,13 +42,13 @@ import qubesadmin.label
 import qubesadmin.storage
 import qubesadmin.utils
 import qubesadmin.vm
-from qubesadmin.vm import Klass
+from qubesadmin.vm import Klass, PowerState
 import qubesadmin.config
 import qubesadmin.device_protocol
 from qubesadmin.vm import QubesVM
 
 try:
-    import qubesdb
+    import qubesdb  # type: ignore
 
     has_qubesdb = True
 except ImportError:
@@ -129,11 +129,12 @@ class VMCollection(object):
             # provide class name to constructor, if already cached (which can be
             # done by 'item not in self' check above, unless blind_mode is
             # enabled
-            klass = None
-            power_state = None
+            klass: Klass | None = None
+            power_state: PowerState | None = None
             if item in self._vm_list:
-                klass = self._vm_list[item]["class"]
-                power_state = self._vm_list[item].get("state")
+                klass = typing.cast(Klass | None, self._vm_list[item]["class"])
+                power_state = typing.cast(PowerState | None,
+                                          self._vm_list[item].get("state"))
             self._vm_objects[item] = cls(
                 self.app, item, klass=klass, power_state=power_state
             )
@@ -254,12 +255,14 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     def pool_drivers(self) -> Iterable[str]:
         """Available storage pool drivers"""
         self._refresh_pool_drivers()
+        assert self._pool_drivers is not None
         return self._pool_drivers.keys()
 
     # TODO add a TypeAlias ?
     def pool_driver_parameters(self, driver: str) -> list[str]:
         """Parameters to initialize storage pool using given driver"""
         self._refresh_pool_drivers()
+        assert self._pool_drivers is not None
         return self._pool_drivers[driver]
 
     def add_pool(self, name: str, driver: str, **kwargs) -> None:
@@ -337,7 +340,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
     def add_new_vm(
         self, cls: str | type["QubesVM"], name: str, label: str,
             template: str | None=None, pool: str | None=None,
-            pools: dict=None
+            pools: dict | None=None
     ) -> QubesVM:
         """Create new Virtual Machine
 
@@ -718,6 +721,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                 # because the process can get blocked on stdout or stderr pipe.
                 # However, in practice the output should be always smaller
                 # than 4K.
+                assert proc.stdin is not None
                 proc.stdin.write(payload)
                 try:
                     shutil.copyfileobj(payload_stream, proc.stdin)
@@ -752,11 +756,13 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         :return: none
         """  # pylint: disable=unused-argument
         if subject is None:
-            subject = self
+            subject_or_self = self
+        else:
+            subject_or_self = subject
 
         try:
             # pylint: disable=protected-access
-            del subject._properties_cache[name]
+            del subject_or_self._properties_cache[name]
         except KeyError:
             pass
 
@@ -866,6 +872,9 @@ class QubesLocal(QubesBase):
                 raise qubesadmin.exc.QubesDaemonCommunicationError(
                     "{} not found".format(method_path)
                 )
+            assert arg is not None
+            # TODO won't this error if arg=None ? _call_with_stream excepts a
+            #  list[str] not list[str|None]
             command = [
                 "env",
                 "QREXEC_REMOTE_DOMAIN=dom0",
