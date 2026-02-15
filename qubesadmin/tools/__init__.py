@@ -454,22 +454,19 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
         for action in self._actions:
             # pylint: disable=protected-access
-            if issubclass(action.__class__, QubesAction):
-                (typing.cast(QubesAction,action)
-                 .parse_qubes_app(self, namespace))
-            elif issubclass(action.__class__,
+            if isinstance(action, QubesAction):
+                action.parse_qubes_app(self, namespace)
+            elif isinstance(action,
                     argparse._SubParsersAction):  # pylint: disable=no-member
                 assert hasattr(namespace, 'command')
                 command = namespace.command
                 if command is None:
                     continue
-                assert isinstance(action, argparse._SubParsersAction)
                 subparser = typing.cast(argparse.ArgumentParser,
                                         action._name_parser_map[command])
                 for subaction in subparser._actions:
-                    if issubclass(subaction.__class__, QubesAction):
-                        (typing.cast(QubesAction,subaction)
-                         .parse_qubes_app(self, namespace))
+                    if isinstance(subaction, QubesAction):
+                        subaction.parse_qubes_app(self, namespace)
 
         return namespace
 
