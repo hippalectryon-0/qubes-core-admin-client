@@ -35,10 +35,12 @@ import docutils.nodes
 import docutils.parsers.rst
 import docutils.parsers.rst.roles
 import docutils.statemachine
+from docutils.nodes import Element
 import sphinx
 import sphinx.errors
 import sphinx.locale
 import sphinx.util.docfields
+from sphinx.application import Sphinx
 from sphinx.util import logging
 
 import qubesadmin.tools
@@ -52,12 +54,12 @@ SUBCOMMANDS_TITLE = 'COMMANDS'
 OPTIONS_TITLE = 'OPTIONS'
 
 
-def make_rst_section(heading, char):
+def make_rst_section(heading: str, char: str) -> str:
     """Format a section header in rst"""
     return '{}\n{}\n\n'.format(heading, char[0] * len(heading))
 
 
-def prepare_manpage(command):
+def prepare_manpage(command: str )-> str:
     """Build a man page skeleton"""
     parser = qubesadmin.tools.get_parser_for_command(command)
     stream = io.StringIO()
@@ -108,23 +110,24 @@ def prepare_manpage(command):
 
     return stream.getvalue()
 
-
 class OptionsCheckVisitor(docutils.nodes.SparseNodeVisitor):
     """ Checks if the visited option nodes and the specified args are in sync.
     """
 
-    def __init__(self, command, args, document):
+    def __init__(self, command: str, args: set,
+                 document: docutils.nodes.document):
+        # TODO do we need that assert ?
         assert isinstance(args, set)
         docutils.nodes.SparseNodeVisitor.__init__(self, document)
         self.command = command
         self.args = args
 
-    def visit_desc(self, node):
+    def visit_desc(self, node: Element) -> None:
         """ Skips all but 'option' elements """
         if not node.get('desctype', None) == 'option':
             raise docutils.nodes.SkipChildren
 
-    def visit_desc_name(self, node):
+    def visit_desc_name(self, node: Element) -> None:
         """ Checks if the option is defined `self.args` """
         if not isinstance(node[0], docutils.nodes.Text):
             raise sphinx.errors.SphinxError('first child should be Text')
@@ -136,7 +139,7 @@ class OptionsCheckVisitor(docutils.nodes.SparseNodeVisitor):
             raise sphinx.errors.SphinxError(
                 'No such argument for {!r}: {!r}'.format(self.command, arg))
 
-    def check_undocumented_arguments(self, ignored_options=None):
+    def check_undocumented_arguments(self, ignored_options: set=None) -> None:
         """ Call this to check if any undocumented arguments are left.
 
             While the documentation talks about a
@@ -159,12 +162,13 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
         command args are in sync.
     """
 
-    def __init__(self, command, sub_commands, document):
+    def __init__(self, command: str, sub_commands: dict[str, set[str]],
+                 document: docutils.nodes.document):
         docutils.nodes.SparseNodeVisitor.__init__(self, document)
         self.command = command
         self.sub_commands = sub_commands
 
-    def visit_section(self, node):
+    def visit_section(self, node: Element) -> None:
         """ Checks if the visited sub-command section nodes exists and it
             options are in sync.
 
@@ -188,14 +192,14 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
                     sub_cmd, args, self.document)
                 node.walkabout(options_visitor)
                 options_visitor.check_undocumented_arguments(
-                    {'--help', '--quiet', '--verbose', '-h', '-q', '-v', \
+                    {'--help', '--quiet', '--verbose', '-h', '-q', '-v',
                     '--version'})
                 del self.sub_commands[cmd]
             except KeyError:
                 raise sphinx.errors.SphinxError(
                     'No such sub-command {!r}'.format(sub_cmd))
 
-    def visit_Text(self, node):
+    def visit_Text(self, node: Element) -> None:
         """ If the visited text node starts with 'alias: ', all the provided
             comma separted alias in this node, are removed from
             `self.sub_commands`
@@ -208,7 +212,7 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
                 assert alias in self.sub_commands
                 del self.sub_commands[alias]
 
-    def check_undocumented_sub_commands(self):
+    def check_undocumented_sub_commands(self) -> None:
         """ Call this to check if any undocumented sub_commands are left.
 
             While the documentation talks about a
@@ -222,13 +226,13 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
                 'Undocumented commands for {!r}: {!r}'.format(
                     self.command, ', '.join(sorted(self.sub_commands.keys()))))
 
-
 class ManpageCheckVisitor(docutils.nodes.SparseNodeVisitor):
     """ Checks if the sub-commands and options specified in the 'COMMAND' and
         'OPTIONS' (case insensitve) sections in sync the command parser.
     """
 
-    def __init__(self, app, command, document):
+    def __init__(self, app: Sphinx, command: str,
+                 document: docutils.nodes.document):
         docutils.nodes.SparseNodeVisitor.__init__(self, document)
         try:
             parser = qubesadmin.tools.get_parser_for_command(command)
@@ -267,7 +271,7 @@ class ManpageCheckVisitor(docutils.nodes.SparseNodeVisitor):
             else:
                 self.options.update(action.option_strings)
 
-    def visit_section(self, node):
+    def visit_section(self, node: Element) -> None:
         """ If section title is OPTIONS or COMMANDS dispatch the apropriate
             `NodeVisitor`.
         """
@@ -286,8 +290,9 @@ class ManpageCheckVisitor(docutils.nodes.SparseNodeVisitor):
             node.walkabout(sub_cmd_visitor)
             sub_cmd_visitor.check_undocumented_sub_commands()
 
-
-def check_man_args(app, doctree, docname):
+def check_man_args(app: Sphinx,
+                   doctree: docutils.nodes.document,
+                   docname: str) -> None:
     """ Checks the manpage for undocumented or obsolete sub-commands and
         options.
     """
@@ -304,7 +309,7 @@ def check_man_args(app, doctree, docname):
     doctree.walk(ManpageCheckVisitor(app, command, doctree))
 
 
-def break_to_pdb(app, *_dummy):
+def break_to_pdb(app: Sphinx, *_dummy) -> None:
     """DEBUG"""
     # pylint: disable=forgotten-debug-statement
     if not app.config.break_to_pdb:
@@ -313,7 +318,7 @@ def break_to_pdb(app, *_dummy):
     pdb.set_trace()
 
 
-def setup(app):
+def setup(app: Sphinx) -> None:
     """Setup Sphinx extension"""
     app.add_config_value('break_to_pdb', False, 'env')
 
