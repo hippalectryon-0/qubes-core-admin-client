@@ -24,14 +24,19 @@
 
 """Various utility functions."""
 
+from __future__ import annotations
+
 import fcntl
 import os
 import re
+import typing
 from typing import Any, Iterable
 
 import qubesadmin.exc
-from qubesadmin.app import QubesBase
-from qubesadmin.vm import QubesVM
+
+if typing.TYPE_CHECKING:
+    from qubesadmin.app import QubesBase
+    from qubesadmin.vm import QubesVM
 
 
 def parse_size(size: str) -> int:

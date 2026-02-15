@@ -31,8 +31,9 @@ class is implemented by an extension.
 Devices are identified by pair of (backend domain, `port_id`), where `port_id`
 is :py:class:`str`.
 """
+from __future__ import annotations
 import itertools
-from typing import Iterable, Iterator, KeysView
+from typing import Iterable, Iterator, TYPE_CHECKING
 
 import qubesadmin.exc
 from qubesadmin.device_protocol import (
@@ -43,7 +44,8 @@ from qubesadmin.device_protocol import (
     VirtualDevice,
     AssignmentMode, DeviceInterface,
 )
-from qubesadmin.vm import QubesVM
+if TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
 
 
 class DeviceCollection:

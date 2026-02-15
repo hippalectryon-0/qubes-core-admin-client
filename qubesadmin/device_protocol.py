@@ -29,17 +29,19 @@ Common part of device API.
 The same in `qubes-core-admin` and `qubes-core-admin-client`,
 should be moved to one place.
 """
-
+from __future__ import annotations
 
 import string
 import sys
 from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 import qubesadmin.exc
-from qubesadmin.app import VMCollection
+
 from qubesadmin.exc import QubesValueError
-from qubesadmin.vm import QubesVM
+if TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
+    from qubesadmin.app import VMCollection
 
 
 class ProtocolError(AssertionError):

@@ -19,10 +19,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 """Storage subsystem."""
-from typing import BinaryIO, Generator
+from __future__ import annotations
+from typing import BinaryIO, Generator, TYPE_CHECKING
 
 import qubesadmin.exc
-from qubesadmin.app import QubesBase
+if TYPE_CHECKING:
+    from qubesadmin.app import QubesBase
 
 
 class Volume(object):

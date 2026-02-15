@@ -20,13 +20,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''Firewall configuration interface'''
-
+from __future__ import annotations
 import datetime
 import socket
 import string
-from typing import Any, SupportsInt
+from typing import SupportsInt, TYPE_CHECKING
 
-from qubesadmin.vm import QubesVM
+if TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
 
 
 class RuleOption(object):

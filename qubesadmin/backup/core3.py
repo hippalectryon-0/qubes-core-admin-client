@@ -19,7 +19,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''Parser for core3 qubes.xml'''
-import io
 import xml.parsers.expat
 import logging
 from typing import BinaryIO

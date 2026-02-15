@@ -33,7 +33,8 @@ from qubesadmin.app import QubesBase
 from qubesadmin.device_protocol import VirtualDevice, Port, UnknownDevice
 from qubesadmin.vm import QubesVM
 
-Handler: typing.TypeAlias = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
+Handler: typing.TypeAlias \
+    = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
 
 class EventsDispatcher(object):
     ''' Events dispatcher, responsible for receiving events and calling

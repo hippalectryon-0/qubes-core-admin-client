@@ -19,6 +19,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''Base classes for managed objects'''
+from __future__ import annotations
+
 import typing
 from typing import BinaryIO, TypeAlias, Any, Generator
 

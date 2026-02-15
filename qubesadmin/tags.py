@@ -19,9 +19,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''VM tags interface'''
+from __future__ import annotations
 from typing import Iterator
 
-from qubesadmin.vm import QubesVM
+import typing
+if typing.TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
 
 
 class Tags(object):

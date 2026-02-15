@@ -19,27 +19,28 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 """Qubes VM objects."""
-
+from __future__ import annotations
 import logging
 import shlex
 
 import subprocess
+import typing
 import warnings
 from logging import Logger
 from subprocess import Popen
 from typing import Literal, AnyStr, Generator
 
 import qubesadmin.utils
-import qubesadmin.base
 import qubesadmin.exc
-import qubesadmin.storage
 import qubesadmin.features
 import qubesadmin.devices
-import qubesadmin.device_protocol
-import qubesadmin.firewall
 import qubesadmin.tags
-from qubesadmin.app import QubesBase
-from qubesadmin.storage import Volume
+import qubesadmin.firewall
+
+if typing.TYPE_CHECKING:
+    from qubesadmin.app import QubesBase
+    import qubesadmin.base
+    from qubesadmin.storage import Volume
 
 Klass = Literal["AppVM", "AdminVM", "TemplateVM", "DispVM"]
 PowerState = Literal["Transient", "Running", "Halted", "Paused",

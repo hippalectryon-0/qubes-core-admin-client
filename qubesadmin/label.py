@@ -19,9 +19,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''VM Labels'''
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import qubesadmin.exc
-from qubesadmin.app import QubesBase
+
+if TYPE_CHECKING:
+    from qubesadmin.app import QubesBase
 
 
 class Label(object):

@@ -19,9 +19,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 '''VM features interface'''
-from typing import Iterator, Any, Generator
+from __future__ import annotations
 
-from qubesadmin.vm import QubesVM
+import typing
+from typing import Iterator, Generator
+
+if typing.TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
 
 
 class Features(object):
