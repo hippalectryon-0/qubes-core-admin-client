@@ -34,6 +34,7 @@ import sys
 import textwrap
 import typing
 from argparse import Namespace
+from typing import Any, TextIO, Iterable
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -47,7 +48,8 @@ class QubesAction(argparse.Action):
         `namespace.app` is instantiated.
     '''
     # pylint: disable=too-few-public-methods
-    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
+    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         ''' This method is called by :py:class:`qubes.tools.QubesArgumentParser`
             after the `namespace.app` is instantiated. Oerwrite this method when
             extending :py:class:`qubes.tools.QubesAction` to initialized values
@@ -69,7 +71,8 @@ class PropertyAction(argparse.Action):
         super().__init__(option_strings, 'properties',
             metavar=metavar, default={}, help=help)
 
-    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: str, option_string: list[str] | None=None) -> None:
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: str, option_string: list[str] | None=None) -> None:
         try:
             prop, value = values.split('=', 1)
         except ValueError:
@@ -111,7 +114,10 @@ class SinglePropertyAction(argparse.Action):
         self.name = dest
 
 
-    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: typing.Any, option_string: list[str] | None=None) -> None:  # noqa: ANN401
+    def __call__(self, parser: argparse.ArgumentParser,
+                 namespace: Namespace, values: typing.Any, # noqa: ANN401
+                 option_string: list[str] | None=None)\
+            -> None:
         if values is self.default and self.default == {}:
             return
 
@@ -128,7 +134,8 @@ class VmNameAction(QubesAction):
     """ Action for parsing one or multiple domains from provided VMNAMEs """
 
     # pylint: disable=too-few-public-methods,redefined-builtin
-    def __init__(self, option_strings: list[str], nargs: int=1, dest: str='vmnames', help: str | None=None,
+    def __init__(self, option_strings: list[str], nargs: int=1,
+                 dest: str='vmnames', help: str | None=None,
                  **kwargs):
         if help is None:
             if nargs == argparse.OPTIONAL:
@@ -149,11 +156,15 @@ class VmNameAction(QubesAction):
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
 
-    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace, values: typing.Any, option_string: list[str] | None=None) -> None:  # noqa: ANN401
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: typing.Any,# noqa: ANN401
+                 option_string: list[str] | None=None) \
+            -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
+    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         ''' Set ``namespace.domains`` to ``values`` '''
         # pylint: disable=too-many-nested-blocks
         assert hasattr(namespace, 'app')
@@ -200,7 +211,8 @@ class RunningVmNameAction(VmNameAction):
     ''' Action for argument parser that gets a running domain from VMNAME '''
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, option_strings: list[str], nargs: int=1, dest: str='vmnames', help: str | None=None,
+    def __init__(self, option_strings: list[str], nargs: int=1,
+                 dest: str='vmnames', help: str | None=None,
                  **kwargs):
         # pylint: disable=redefined-builtin
         if help is None:
@@ -221,7 +233,8 @@ class RunningVmNameAction(VmNameAction):
         super().__init__(
             option_strings, dest=dest, help=help, nargs=nargs, **kwargs)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser, namespace: Namespace) -> None:
+    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         super().parse_qubes_app(parser, namespace)
         for vm in namespace.domains:
             if not vm.is_running():
@@ -235,17 +248,21 @@ class VolumeAction(QubesAction):
     '''
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, help='A pool & volume id combination',
-                 required=True, **kwargs):
+    def __init__(self, help: str='A pool & volume id combination',
+                 required: bool=True, **kwargs):
         # pylint: disable=redefined-builtin
         super().__init__(help=help, required=required,
                                            **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: typing.Any,  # noqa:ANN401
+                 option_string: str | None=None)\
+            -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         ''' Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
         '''
@@ -276,17 +293,20 @@ class VMVolumeAction(QubesAction):
     '''
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, help='A pool & volume id combination',
-                 required=True, **kwargs):
+    def __init__(self, help: str='A pool & volume id combination',
+                 required: bool=True, **kwargs):
         # pylint: disable=redefined-builtin
         super().__init__(help=help, required=required,
                                            **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: typing.Any,  # noqa:ANN401
+                 option_string: str | None=None) -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         ''' Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
         '''
@@ -313,7 +333,9 @@ class PoolsAction(QubesAction):
     ''' Action for argument parser to gather multiple pools '''
     # pylint: disable=too-few-public-methods
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: typing.Any,  # noqa:ANN401
+                 option_string: str | None=None) -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         if hasattr(namespace, self.dest) and getattr(namespace, self.dest):
             names = getattr(namespace, self.dest)
@@ -322,7 +344,8 @@ class PoolsAction(QubesAction):
         names += [values]
         setattr(namespace, self.dest, names)
 
-    def parse_qubes_app(self, parser, namespace):
+    def parse_qubes_app(self,parser: argparse.ArgumentParser,
+                        namespace: Namespace) -> None:
         app = namespace.app
         pool_names = getattr(namespace, self.dest)
         if pool_names:
@@ -362,7 +385,8 @@ class QubesArgumentParser(argparse.ArgumentParser):
         Setting ``version`` argument to '' will disable ``--version`` option.
     '''
 
-    def __init__(self, vmname_nargs=None, show_forceroot=False, version=None, \
+    def __init__(self, vmname_nargs: int | None=None,
+                 show_forceroot: bool=False, version: str | None=None,
             **kwargs):
 
         super().__init__(add_help=False, **kwargs)
@@ -410,7 +434,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
         self.set_defaults(verbose=1, quiet=0)
 
-    def parse_args(self, *args, **kwargs):
+    def parse_args(self, *args, **kwargs) -> None:
         # pylint: disable=arguments-differ,signature-differs
         # hack for tests
         app = kwargs.pop('app', None)
@@ -445,7 +469,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
         return namespace
 
 
-    def error_runtime(self, message, exit_code=1):
+    def error_runtime(self, message: str, exit_code: int=1) -> None:
         '''Runtime error, without showing usage.
 
         :param str message: message to show
@@ -454,16 +478,17 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
 
     @staticmethod
-    def get_loglevel_from_verbosity(namespace):
+    def get_loglevel_from_verbosity(namespace: Namespace) -> int:
         ''' Return loglevel calculated from quiet and verbose arguments '''
         return (namespace.quiet - namespace.verbose) * 10 + logging.WARNING
 
 
     @staticmethod
-    def set_qubes_verbosity(namespace):
+    def set_qubes_verbosity(namespace: Namespace) -> None:
         '''Apply a verbosity setting.
 
         This is done by configuring global logging.
+        TODO wrong docstring below
         :param argparse.Namespace args: args as parsed by parser
         '''
 
@@ -474,7 +499,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
         elif verbose >= 1:
             qubesadmin.log.enable()
 
-    def print_error(self, *args, **kwargs):
+    def print_error(self, *args, **kwargs) -> None:
         """ Print to ``sys.stderr``"""
         print("Error:", *args, file=sys.stderr, **kwargs)
 
@@ -485,11 +510,12 @@ class SubParsersHelpAction(argparse._HelpAction):
     # pylint: disable=protected-access,too-few-public-methods
 
     @staticmethod
-    def _indent(indent, text):
+    def _indent(indent: int, text: str) -> str:
         '''Indent *text* by *indent* spaces'''
         return '\n'.join((' ' * indent) + l for l in text.splitlines())
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
+                 values: str, option_string: list[str] | None=None) -> None:
         parser.print_help()
 
         # retrieve subparsers from parser
@@ -516,16 +542,19 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
     # pylint: disable=protected-access,too-few-public-methods,missing-docstring
     class _AliasedPseudoAction(argparse.Action):
         # pylint: disable=redefined-builtin
-        def __init__(self, name, aliases, help):
+        def __init__(self, name: str, aliases: list[str],
+                     help: str):
             dest = name
             if aliases:
                 dest += ' (%s)' % ','.join(aliases)
             super().__init__(option_strings=[], dest=dest, help=help)
 
-        def __call__(self, parser, namespace, values, option_string=None):
+        def __call__(self, parser: argparse.ArgumentParser,
+                     namespace: Namespace,
+                 values: str, option_string: list[str] | None=None) -> None:
             pass
 
-    def add_parser(self, name, **kwargs):
+    def add_parser(self, name: str, **kwargs) -> argparse.ArgumentParser:
         if 'aliases' in kwargs:
             aliases = kwargs['aliases']
             del kwargs['aliases']
@@ -547,7 +576,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
         return local_parser
 
 
-def get_parser_for_command(command):
+def get_parser_for_command(command: str) -> argparse.ArgumentParser:
     '''Get parser for given qvm-tool.
 
     :param str command: command name
@@ -576,7 +605,9 @@ class VmNameGroup(argparse._MutuallyExclusiveGroup):
         :py:class:``argparse.ArgumentParser```.
     '''
 
-    def __init__(self, container, required, vm_action=VmNameAction, help=None):
+    def __init__(self, container: argparse._ActionsContainer,
+                 required: bool, vm_action: type[QubesAction]=VmNameAction,
+                 help: str=None):
         # pylint: disable=redefined-builtin
         super().__init__(container, required=required)
         if not help:
@@ -592,9 +623,9 @@ class VmNameGroup(argparse._MutuallyExclusiveGroup):
         self.add_argument('VMNAME', action=vm_action, nargs='*', default=[])
 
 
-def print_table(table, stream=None):
+def print_table(table: list[Iterable], stream: TextIO | None=None) -> None:
     ''' Uses the unix column command to print pretty table.
-
+        TODO below: obsolete docstring
         :param str text: list of lists/sets
     '''
     unit_separator = chr(31)
