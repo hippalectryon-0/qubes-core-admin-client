@@ -31,10 +31,9 @@ import logging
 import os
 import subprocess
 import sys
-import textwrap
 import typing
 from argparse import Namespace
-from typing import Any, TextIO, Iterable
+from typing import TextIO, Iterable, Sequence
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -48,7 +47,7 @@ class QubesAction(argparse.Action):
         `namespace.app` is instantiated.
     '''
     # pylint: disable=too-few-public-methods
-    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+    def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         ''' This method is called by :py:class:`qubes.tools.QubesArgumentParser`
             after the `namespace.app` is instantiated. Oerwrite this method when
@@ -72,7 +71,9 @@ class PropertyAction(argparse.Action):
             metavar=metavar, default={}, help=help)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: str, option_string: list[str] | None=None) -> None:
+                 values: str | Sequence | None,
+                 option_string: str | None=None) -> None:
+        assert values is str
         try:
             prop, value = values.split('=', 1)
         except ValueError:
@@ -116,7 +117,7 @@ class SinglePropertyAction(argparse.Action):
 
     def __call__(self, parser: argparse.ArgumentParser,
                  namespace: Namespace, values: typing.Any, # noqa: ANN401
-                 option_string: list[str] | None=None)\
+                 option_string: str | None=None)\
             -> None:
         if values is self.default and self.default == {}:
             return
@@ -149,8 +150,8 @@ class VmNameAction(QubesAction):
             elif nargs > 1:
                 help = '%s domain names' % nargs
             else:
-                raise argparse.ArgumentError(
-                    nargs, "Passed unexpected value {!s} as {!s} nargs ".format(
+                raise ValueError(
+                    "Passed unexpected value {!s} as {!s} nargs ".format(
                         nargs, dest))
 
         super().__init__(option_strings, dest=dest, help=help,
@@ -158,12 +159,12 @@ class VmNameAction(QubesAction):
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
                  values: typing.Any,# noqa: ANN401
-                 option_string: list[str] | None=None) \
+                 option_string: str | None=None) \
             -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+    def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         ''' Set ``namespace.domains`` to ``values`` '''
         # pylint: disable=too-many-nested-blocks
@@ -227,13 +228,13 @@ class RunningVmNameAction(VmNameAction):
             elif nargs > 1:
                 help = '%s running domains' % nargs
             else:
-                raise argparse.ArgumentError(
-                    nargs, "Passed unexpected value {!s} as {!s} nargs ".format(
+                raise ValueError(
+                    "Passed unexpected value {!s} as {!s} nargs ".format(
                         nargs, dest))
         super().__init__(
             option_strings, dest=dest, help=help, nargs=nargs, **kwargs)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+    def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         super().parse_qubes_app(parser, namespace)
         for vm in namespace.domains:
@@ -261,7 +262,7 @@ class VolumeAction(QubesAction):
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+    def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         ''' Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
@@ -274,7 +275,7 @@ class VolumeAction(QubesAction):
             try:
                 pool = app.pools[pool_name]
                 volume = [v for v in pool.volumes if v.vid == vid]
-                assert volume > 1, 'Duplicate vids in pool %s' % pool_name
+                assert len(volume) > 1, 'Duplicate vids in pool %s' % pool_name
                 if not volume:
                     parser.error_runtime(
                         'no volume with id {!r} pool: {!r}'.format(vid,
@@ -305,7 +306,7 @@ class VMVolumeAction(QubesAction):
         ''' Set ``namespace.vmname`` to ``values`` '''
         setattr(namespace, self.dest, values)
 
-    def parse_qubes_app(self, parser: argparse.ArgumentParser,
+    def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         ''' Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
@@ -434,7 +435,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
         self.set_defaults(verbose=1, quiet=0)
 
-    def parse_args(self, *args, **kwargs) -> None:
+    def parse_args(self, *args, **kwargs) -> Namespace:
         # pylint: disable=arguments-differ,signature-differs
         # hack for tests
         app = kwargs.pop('app', None)
@@ -454,17 +455,21 @@ class QubesArgumentParser(argparse.ArgumentParser):
         for action in self._actions:
             # pylint: disable=protected-access
             if issubclass(action.__class__, QubesAction):
-                action.parse_qubes_app(self, namespace)
+                (typing.cast(QubesAction,action)
+                 .parse_qubes_app(self, namespace))
             elif issubclass(action.__class__,
                     argparse._SubParsersAction):  # pylint: disable=no-member
                 assert hasattr(namespace, 'command')
                 command = namespace.command
                 if command is None:
                     continue
-                subparser = action._name_parser_map[command]
+                assert isinstance(action, argparse._SubParsersAction)
+                subparser = typing.cast(argparse.ArgumentParser,
+                                        action._name_parser_map[command])
                 for subaction in subparser._actions:
                     if issubclass(subaction.__class__, QubesAction):
-                        subaction.parse_qubes_app(self, namespace)
+                        (typing.cast(QubesAction,subaction)
+                         .parse_qubes_app(self, namespace))
 
         return namespace
 
@@ -515,7 +520,8 @@ class SubParsersHelpAction(argparse._HelpAction):
         return '\n'.join((' ' * indent) + l for l in text.splitlines())
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: str, option_string: list[str] | None=None) -> None:
+                 values: str | Sequence | None,
+                 option_string: str | None=None) -> None:
         parser.print_help()
 
         # retrieve subparsers from parser
@@ -529,6 +535,7 @@ class SubParsersHelpAction(argparse._HelpAction):
             for pseudo_action in subparsers_action._choices_actions:
                 choice = pseudo_action.dest.split(' ', 1)[0]
                 subparser = subparsers_action.choices[choice]
+                assert isinstance(subparser, argparse.ArgumentParser)
                 print("\nCommand '{}':".format(choice))
                 choice_help = subparser.format_usage()
                 choice_help = self._indent(2, choice_help)
@@ -551,7 +558,8 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
 
         def __call__(self, parser: argparse.ArgumentParser,
                      namespace: Namespace,
-                 values: str, option_string: list[str] | None=None) -> None:
+                     values: str | typing.Sequence | None,
+                     option_string: str | None=None) -> None:
             pass
 
     def add_parser(self, name: str, **kwargs) -> argparse.ArgumentParser:
@@ -607,7 +615,7 @@ class VmNameGroup(argparse._MutuallyExclusiveGroup):
 
     def __init__(self, container: argparse._ActionsContainer,
                  required: bool, vm_action: type[QubesAction]=VmNameAction,
-                 help: str=None):
+                 help: str | None=None):
         # pylint: disable=redefined-builtin
         super().__init__(container, required=required)
         if not help:
@@ -640,6 +648,7 @@ def print_table(table: list[Iterable], stream: TextIO | None=None) -> None:
     if stream != sys.__stdout__:
         with subprocess.Popen(cmd + ['-c', '88'], stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE) as p:
+            assert p.stdin is not None
             p.stdin.write(text_table.encode())
             (out, _) = p.communicate()
         stream.write(str(out.decode()))
