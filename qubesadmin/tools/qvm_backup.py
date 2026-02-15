@@ -26,7 +26,12 @@ import getpass
 import os
 import signal
 import sys
+from argparse import Namespace
+from typing import IO, SupportsFloat
+
 import yaml
+
+from qubesadmin.app import QubesBase
 
 try:
     import qubesadmin.events
@@ -87,7 +92,8 @@ no_profile.add_argument("vms", nargs="*", action=qubesadmin.tools.VmNameAction,
     help="Backup only those VMs")
 
 
-def write_backup_profile(output_stream, args, passphrase=None):
+def write_backup_profile(output_stream: IO, args: Namespace,
+                         passphrase: str | None = None) -> None:
     '''Format backup profile and print it to *output_stream* (a file or
     stdout)
 
@@ -116,16 +122,17 @@ def write_backup_profile(output_stream, args, passphrase=None):
     yaml.safe_dump(profile_data, output_stream)
 
 
-def print_progress(expected_profile, _subject, _event, backup_profile,
-        progress):
+def print_progress[T](expected_profile: T, _subject: object, _event: object,
+                   backup_profile: T,
+                   progress: SupportsFloat) -> None:
     '''Event handler for reporting backup progress'''
     if backup_profile != expected_profile:
         return
     sys.stderr.write('\rMaking a backup... {:.02f}%'.format(float(progress)))
 
-def main(args=None, app=None):
+def main(args: list[str] | None = None, app: QubesBase | None = None) -> int:
     '''Main function of qvm-backup tool'''
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     profile_path = None
     if args.profile is None:
         if args.backup_location is None:
@@ -184,10 +191,12 @@ def main(args=None, app=None):
     if not args.yes:
         if input("Do you want to proceed? [y/N] ").upper() != "Y":
             if args.profile is None and not args.save_profile:
+                assert profile_path is not None
                 os.unlink(profile_path)
             return 0
 
     if args.profile is None:
+        assert profile_path is not None
         if args.passphrase_file is not None:
             if args.passphrase_file == '-':
                 passphrase = sys.stdin.readline().rstrip()
@@ -231,6 +240,7 @@ def main(args=None, app=None):
                 pass
         loop.close()
         if args.profile is None and not args.save_profile:
+            assert profile_path is not None
             os.unlink(profile_path)
         print('\n')
     return 0
