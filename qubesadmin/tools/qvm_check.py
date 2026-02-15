@@ -23,20 +23,28 @@
 """ Exits sucessfull if the provided domain(s) exist, else returns failure """
 
 import sys
+from argparse import Namespace, ArgumentParser
+from logging import Logger
+from typing import Any, Iterable
 
 import qubesadmin.tools
 import qubesadmin.vm
+from qubesadmin.app import QubesBase
+from qubesadmin.vm import QubesVM
+
 
 class QvmCheckVmNameAction(qubesadmin.tools.VmNameAction):
     """ Action for parsing one or multiple valid/invalid VMNAMEs """
 
-    def __init__(self, option_strings, nargs=1, dest='vmnames', help=None,
+    def __init__(self, option_strings: list[str], nargs: int=1,
+                 dest: str='vmnames', help: str | None=None,
                  **kwargs):
         # pylint: disable=redefined-builtin
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
 
-    def parse_qubes_app(self, parent_parser, namespace):
+    def parse_qubes_app(self, parent_parser: ArgumentParser,
+                        namespace: Namespace) -> None:
         # pylint: disable=arguments-renamed
         assert hasattr(namespace, 'app')
         setattr(namespace, 'domains', [])
@@ -62,10 +70,16 @@ class QvmCheckVmNameAction(qubesadmin.tools.VmNameAction):
 
 class QvmCheckArgumentParser(qubesadmin.tools.QubesArgumentParser):
     """ Extended argument parser for qvm-check to collect invalid domains """
-    def __init__(self, description):
+    def __init__(self, description: str):
         super().__init__(description=description, vmname_nargs=None)
+        # TODO `required` has to be a bool, not a str
+        #  explicitely ignoring for now
+        #  but seek confirmation. should likely be
+        #  `True`(=bool("+")) instead.
+        #  Note: `+` is usually used for `nargs` instead
         vm_name_group = qubesadmin.tools.VmNameGroup(
-                self, required='+', vm_action=QvmCheckVmNameAction)
+                self, required='+',  # type: ignore
+            vm_action=QvmCheckVmNameAction)
         self._mutually_exclusive_groups.append(vm_name_group)
 
 
@@ -84,7 +98,8 @@ parser.add_argument("--networked", action="store_true", dest="networked",
                     help="Determine if (any of given) VM can reach network")
 
 
-def print_msg(log, domains, status):
+def print_msg(log: Logger, domains: Iterable[QubesVM],
+              status: list[str]) -> None:
     """Print message in appropriate form about given valid domain(s)"""
     if not domains:
         log.info("None of qubes: {!s}".format(', '.join(status)))
@@ -93,7 +108,7 @@ def print_msg(log, domains, status):
             log.info("{!s}: {!s}".format(vm.name, ', '.join(status)))
 
 
-def get_filters(args):
+def get_filters(args: Namespace) -> list[dict[str, Any]]: # noqa:ANN401
     """Get status and check functions"""
     filters = []
 
@@ -111,7 +126,7 @@ def get_filters(args):
     return filters
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> int:
     """Main function of qvm-check tool"""
     args = parser.parse_args(args, app=app)
     domains = args.domains
