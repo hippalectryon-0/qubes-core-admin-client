@@ -26,14 +26,15 @@ import sys
 
 import qubesadmin
 import qubesadmin.tools.qvm_prefs
+from qubesadmin.tools import QubesArgumentParser
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     '''Prepare argument parser'''
     return qubesadmin.tools.qvm_prefs.get_parser(None)
 
 
-def main(args=None, app=None):  # pylint: disable=missing-docstring
+def main(args: object = None, app: object = None) -> int:  # pylint: disable=missing-docstring
     parser = get_parser()
     args = parser.parse_args(args, app=app)
     target = args.app
