@@ -956,7 +956,7 @@ class BackupRestore(object):
                 self.username = os.path.basename(subdir)
 
     def __init__(self, app: QubesBase, backup_location: str,
-                 backup_vm: QubesVM, passphrase: str, *,
+                 backup_vm: QubesVM | None, passphrase: str, *,
                  location_is_service: bool=False,
                  force_compression_filter: str | None=None,
                  tmpdir: str | None=None):

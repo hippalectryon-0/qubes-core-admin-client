@@ -33,7 +33,7 @@ import subprocess
 import sys
 import typing
 from argparse import Namespace
-from typing import TextIO, Iterable, Sequence
+from typing import TextIO, Iterable, Sequence, NoReturn
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -471,7 +471,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
         return namespace
 
 
-    def error_runtime(self, message: str, exit_code: int=1) -> None:
+    def error_runtime(self, message: str, exit_code: int=1) -> NoReturn:
         '''Runtime error, without showing usage.
 
         :param str message: message to show

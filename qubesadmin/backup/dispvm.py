@@ -288,7 +288,7 @@ class RestoreInDisposableVM:
         backup_log = self.sanitize_log(untrusted_backup_log)
         return backup_log
 
-    def run(self) -> bytes | None:
+    def run(self) -> bytes:
         """Run the backup restore operation"""
         assert self.dispvm is not None
 

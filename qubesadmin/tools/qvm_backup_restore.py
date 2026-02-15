@@ -23,12 +23,15 @@
 import getpass
 import os
 import sys
+from argparse import Namespace
 
+from qubesadmin.app import QubesBase
 from qubesadmin.backup.restore import BackupRestore
 from qubesadmin.backup.dispvm import RestoreInDisposableVM
 import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.utils
+from qubesadmin.vm import QubesVM
 
 parser = qubesadmin.tools.QubesArgumentParser()
 
@@ -109,8 +112,8 @@ parser.add_argument('vms', nargs='*', action='store', default=[],
     help='Restore only those VMs')
 
 
-def handle_broken(app, args, restore_info):
-    '''Display information about problems with VMs selected for resetore'''
+def handle_broken(app: QubesBase, args: Namespace, restore_info: dict) -> None:
+    '''Display information about problems with VMs selected for restore'''
     there_are_conflicting_vms = False
     there_are_missing_templates = False
     there_are_missing_netvms = False
@@ -212,7 +215,7 @@ def handle_broken(app, args, restore_info):
             "directory before using them.")
 
 
-def print_backup_log(backup_log):
+def print_backup_log(backup_log: bytes) -> None:
     """Print a log on stdout, coloring it red if it's a terminal"""
     if os.isatty(sys.stdout.fileno()):
         sys.stdout.write('\033[0;31m')
@@ -223,7 +226,7 @@ def print_backup_log(backup_log):
         sys.stdout.flush()
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main function of qvm-backup-restore'''
     # pylint: disable=too-many-return-statements
     args = parser.parse_args(args, app=app)
@@ -249,10 +252,8 @@ def main(args=None, app=None):
             if e.backup_log is not None:
                 print_backup_log(e.backup_log)
             parser.error_runtime(str(e))
-            return 1
         except qubesadmin.exc.QubesException as e:
             parser.error_runtime(str(e))
-            return 1
         return
 
     if args.pass_file is not None:
@@ -273,8 +274,6 @@ def main(args=None, app=None):
             force_compression_filter=args.compression)
     except qubesadmin.exc.QubesException as e:
         parser.error_runtime(str(e))
-        # unreachable - error_runtime will raise SystemExit
-        return 1
 
     backup.options.use_default_template = args.ignore_missing
     backup.options.use_default_netvm = args.ignore_missing
