@@ -47,7 +47,7 @@ import concurrent.futures.thread
 
 import collections
 from subprocess import Popen
-from typing import Callable, TypeVar, Iterable, IO, Generator, BinaryIO
+from typing import Callable, Iterable, IO, Generator, BinaryIO
 
 import qubesadmin
 import qubesadmin.vm
@@ -62,8 +62,6 @@ from qubesadmin.exc import QubesException
 from qubesadmin.storage import Volume
 from qubesadmin.utils import size_to_human
 from qubesadmin.vm import QubesVM
-
-T = TypeVar('T')
 
 # Python 3.14 in Fedora 43 changes the default start method away from fork
 if multiprocessing.get_start_method(allow_none=True) != "fork":
@@ -551,7 +549,7 @@ class ExtractWorker3(Process):
             self.tar2_current_file = None
         self.tar2_process = None
 
-    def _data_import_wrapper(self, close_fds: Iterable[int],
+    def _data_import_wrapper[T](self, close_fds: Iterable[int],
                              data_func: Callable[..., T],
                              tar2_process: Popen) -> T:
         '''Close not needed file descriptors, handle output size reported

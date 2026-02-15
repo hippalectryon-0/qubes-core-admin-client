@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import typing
-from typing import BinaryIO, TypeAlias, Any, Generator
+from typing import BinaryIO, Any, Generator
 
 import qubesadmin.exc
 from qubesadmin.vm import QubesVM
@@ -34,7 +34,7 @@ DEFAULT = object()
 
 # We use Any because the dynamic metatada handling of the current code
 # is too complex for type checkers otherwise
-VMProperty: TypeAlias = Any  # noqa: ANN401
+type VMProperty = Any  # noqa: ANN401
 
 
 class PropertyHolder(object):
@@ -427,12 +427,9 @@ class PropertyHolder(object):
                 qubesadmin.exc.QubesVMNotFoundError):
             raise qubesadmin.exc.QubesPropertyAccessError(name)
 
-T = typing.TypeVar('T')
+type WrapperObjectsCollectionKey = int | str
 
-
-WrapperObjectsCollectionKey: TypeAlias = int | str
-
-class WrapperObjectsCollection(typing.Generic[T], object):
+class WrapperObjectsCollection[T](object):
     '''Collection of simple named objects'''
     def __init__(self, app: QubesBase,
                  list_method: str, object_class: type[T]):

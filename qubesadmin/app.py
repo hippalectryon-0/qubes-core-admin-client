@@ -259,7 +259,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         assert self._pool_drivers is not None
         return self._pool_drivers.keys()
 
-    # TODO add a TypeAlias ?
+    # TODO create a custom type=... ?
     def pool_driver_parameters(self, driver: str) -> list[str]:
         """Parameters to initialize storage pool using given driver"""
         self._refresh_pool_drivers()
