@@ -429,7 +429,7 @@ class PropertyHolder(object):
 
 type WrapperObjectsCollectionKey = int | str
 
-class WrapperObjectsCollection[T](object):
+class WrapperObjectsCollection[T]:
     '''Collection of simple named objects'''
     def __init__(self, app: QubesBase,
                  list_method: str, object_class: type[T]):
