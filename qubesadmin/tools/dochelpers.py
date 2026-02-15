@@ -139,7 +139,8 @@ class OptionsCheckVisitor(docutils.nodes.SparseNodeVisitor):
             raise sphinx.errors.SphinxError(
                 'No such argument for {!r}: {!r}'.format(self.command, arg))
 
-    def check_undocumented_arguments(self, ignored_options: set=None) -> None:
+    def check_undocumented_arguments(self,
+                                     ignored_options: set | None=None) -> None:
         """ Call this to check if any undocumented arguments are left.
 
             While the documentation talks about a
@@ -259,6 +260,8 @@ class ManpageCheckVisitor(docutils.nodes.SparseNodeVisitor):
 
             if issubclass(action.__class__,
                           qubesadmin.tools.AliasedSubParsersAction):
+                assert isinstance(action,
+                                  qubesadmin.tools.AliasedSubParsersAction)
                 for cmd, cmd_parser in action._name_parser_map.items():
                     self.sub_commands[cmd] = set()
                     for sub_action in cmd_parser._actions:
