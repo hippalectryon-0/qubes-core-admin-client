@@ -25,10 +25,16 @@ import argparse
 import datetime
 import sys
 import itertools
+from argparse import ArgumentParser, Namespace
+from typing import Iterable
+
+from mypyc.ir.ops import Sequence
 
 import qubesadmin.exc
 import qubesadmin.firewall
 import qubesadmin.tools
+from qubesadmin.app import QubesBase
+from qubesadmin.vm import QubesVM
 
 
 class RuleAction(argparse.Action):
@@ -40,7 +46,10 @@ class RuleAction(argparse.Action):
 
     Or a mix of them.
     '''
-    def __call__(self, _parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values: str | Sequence | None,
+                 option_string: str | None = None) \
+            -> None:
         if not values:
             setattr(namespace, self.dest, None)
             return
@@ -140,7 +149,7 @@ parser.add_argument('--raw', action='store_true',
     help='output rules as raw strings, instead of nice table')
 
 
-def rules_list_table(vm):
+def rules_list_table(vm: QubesVM) -> None:
     '''Print rules to stdout in human-readable form (table)
 
     :param vm: VM object
@@ -164,7 +173,7 @@ def rules_list_table(vm):
     qubesadmin.tools.print_table([header] + rows)
 
 
-def rules_list_raw(vm):
+def rules_list_raw(vm: QubesVM) -> None:
     '''Print rules in machine-readable form (as specified in Admin API)
 
     :param vm: VM object
@@ -174,7 +183,7 @@ def rules_list_raw(vm):
         sys.stdout.write(rule.rule + '\n')
 
 
-def rules_add(vm, args):
+def rules_add(vm: QubesVM, args: Namespace) -> None:
     '''Add a rule defined by args.rule'''
     if args.before is not None:
         vm.firewall.rules.insert(args.before, args.rule)
@@ -183,7 +192,7 @@ def rules_add(vm, args):
     vm.firewall.save_rules()
 
 
-def rules_del(vm, args):
+def rules_del(vm: QubesVM, args: Namespace) -> None:
     '''Delete a rule according to args.rule/args.rule_no'''
     if args.rule_no is not None:
         vm.firewall.rules.pop(args.rule_no)
@@ -192,10 +201,11 @@ def rules_del(vm, args):
     vm.firewall.save_rules()
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) \
+        -> int:
     '''Main routine of :program:`qvm-firewall`.'''
     try:
-        args = parser.parse_args(args, app=app)
+        args: Namespace = parser.parse_args(args, app=app)
         vm = args.domains[0]
         if args.command == 'add':
             rules_add(vm, args)
