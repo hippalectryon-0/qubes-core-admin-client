@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from qubesadmin.app import QubesBase
 
 
-class Volume(object):
+class Volume:
     """Storage volume."""
     def __init__(self, app: QubesBase, pool: str | None=None,
                  vid: str | None=None, vm: str | None=None,
@@ -331,7 +331,7 @@ class Volume(object):
         self._qubesd_call('CloneTo', payload=token)
 
 
-class Pool(object):
+class Pool:
     """ A Pool is used to manage different kind of volumes (File
         based/LVM/Btrfs/...).
     """

@@ -37,7 +37,7 @@ DEFAULT = object()
 type VMProperty = Any  # noqa: ANN401
 
 
-class PropertyHolder(object):
+class PropertyHolder:
     '''A base class for object having properties retrievable using mgmt API.
 
     Warning: each (non-private) local attribute needs to be defined at class

@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
 
 
-class Tags(object):
+class Tags:
     '''Manager of the tags.
 
     Tags are simple: tag either can be present on qube or not. Tag is a

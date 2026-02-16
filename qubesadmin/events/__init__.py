@@ -35,7 +35,7 @@ from qubesadmin.vm import QubesVM
 
 type Handler = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
 
-class EventsDispatcher(object):
+class EventsDispatcher:
     ''' Events dispatcher, responsible for receiving events and calling
     appropriate handlers'''
     def __init__(self, app: QubesBase, api_method: str='admin.Events',

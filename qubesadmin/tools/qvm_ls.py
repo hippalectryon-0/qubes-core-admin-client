@@ -51,7 +51,7 @@ from qubesadmin.vm import QubesVM
 # columns
 #
 
-class Column(object):
+class Column:
     '''A column in qvm-ls output characterised by its head and a way
     to fetch a parameter describing the domain.
 
@@ -411,7 +411,7 @@ SORT_NUMERIC = ['MEMORY', 'DISK', 'PRIV-CURR', 'PRIV-MAX', 'ROOT-CURR', 'XID', \
                 'ROOT-MAX', 'MAXMEM', 'QREXEC-TIMEOUT', 'SHUTDOWN-TIMEOUT', \
                 'VCPUS', 'PRIV-USED', 'ROOT-USED']
 
-class Table(object):
+class Table:
     '''Table that is displayed to the user.
 
     :param domains: Domains to include in the table.

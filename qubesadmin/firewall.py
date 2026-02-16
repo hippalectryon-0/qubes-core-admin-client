@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
 
 
-class RuleOption(object):
+class RuleOption:
     '''Base class for a single rule element'''
     def __init__(self, value: object) -> None:
         self._value = str(value)
@@ -244,7 +244,7 @@ class Comment(RuleOption):
         return 'comment=' + str(self)
 
 
-class Rule(object):
+class Rule:
     '''A single firewall rule'''
 
     def __init__(self, rule: str | None, **kwargs):
@@ -414,7 +414,7 @@ class Rule(object):
         return 'Rule(\'{}\')'.format(self.rule)
 
 
-class Firewall(object):
+class Firewall:
     '''Firewal manager for a VM'''
     def __init__(self, vm: QubesVM):
         self.vm = vm

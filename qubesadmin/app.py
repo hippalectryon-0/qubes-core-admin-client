@@ -56,7 +56,7 @@ except ImportError:
     has_qubesdb = False
 
 
-class VMCollection(object):
+class VMCollection:
     """Collection of VMs objects"""
 
     def __init__(self, app: "QubesBase"):
