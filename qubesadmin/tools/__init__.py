@@ -628,7 +628,8 @@ class VmNameGroup(argparse._MutuallyExclusiveGroup):
         self.add_argument('VMNAME', action=vm_action, nargs='*', default=[])
 
 
-def print_table(table: list[Iterable], stream: TextIO | None=None) -> None:
+def print_table(table: Iterable[Iterable[str]],
+                stream: TextIO | None=None) -> None:
     ''' Uses the unix column command to print pretty table.
         TODO below: obsolete docstring
         :param str text: list of lists/sets

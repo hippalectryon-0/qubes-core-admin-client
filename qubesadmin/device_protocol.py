@@ -627,6 +627,7 @@ class VirtualDevice:
                 backend = get_domain(backend_name)
         else:
             identity = representation
+        assert backend is not None
 
         port_id, _, devid = identity.replace(sep, ":").partition(":")
         if port_id == "_":
