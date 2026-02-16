@@ -23,8 +23,10 @@
 ''' Clone a domain '''
 
 import sys
+from argparse import Namespace
 
 import qubesadmin.exc
+from qubesadmin.app import QubesBase
 from qubesadmin.tools import QubesArgumentParser
 
 parser = QubesArgumentParser(description=__doc__, vmname_nargs=1)
@@ -56,7 +58,7 @@ group.add_argument('-p',
                     help='specify the pool to use for the specific volume')
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     ''' Clones an existing VM by copying all its disk files '''
     args = parser.parse_args(args, app=app)
     app = args.app
@@ -80,7 +82,7 @@ def main(args=None, app=None):
         app.clone_vm(src_vm, new_name, new_cls=args.cls, pool=pool, pools=pools,
                      ignore_errors=args.ignore_errors)
     except qubesadmin.exc.QubesException as e:
-        parser.error_runtime(e)
+        parser.error_runtime(str(e))
 
 if __name__ == '__main__':
     sys.exit(main())
