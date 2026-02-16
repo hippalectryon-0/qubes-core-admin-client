@@ -20,13 +20,16 @@
 
 '''qvm-start - start a domain'''
 import argparse
+from argparse import ArgumentParser, Namespace
 import string
 import sys
 
 import subprocess
 
 import time
+from typing import Sequence, Iterable
 
+from qubesadmin.app import QubesBase
 from qubesadmin.device_protocol import DeviceAssignment, UnknownDevice
 import qubesadmin.exc
 import qubesadmin.tools
@@ -36,21 +39,23 @@ class DriveAction(argparse.Action):
 
     # pylint: disable=redefined-builtin,too-few-public-methods
     def __init__(self,
-            option_strings,
-            dest='drive',
+            option_strings: Sequence[str],
+            dest: str='drive',
             *,
-            prefix='cdrom:',
-            metavar='IMAGE',
-            required=False,
-            help='Attach drive'):
+            prefix: str='cdrom:',
+            metavar: str='IMAGE',
+            required: bool=False,
+            help: str='Attach drive'):
         super().__init__(option_strings, dest,
             metavar=metavar, help=help)
         self.prefix = prefix
 
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
-                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+                 values:  str | Sequence | None,
+                 option_string: str | None=None)\
             -> None:
         # pylint: disable=redefined-outer-name
+        assert isinstance(values, str)
         setattr(namespace, self.dest, self.prefix + values)
 
 
@@ -81,7 +86,7 @@ parser_drive.add_argument('--install-windows-tools',
     help='temporarily attach Windows tools CDROM to the domain')
 
 
-def get_drive_assignment(app, drive_str):
+def get_drive_assignment(app: QubesBase, drive_str: str) -> DeviceAssignment:
     """
     Prepare :py:class:`qubesadmin.device_protocol.DeviceAssignment` object for a
     given drive.
@@ -167,14 +172,14 @@ def get_drive_assignment(app, drive_str):
     return assignment
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-start`.
 
     :param list args: Optional arguments to override those delivered from \
         command line.
     '''
 
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     exit_code = 0
     for domain in args.domains:

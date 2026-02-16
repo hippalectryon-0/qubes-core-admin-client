@@ -158,7 +158,7 @@ class DeviceSerializer:
         return properties, options
 
     @classmethod
-    def pack_property(cls, key: str, value: str | None) -> bytes:
+    def pack_property(cls, key: str, value: object) -> bytes:
         """
         Add property `key=value` to serialization.
         """
@@ -231,7 +231,7 @@ class DeviceSerializer:
         properties["port"] = expected
 
     @staticmethod
-    def serialize_str(value: str) -> str:
+    def serialize_str(value: object) -> str:
         """
         Serialize python string to ensure consistency.
         """
@@ -1262,7 +1262,7 @@ class DeviceAssignment:
         self,
         device: VirtualDevice,
         frontend_domain: QubesVM | None=None,
-        options: dict[str, str] | None=None,
+        options: dict[str, object] | None=None,
         mode: str | AssignmentMode = AssignmentMode.MANUAL,
     ):
         if isinstance(device, DeviceInfo):
@@ -1284,7 +1284,7 @@ class DeviceAssignment:
         device_id: str | None = None,
         *,
         frontend_domain: QubesVM | None = None,
-        options: dict[str, str] | None=None,
+        options: dict[str, object] | None=None,
         mode: str | AssignmentMode = AssignmentMode.MANUAL,
     ) -> "DeviceAssignment":
         """Helper method to create a DeviceAssignment object."""
@@ -1457,12 +1457,12 @@ class DeviceAssignment:
         )
 
     @property
-    def options(self) -> dict[str, Any]: # noqa:ANN401
+    def options(self) -> dict[str, object]:
         """Device options (same as in the legacy API)."""
         return self.__options
 
     @options.setter
-    def options(self, options: dict[str, Any] | None) -> None: # noqa:ANN401
+    def options(self, options: dict[str, object] | None) -> None:
         """Device options (same as in the legacy API)."""
         self.__options = options or {}
 
