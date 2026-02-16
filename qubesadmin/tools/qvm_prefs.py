@@ -24,14 +24,19 @@ from __future__ import print_function
 
 import sys
 import textwrap
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.tools
 import qubesadmin.utils
 import qubesadmin.vm
+import qubesadmin.exc
+from qubesadmin.app import QubesBase
+from qubesadmin.tools import QubesArgumentParser
 
 
-def get_parser(vmname_nargs=1):
+def get_parser(vmname_nargs: int | None = 1) -> QubesArgumentParser:
     '''Return argument parser for generic property-related tool'''
     parser = qubesadmin.tools.QubesArgumentParser(
         vmname_nargs=vmname_nargs)
@@ -70,7 +75,8 @@ def get_parser(vmname_nargs=1):
     return parser
 
 
-def process_actions(parser, args, target):
+def process_actions(parser: QubesArgumentParser, args: Namespace,
+                    target: QubesBase) -> int:
     '''Handle actions for generic property-related tool
 
     :param parser: argument parser used to produce args
@@ -128,7 +134,7 @@ def process_actions(parser, args, target):
         except qubesadmin.exc.QubesNoSuchPropertyError:
             parser.error('no such property: {!r}'.format(args.property))
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
         return 0
 
     if args.delete:
@@ -137,7 +143,7 @@ def process_actions(parser, args, target):
         except qubesadmin.exc.QubesNoSuchPropertyError:
             parser.error('no such property: {!r}'.format(args.property))
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
         return 0
 
     try:
@@ -150,14 +156,14 @@ def process_actions(parser, args, target):
     except qubesadmin.exc.QubesNoSuchPropertyError:
         parser.error('no such property: {!r}'.format(args.property))
     except qubesadmin.exc.QubesException as e:
-        parser.error_runtime(e)
+        parser.error_runtime(str(e))
 
     return 0
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  # pylint: disable=missing-docstring
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:  # pylint: disable=missing-docstring
     parser = get_parser(1)
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     target = args.domains.pop()
     return process_actions(parser, args, target)
 

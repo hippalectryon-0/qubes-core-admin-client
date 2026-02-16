@@ -22,8 +22,11 @@
 """Remove domains from the system"""
 
 import sys
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin.exc
+from qubesadmin.app import QubesBase
 from qubesadmin.tools import QubesArgumentParser
 import qubesadmin.utils
 
@@ -38,8 +41,8 @@ parser.add_argument(
 )
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  # pylint: disable=missing-docstring
-    args = parser.parse_args(args, app=app)
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:  # pylint: disable=missing-docstring
+    args: Namespace = parser.parse_args(args, app=app)
     go_ahead = ""
 
     if "dom0" in args.domains:
@@ -105,9 +108,9 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  
                                 file=sys.stderr,
                             )
                 # Display the original message as well
-                parser.error_runtime(e)
+                parser.error_runtime(str(e))
             except qubesadmin.exc.QubesException as e:
-                parser.error_runtime(e)
+                parser.error_runtime(str(e))
         retcode = 0
     else:
         print("Remove cancelled.", file=sys.stderr)
