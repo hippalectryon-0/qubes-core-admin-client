@@ -386,7 +386,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             )
         except subprocess.CalledProcessError as e:
             e.cmd = command
-            raise e
+            raise
 
     def run_with_args(self, *args, **kwargs) -> tuple[bytes, bytes]:
         """Run a single command inside the domain. Use the qubes.VMExec qrexec,
@@ -410,7 +410,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 )
             except subprocess.CalledProcessError as e:
                 e.cmd = str(args)
-                raise e
+                raise
 
         return self.run(" ".join(shlex.quote(arg) for arg in args), **kwargs)
 
@@ -547,7 +547,7 @@ class DispVM(QubesVM):
     """Disposable VM"""
 
     @classmethod
-    def from_appvm(cls, app: QubesBase, appvm: QubesVM,
+    def from_appvm(cls, app: QubesBase, appvm: QubesVM | None,
                    redirect_dispvm_calls: bool=False) -> DispVMWrapper:
         """Returns a wrapper for calling service in a new DispVM based on given
         AppVM. If *appvm* is none, use default DispVM template

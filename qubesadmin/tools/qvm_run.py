@@ -30,10 +30,18 @@ import sys
 import multiprocessing
 
 import select
+from argparse import Namespace
+from multiprocessing import Process
+from subprocess import Popen
+from typing import BinaryIO, IO, Iterable
 
 import qubesadmin.tools
 import qubesadmin.exc
 import qubesadmin.utils
+import qubesadmin.vm
+import qubesadmin.app
+from qubesadmin.app import QubesBase
+from qubesadmin.vm import QubesVM
 
 parser = qubesadmin.tools.QubesArgumentParser()
 
@@ -195,7 +203,7 @@ parser.add_argument(
 )
 
 
-def copy_stdin(stream):
+def copy_stdin(stream: BinaryIO) -> None:
     """Copy stdin to *stream*"""
     # multiprocessing.Process have sys.stdin connected to /dev/null, use fd 0
     #  directly
@@ -213,7 +221,7 @@ def copy_stdin(stream):
     stream.close()
 
 
-def print_no_color(msg, file, color):
+def print_no_color(msg: str, file: IO, color: str | int) -> None:
     """Print a *msg* to *file* without coloring it.
     Namely reset to base color first, print a message, then restore color.
     """
@@ -223,7 +231,9 @@ def print_no_color(msg, file, color):
         print(msg, file=file)
 
 
-def run_command_single(args, vm):
+def run_command_single(args: Namespace,
+                       vm: QubesVM) \
+        -> tuple[Popen, Process | None, Popen | None]:
     """Handle a single VM to run the command in"""
     run_kwargs = {}
     if not args.passio:
@@ -298,6 +308,8 @@ def run_command_single(args, vm):
         shell_cmd = args.cmd
 
     proc = vm.run_service(service, user=args.user, **run_kwargs)
+    assert proc.stdin is not None
+    assert proc.stdout is not None
     if shell_cmd:
         proc.stdin.write(vm.prepare_input_for_vmshell(shell_cmd))
         proc.stdin.flush()
@@ -318,7 +330,7 @@ def run_command_single(args, vm):
     return proc, copy_proc, local_proc
 
 
-def has_gui(qube) -> bool:
+def has_gui(qube: QubesVM) -> bool | object:
     """Returns ``True`` if qube can have a GUI."""
     return (
         os.environ.get("DISPLAY") is not None
@@ -328,9 +340,9 @@ def has_gui(qube) -> bool:
 
 
 # pylint: disable=too-many-statements
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     """Main function of qvm-run tool"""
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     # pylint: disable=unidiomatic-typecheck
     if type(args.cmd) is not str:
         # pylint: disable=unidiomatic-typecheck

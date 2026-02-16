@@ -75,7 +75,12 @@ class Features:
 
     NO_DEFAULT = object()
 
-    def get(self, item: str, default: object = None) -> str | object:
+    @typing.overload
+    def get(self, item: str) -> str | None: ...
+    @typing.overload
+    def get[T](self, item: str, default: T) -> str | T: ...
+    # Overloaded to handle default None return type
+    def get(self, item: str, default: object = None) -> object:
         '''Get a feature, return default value if missing.'''
         try:
             return self[item]
@@ -84,8 +89,13 @@ class Features:
                 raise
             return default
 
+    @typing.overload
+    def check_with_template(self, item: str) -> str | None: ...
+    @typing.overload
+    def check_with_template[T](self, item: str, default: T) -> str | T: ...
+    # Overloaded to handle default None return type
     def check_with_template(self, feature: str,
-                            default: object | None = None) -> str | object:
+                            default: object = None) -> object:
         ''' Check if the vm's template has the specified feature. '''
         try:
             qubesd_response = self.vm.qubesd_call(
