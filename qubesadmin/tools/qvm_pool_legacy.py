@@ -38,7 +38,9 @@ class _Info(qubesadmin.tools.PoolsAction):
         # pylint: disable=redefined-builtin
         super().__init__(option_strings, help=help, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+            -> None:
         setattr(namespace, 'command', 'info')
         super().__call__(parser, namespace, values, option_string)
 
@@ -84,7 +86,9 @@ class _Add(argparse.Action):
                          nargs=2,
                          help='add pool')
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+            -> None:
         name, driver = values
         setattr(namespace, 'command', 'add')
         setattr(namespace, 'name', name)

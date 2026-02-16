@@ -47,7 +47,9 @@ class DriveAction(argparse.Action):
             metavar=metavar, help=help)
         self.prefix = prefix
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+            -> None:
         # pylint: disable=redefined-outer-name
         setattr(namespace, self.dest, self.prefix + values)
 

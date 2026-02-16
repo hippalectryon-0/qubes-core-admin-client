@@ -32,6 +32,8 @@ import argparse
 import collections.abc
 import sys
 import textwrap
+from argparse import ArgumentParser, Namespace
+from typing import Callable, Iterable, Sequence, TextIO, MutableSequence
 
 import qubesadmin
 import qubesadmin.spinner
@@ -39,6 +41,11 @@ import qubesadmin.tools
 import qubesadmin.utils
 import qubesadmin.vm
 import qubesadmin.exc
+from qubesadmin.app import QubesBase
+from qubesadmin.spinner import AbstractSpinner
+from qubesadmin.tools import QubesArgumentParser
+from qubesadmin.vm import QubesVM
+
 
 #
 # columns
@@ -57,7 +64,9 @@ class Column(object):
     #: collection of all columns
     columns = {}
 
-    def __init__(self, head, attr=None, doc=None):
+    def __init__(self, head: str,
+                 attr: str | Callable[[QubesVM], int | None] | None=None,
+                 doc: str | None=None):
         self.ls_head = head
         self.__doc__ = doc
 
@@ -69,7 +78,7 @@ class Column(object):
         self.__class__.columns[self.ls_head] = self
 
 
-    def cell(self, vm, insertion=0):
+    def cell(self, vm: QubesVM, insertion: int=0) -> str:
         '''Format one cell.
 
         .. note::
@@ -91,12 +100,12 @@ class Column(object):
         return value
 
 
-    def format(self, vm):
+    def format(self, vm: QubesVM) -> str | None:
         '''Format one cell value.
 
         Return value to put in a table cell.
 
-        :param qubes.vm.qubesvm.QubesVM: Domain to get a value from.
+        :param qubes.vm.QubesVM: Domain to get a value from.
         :returns: Value to put, or :py:obj:`None` if no value.
         :rtype: str or None
         '''
@@ -121,17 +130,21 @@ class Column(object):
 
         return str(ret)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}(head={!r})'.format(self.__class__.__name__,
             self.ls_head)
 
 
-    def __eq__(self, other):
-        return self.ls_head == other.ls_head
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Column):
+            return self.ls_head == other.ls_head
+        return NotImplemented
 
 
-    def __lt__(self, other):
-        return self.ls_head < other.ls_head
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Column):
+            return self.ls_head < other.ls_head
+        return NotImplemented
 
 
 class PropertyColumn(Column):
@@ -141,17 +154,17 @@ class PropertyColumn(Column):
     :param name: Name of VM property.
     '''
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         ls_head = name.replace('_', '-').upper()
         super().__init__(head=ls_head, attr=name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}(head={!r}'.format(
             self.__class__.__name__,
             self.ls_head)
 
 
-def process_vm(vm):
+def process_vm(vm: QubesVM) -> None:
     '''Process VM object to find all listable properties.
 
     :param qubesmgmt.vm.QubesVM vm: VM object.
@@ -161,27 +174,28 @@ def process_vm(vm):
         PropertyColumn(prop_name)
 
 
-def flag(field):
+def flag(field: int) -> Callable:
     '''Mark method as flag field.
 
     :param int field: Which field to fill (counted from 1)
     '''
 
-    def decorator(obj):
+    def decorator[T: Callable](obj: T)-> T:
         # pylint: disable=missing-docstring
         obj.field = field
         return obj
     return decorator
 
 
-def simple_flag(field, letter, attr, doc=None):
+def simple_flag(field: int, letter: str, attr: str, doc: str | None=None)\
+        -> Callable:
     '''Create simple, binary flag.
 
     :param str attr: Attribute name to check. If result is true, flag is fired.
     :param str letter: The letter to show.
     '''
 
-    def helper(self, vm):
+    def helper(self: FlagsColumn, vm: QubesVM) -> str | None:
         # pylint: disable=missing-docstring,unused-argument
         try:
             value = getattr(vm, attr)
@@ -192,19 +206,19 @@ def simple_flag(field, letter, attr, doc=None):
             return letter[0]
 
     helper.__doc__ = doc
-    helper.field = field
+    setattr(helper, "field", field)
     return helper
 
 
 class FlagsColumn(Column):
     '''Some fancy flags that describe general status of the domain.'''
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(head='FLAGS', doc=self.__class__.__doc__)
 
 
     @flag(1)
-    def type(self, vm):
+    def type(self, vm: QubesVM) -> str | None:
         '''Type of domain.
 
         0   AdminVM (AKA Dom0)
@@ -234,7 +248,7 @@ class FlagsColumn(Column):
 
 
     @flag(2)
-    def power(self, vm):
+    def power(self, vm: QubesVM) -> str | None:
         '''Current power state.
 
         r   running
@@ -277,12 +291,12 @@ class FlagsColumn(Column):
     # include in backups
     # uses_custom_config
 
-    def _no_flag(self, vm):
+    def _no_flag(self, vm: QubesVM) -> None:
         '''Reserved for future use.'''
 
 
     @classmethod
-    def get_flags(cls):
+    def get_flags(cls) -> list[Callable]:
         '''Get all flags as list.
 
         Holes between flags are filled with :py:meth:`_no_flag`.
@@ -303,25 +317,25 @@ class FlagsColumn(Column):
             for i in range(1, max(flags) + 1)]
 
 
-    def format(self, vm):
+    def format(self, vm: QubesVM) -> str:
         return ''.join((flag(self, vm) or '-') for flag in self.get_flags())
 
 
-def calc_size(vm, volume_name):
+def calc_size(vm: QubesVM, volume_name: str) -> int:
     ''' Calculates the volume size in MiB '''
     try:
         return vm.volumes[volume_name].size // 1024 // 1024
     except KeyError:
         return 0
 
-def calc_usage(vm, volume_name):
+def calc_usage(vm: QubesVM, volume_name: str) -> int:
     ''' Calculates the volume usage in MiB '''
     try:
         return vm.volumes[volume_name].usage // 1024 // 1024
     except KeyError:
         return 0
 
-def calc_used(vm, volume_name):
+def calc_used(vm: QubesVM, volume_name: str) -> int | str:
     ''' Calculates the volume usage in percent '''
     size = calc_size(vm, volume_name)
     if size == 0:
@@ -403,9 +417,14 @@ class Table(object):
     :param domains: Domains to include in the table.
     :param list colnames: Names of the columns (need not to be uppercase).
     '''
-    def __init__(self, domains, colnames, spinner, *, raw_data=False,
-                tree_sorted=False, sort_order='NAME', reverse_sort=False,
-                ignore_case=False):
+    def __init__(self, domains: MutableSequence[QubesVM],
+                 colnames: Iterable[str],
+                 spinner: AbstractSpinner, *,
+                 raw_data: bool=False,
+                tree_sorted: bool=False,
+                 sort_order: str='NAME',
+                 reverse_sort: bool=False,
+                ignore_case: bool=False):
         self.domains = domains
         self.columns = tuple(Column.columns[col.upper().replace('_', '-')]
                 for col in colnames)
@@ -416,11 +435,11 @@ class Table(object):
         self.reverse_sort = reverse_sort
         self.ignore_case = ignore_case
 
-    def get_head(self):
+    def get_head(self) -> list[str]:
         '''Get table head data (all column heads).'''
         return [col.ls_head for col in self.columns]
 
-    def get_row(self, vm, insertion=0):
+    def get_row(self, vm: QubesVM, insertion: int = 0) -> list[str]:
         '''Get single table row data (all columns for one domain).'''
         ret = []
         for col in self.columns:
@@ -431,7 +450,8 @@ class Table(object):
             self.spinner.update()
         return ret
 
-    def tree_append_child(self, parent, level):
+    def tree_append_child(self, parent: QubesVM, level: int) \
+            -> list[tuple[int, QubesVM]]:
         '''Concatenate the network children of the vm to a list.
 
         :param qubes.vm.qubesvm.QubesVM: Parent vm of the children VMs
@@ -445,7 +465,8 @@ class Table(object):
                 childs.append((level, child))
         return childs
 
-    def sort_to_tree(self, domains):
+    def sort_to_tree(self, domains: MutableSequence[QubesVM])\
+            -> list[tuple[int, QubesVM]]:
         '''Sort the domains as a network tree. It returns a list of sets. Each
         tuple stores the insertion of the cell name and the vm object.
 
@@ -474,7 +495,7 @@ class Table(object):
 
         return tree
 
-    def write_table(self, stream=sys.stdout):
+    def write_table(self, stream: TextIO=sys.stdout) -> None:
         '''Sort & write whole table to file-like object.
 
         :param file stream: Stream to write the table to.
@@ -548,10 +569,11 @@ class _HelpColumnsAction(argparse.Action):
     '''Action for argument parser that displays all columns and exits.'''
     # pylint: disable=redefined-builtin
     def __init__(self,
-            option_strings,
-            dest=argparse.SUPPRESS,
-            default=argparse.SUPPRESS,
-            help='list all available columns with short descriptions and exit'):
+            option_strings: Sequence[str],
+            dest: str=argparse.SUPPRESS,
+            default: str=argparse.SUPPRESS,
+            help: str='list all available columns '
+                      'with short descriptions and exit'):
         super().__init__(
             option_strings=option_strings,
             dest=dest,
@@ -559,7 +581,10 @@ class _HelpColumnsAction(argparse.Action):
             nargs=0,
             help=help)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values:  str | Sequence | None,
+                 option_string: str | None=None)\
+            -> None:
         width = max(len(column.ls_head) for column in Column.columns.values())
         wrapper = textwrap.TextWrapper(width=80,
             initial_indent='  ', subsequent_indent=' ' * (width + 6))
@@ -580,10 +605,11 @@ class _HelpFormatsAction(argparse.Action):
     '''Action for argument parser that displays all formats and exits.'''
     # pylint: disable=redefined-builtin
     def __init__(self,
-            option_strings,
-            dest=argparse.SUPPRESS,
-            default=argparse.SUPPRESS,
-            help='list all available formats with their definitions and exit'):
+            option_strings: Sequence[str],
+            dest: str=argparse.SUPPRESS,
+            default: str=argparse.SUPPRESS,
+            help: str='list all available formats'
+                      ' with their definitions and exit'):
         super().__init__(
             option_strings=option_strings,
             dest=dest,
@@ -591,7 +617,10 @@ class _HelpFormatsAction(argparse.Action):
             nargs=0,
             help=help)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values:  str | Sequence | None,
+                 option_string: str | None=None)\
+            -> None:
         width = max(len(fmt) for fmt in formats)
         text = 'Available formats:\n' + ''.join(
             '  {fmt:{width}s}  {columns}\n'.format(
@@ -606,7 +635,7 @@ class _HelpFormatsAction(argparse.Action):
 DOMAIN_POWER_STATES = ['running', 'paused', 'halted']
 
 
-def matches_power_states(domain, **states):
+def matches_power_states(domain: QubesVM, **states) -> bool:
     '''Filter domains by their power state'''
     # if all values are False (default) => return match on every VM
     if not states or set(states.values()) == {False}:
@@ -617,7 +646,7 @@ def matches_power_states(domain, **states):
     return domain.get_power_state().lower() in requested_states
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     '''Create :py:class:`argparse.ArgumentParser` suitable for
     :program:`qvm-ls`.
     '''
@@ -752,7 +781,7 @@ def get_parser():
     return parser
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-ls`.
 
     :param list args: Optional arguments to override those delivered from \
@@ -762,7 +791,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
 
     parser = get_parser()
     try:
-        args = parser.parse_args(args, app=app)
+        args: Namespace = parser.parse_args(args, app=app)
     except qubesadmin.exc.QubesException as e:
         parser.print_error(str(e))
         return 1
