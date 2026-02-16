@@ -23,36 +23,43 @@
 from __future__ import print_function
 
 import argparse
+from argparse import ArgumentParser, Namespace
 import sys
+from typing import Sequence, Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
+from qubesadmin.app import QubesBase
+from qubesadmin.storage import Pool
+from qubesadmin.tools import QubesArgumentParser
 
 
 class _Info(qubesadmin.tools.PoolsAction):
     ''' Action for argument parser that displays pool info and exits. '''
 
-    def __init__(self, option_strings, help='print pool info and exit',
+    def __init__(self, option_strings: Sequence[str],
+                 help: str='print pool info and exit',
                  **kwargs):
         # pylint: disable=redefined-builtin
         super().__init__(option_strings, help=help, **kwargs)
 
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
-                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+                 values:  str | Sequence | None,
+                 option_string: str | None=None)\
             -> None:
         setattr(namespace, 'command', 'info')
         super().__call__(parser, namespace, values, option_string)
 
 
-def pool_info(pool):
+def pool_info(pool: Pool) -> None:
     ''' Prints out pool name and config '''
     data = [("name", pool.name)]
     data += [i for i in sorted(pool.config.items()) if i[0] != 'name']
     qubesadmin.tools.print_table(data)
 
 
-def list_pools(app):
+def list_pools(app: QubesBase) -> None:
     ''' Prints out all known pools and their drivers '''
     result = [('NAME', 'DRIVER')]
     for pool in app.pools.values():
@@ -63,14 +70,16 @@ def list_pools(app):
 class _Remove(argparse.Action):
     ''' Action for argument parser that removes a pool '''
 
-    def __init__(self, option_strings, dest=None, default=None, metavar=None):
+    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+                 default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          metavar=metavar,
                          default=default,
                          help='remove pool')
 
-    def __call__(self, parser, namespace, name, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace, name: str,
+                 option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'remove')
         setattr(namespace, 'name', name)
 
@@ -78,7 +87,8 @@ class _Remove(argparse.Action):
 class _Add(argparse.Action):
     ''' Action for argument parser that adds a pool. '''
 
-    def __init__(self, option_strings, dest=None, default=None, metavar=None):
+    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+                 default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          metavar=metavar,
@@ -87,7 +97,8 @@ class _Add(argparse.Action):
                          help='add pool')
 
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
-                 values:  str | Sequence[Any] | None, option_string: str | None=None)\
+                 values:  str | Sequence | None,
+                 option_string: str | None=None)\
             -> None:
         name, driver = values
         setattr(namespace, 'command', 'add')
@@ -98,7 +109,8 @@ class _Add(argparse.Action):
 class _Set(qubesadmin.tools.PoolsAction):
     ''' Action for argument parser that sets pool options. '''
 
-    def __init__(self, option_strings, dest=None, default=None, metavar=None):
+    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+                 default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
                          metavar=metavar,
@@ -106,7 +118,8 @@ class _Set(qubesadmin.tools.PoolsAction):
                          help='modify pool (use -o to specify '
                               'modifications)')
 
-    def __call__(self, parser, namespace, name, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace, name: str,
+                 option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'set')
         super().__call__(parser, namespace, name, option_string)
 
@@ -114,7 +127,8 @@ class _Set(qubesadmin.tools.PoolsAction):
 class _Options(argparse.Action):
     ''' Action for argument parser that parsers options. '''
 
-    def __init__(self, option_strings, dest, default, metavar='options'):
+    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+                 default: str | None=None, metavar: str | None = 'options'):
         super().__init__(
             option_strings=option_strings,
             dest=dest,
@@ -122,12 +136,15 @@ class _Options(argparse.Action):
             default=default,
             help='comma-separated list of driver options')
 
-    def __call__(self, parser, namespace, options, option_string=None):
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values: str | Sequence | None,
+                 option_string: str | None=None) -> None:
+        assert isinstance(values, str)
         setattr(namespace, 'options',
-                dict([option.split('=', 1) for option in options.split(',')]))
+                dict([option.split('=', 1) for option in values.split(',')]))
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     ''' Parses the provided args '''
     parser = qubesadmin.tools.QubesArgumentParser(description=__doc__)
     parser.add_argument('-o', action=_Options, dest='options', default={})
@@ -156,7 +173,7 @@ def get_parser():
     return parser
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-pools`.
 
     :param list args: Optional arguments to override those delivered from \
@@ -164,7 +181,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     '''
     parser = get_parser()
     try:
-        args = parser.parse_args(args, app=app)
+        args: Namespace = parser.parse_args(args, app=app)
     except qubesadmin.exc.QubesException as e:
         parser.print_error(str(e))
         return 1

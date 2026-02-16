@@ -24,14 +24,18 @@ from __future__ import print_function
 
 import argparse
 import sys
+from argparse import Namespace
+from typing import Iterable, Sequence
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.tools.qvm_pool_legacy
+from qubesadmin.app import QubesBase
+from qubesadmin.tools import QubesArgumentParser
 
 
-def list_drivers(args):
+def list_drivers(args: Namespace) -> None:
     ''' Lists all drivers with their options '''
     result = [('DRIVER', 'OPTIONS')]
     for driver in sorted(args.app.pool_drivers):
@@ -41,7 +45,7 @@ def list_drivers(args):
     qubesadmin.tools.print_table(result)
 
 
-def list_pools(args):
+def list_pools(args: Namespace) -> None:
     ''' Lists all available pools '''
     result = [('NAME', 'DRIVER')]
     for pool in args.app.pools.values():
@@ -49,7 +53,7 @@ def list_pools(args):
     qubesadmin.tools.print_table(result)
 
 
-def info_pools(args):
+def info_pools(args: Namespace) -> None:
     ''' Prints info about the specified pools '''
     data = []
     for idx, pool in enumerate(args.pools):
@@ -59,7 +63,7 @@ def info_pools(args):
     qubesadmin.tools.print_table(data)
 
 
-def add_pool(args):
+def add_pool(args: Namespace) -> None:
     ''' Adds a new pool '''
     options = dict(opt.split('=', 1) for opt in args.option or [])
     try:
@@ -69,7 +73,7 @@ def add_pool(args):
                                             args.pool_name, str(e))
 
 
-def remove_pools(args):
+def remove_pools(args: Namespace) -> None:
     ''' Removes the specified pools '''
     errors = []
     for pool_name in args.pool_names:
@@ -84,7 +88,7 @@ def remove_pools(args):
         raise qubesadmin.exc.QubesException('\n'.join(errors))
 
 
-def set_pool(args):
+def set_pool(args: Namespace) -> None:
     ''' Modifies driver options for a pool '''
     options = (opt.split('=', 1) for opt in args.option or [])
     pool = args.app.pools[args.pool_name]
@@ -103,14 +107,14 @@ def set_pool(args):
         raise qubesadmin.exc.QubesException('\n'.join(errors))
 
 
-def init_list_parser(sub_parsers):
+def init_list_parser(sub_parsers: argparse._SubParsersAction) -> None:
     ''' Adds 'list' action related options '''
     l_parser = sub_parsers.add_parser(
         'list', aliases=('l', 'ls'), help='List all available pools')
     l_parser.set_defaults(func=list_pools)
 
 
-def init_info_parser(sub_parsers):
+def init_info_parser(sub_parsers: argparse._SubParsersAction) -> None:
     ''' Adds 'info' action related options '''
     i_parser = sub_parsers.add_parser(
         'info', aliases=('i',), help='Print info about the specified pools')
@@ -119,7 +123,7 @@ def init_info_parser(sub_parsers):
     i_parser.set_defaults(func=info_pools)
 
 
-def init_add_parser(sub_parsers):
+def init_add_parser(sub_parsers: argparse._SubParsersAction) -> None:
     ''' Adds 'add' action related options '''
     a_parser = sub_parsers.add_parser(
         'add', aliases=('a',), help='Add a new pool')
@@ -132,7 +136,7 @@ def init_add_parser(sub_parsers):
     a_parser.set_defaults(func=add_pool)
 
 
-def init_remove_parser(sub_parsers):
+def init_remove_parser(sub_parsers: argparse._SubParsersAction) -> None:
     ''' Adds 'remove' action related options '''
     r_parser = sub_parsers.add_parser(
         'remove', aliases=('r', 'rm'), help='Remove the specified pools')
@@ -140,7 +144,7 @@ def init_remove_parser(sub_parsers):
     r_parser.set_defaults(func=remove_pools)
 
 
-def init_set_parser(sub_parsers):
+def init_set_parser(sub_parsers: argparse._SubParsersAction) -> None:
     ''' Adds 'set' action related options '''
     s_parser = sub_parsers.add_parser(
         'set', aliases=('s',), help='Modify driver options for a pool')
@@ -152,7 +156,7 @@ def init_set_parser(sub_parsers):
     s_parser.set_defaults(func=set_pool)
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     ''' Creates :py:class:`argparse.ArgumentParser` suitable for
         :program:`qvm-pool`.
     '''
@@ -180,7 +184,8 @@ def get_parser():
     return parser
 
 
-def uses_legacy_options(args, app):
+def uses_legacy_options(args: Sequence[str] | None,
+                        app: QubesBase | None) -> bool:
     ''' Checks if legacy options and used, and invokes the legacy tool '''
     parser = argparse.ArgumentParser(description=__doc__,
                                      usage=argparse.SUPPRESS,
@@ -212,13 +217,13 @@ def uses_legacy_options(args, app):
     return False
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Sequence[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-pool`.'''
     if uses_legacy_options(args, app):
         return 0
 
     parser = get_parser()
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     try:
         args.func(args)
