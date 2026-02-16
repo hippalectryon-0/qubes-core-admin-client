@@ -27,10 +27,14 @@ import os
 import subprocess
 import sys
 import tempfile
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
+from qubesadmin.app import QubesBase
+from qubesadmin.tools import QubesArgumentParser
 
 
 class ConfirmAction:
@@ -46,7 +50,7 @@ class ConfirmAction:
             sys.exit(2)
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     """Create :py:class:`argparse.ArgumentParser` suitable for
     :program:`qvm-notes`.
     """
@@ -119,11 +123,11 @@ def get_parser():
     return parser
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     """Main function of Program:`qvm-notes`."""
     app = app or qubesadmin.Qubes()
     parser = get_parser()
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     qube = args.domains.pop()
 
     ConfirmAction.use_the_force = args.force

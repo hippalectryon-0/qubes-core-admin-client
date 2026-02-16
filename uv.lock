@@ -20,7 +20,7 @@ current-dev = [
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "pylint", specifier = ">=4.0.4" },
     { name = "setuptools", specifier = ">=82.0.0" },
-    { name = "sphinx", specifier = ">=3.5.3" },
+    { name = "sphinx", specifier = ">=9.1.0" },
     { name = "types-lxml", specifier = ">=2026.1.1" },
 ]
 future-dev = [

@@ -21,8 +21,13 @@
 '''qvm-pause - Pause a domain'''
 
 import sys
-import qubesadmin
+from argparse import Namespace
+from typing import Iterable
 
+import qubesadmin
+import qubesadmin.exc
+import qubesadmin.tools
+from qubesadmin.app import QubesBase
 
 parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs='+',
     description='pause a qube',
@@ -36,14 +41,14 @@ parser.add_argument(
 )
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-pause`.
 
     :param list args: Optional arguments to override those delivered from \
         command line.
     '''
 
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     exit_code = 0
     for domain in args.domains:
         try:
