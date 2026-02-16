@@ -28,6 +28,11 @@ import sys
 import time
 
 import asyncio
+from argparse import Namespace
+from typing import Iterable
+
+from qubesadmin.app import QubesBase
+from qubesadmin.vm import QubesVM
 
 try:
     import qubesadmin.events.utils
@@ -61,7 +66,7 @@ parser.add_argument(
     help='don\'t really shutdown or kill the domains; useful with --wait')
 
 
-def failed_domains(vms):
+def failed_domains(vms: Iterable[QubesVM]) -> list[QubesVM]:
     '''Find the domains that have not successfully been shut down'''
 
     # DispVM might have been deleted before we check them, so NA is acceptable.
@@ -70,7 +75,7 @@ def failed_domains(vms):
                 or (vm.klass == 'DispVM' and vm.get_power_state() == 'NA'))]
 
 def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  # pylint: disable=missing-docstring
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     force = args.force or bool(args.all_domains)
 
@@ -121,7 +126,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  
                             # already shut down
                             pass
                         except qubesadmin.exc.QubesException as e:
-                            parser.error_runtime(e)
+                            parser.error_runtime(str(e))
         else:
             timeout = args.timeout
             current_vms = list(sorted(this_round_domains))
@@ -145,7 +150,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  
                         # already shut down
                         pass
                     except qubesadmin.exc.QubesException as e:
-                        parser.error_runtime(e)
+                        parser.error_runtime(str(e))
 
     if args.wait:
         if have_events:

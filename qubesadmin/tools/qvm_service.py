@@ -28,10 +28,13 @@ from __future__ import print_function
 
 import argparse
 import sys
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
+from qubesadmin.app import QubesBase
 
 parser = qubesadmin.tools.QubesArgumentParser(
     vmname_nargs=1,
@@ -66,7 +69,7 @@ parser.add_argument('--disable', '-d',
     action='store_const', const='0',
     help='disable service (same as setting "off" value)')
 
-def parse_bool(value):
+def parse_bool(value: object) -> bool:
     '''Convert string value to bool according to well known representations
 
     It accepts (case-insensitive) ``'0'``, ``'no'`` and ``false`` as
@@ -85,14 +88,14 @@ def parse_bool(value):
     return bool(value)
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-features`.
 
     :param list args: Optional arguments to override those delivered from \
         command line.
     '''
 
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     vm = args.domains[0]
 
     if not hasattr(args, 'service'):
