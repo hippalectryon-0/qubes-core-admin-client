@@ -85,7 +85,7 @@ def parse_bool(value):
     return bool(value)
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-features`.
 
     :param list args: Optional arguments to override those delivered from \

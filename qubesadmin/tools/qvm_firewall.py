@@ -192,7 +192,7 @@ def rules_del(vm, args):
     vm.firewall.save_rules()
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-firewall`.'''
     try:
         args = parser.parse_args(args, app=app)

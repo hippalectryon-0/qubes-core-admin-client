@@ -328,7 +328,7 @@ def has_gui(qube) -> bool:
 
 
 # pylint: disable=too-many-statements
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     """Main function of qvm-run tool"""
     args = parser.parse_args(args, app=app)
     # pylint: disable=unidiomatic-typecheck

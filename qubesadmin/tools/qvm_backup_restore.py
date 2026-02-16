@@ -24,6 +24,7 @@ import getpass
 import os
 import sys
 from argparse import Namespace
+from typing import Iterable
 
 from qubesadmin.app import QubesBase
 from qubesadmin.backup.restore import BackupRestore
@@ -226,10 +227,10 @@ def print_backup_log(backup_log: bytes) -> None:
         sys.stdout.flush()
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     '''Main function of qvm-backup-restore'''
     # pylint: disable=too-many-return-statements
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     appvm = None
     if args.appvm:

@@ -119,7 +119,7 @@ def get_parser():
     return parser
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     """Main function of Program:`qvm-notes`."""
     app = app or qubesadmin.Qubes()
     parser = get_parser()

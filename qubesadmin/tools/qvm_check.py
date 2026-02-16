@@ -126,7 +126,7 @@ def get_filters(args: Namespace) -> list[dict[str, Any]]: # noqa:ANN401
     return filters
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> int:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     """Main function of qvm-check tool"""
     args = parser.parse_args(args, app=app)
     domains = args.domains

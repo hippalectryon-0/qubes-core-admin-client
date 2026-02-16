@@ -24,6 +24,7 @@
 
 import sys
 from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin.exc
 from qubesadmin.app import QubesBase
@@ -58,9 +59,9 @@ group.add_argument('-p',
                     help='specify the pool to use for the specific volume')
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     ''' Clones an existing VM by copying all its disk files '''
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     app = args.app
     src_vm = args.domains[0]
     new_name = args.new_name

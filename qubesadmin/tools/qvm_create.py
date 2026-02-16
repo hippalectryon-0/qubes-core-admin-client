@@ -33,6 +33,7 @@ import argparse
 from argparse import Namespace
 import os
 import sys
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.tools
@@ -100,9 +101,9 @@ parser.add_argument('name', metavar='VMNAME',
     help='name of the domain to create')
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> int:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main function of qvm-create tool'''
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     if args.help_classes:
         vm_classes = args.app.list_vmclass()

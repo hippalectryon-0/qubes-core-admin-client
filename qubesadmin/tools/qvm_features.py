@@ -27,9 +27,13 @@
 from __future__ import print_function
 
 import sys
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.tools
+import qubesadmin.exc
+from qubesadmin.app import QubesBase
 
 parser = qubesadmin.tools.QubesArgumentParser(
     vmname_nargs=1,
@@ -49,14 +53,14 @@ parser.add_argument('--unset', '--default', '--delete', '-D',
     help='unset the feature')
 
 
-def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-features`.
 
     :param list args: Optional arguments to override those delivered from \
         command line.
     '''
 
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     vm = args.domains[0]
 
     if args.feature is None:
@@ -67,7 +71,7 @@ def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
             features = [(feat, vm.features[feat]) for feat in vm.features]
             qubesadmin.tools.print_table(features)
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
 
     elif args.delete:
         if args.value is not None:
@@ -77,7 +81,7 @@ def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
         except KeyError:
             pass
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
 
     elif args.value is None:
         try:
@@ -86,12 +90,12 @@ def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
         except KeyError:
             return 1
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
     else:
         try:
             vm.features[args.feature] = args.value
         except qubesadmin.exc.QubesException as e:
-            parser.error_runtime(e)
+            parser.error_runtime(str(e))
 
     return 0
 
