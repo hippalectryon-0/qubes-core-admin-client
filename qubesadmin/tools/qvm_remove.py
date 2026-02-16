@@ -38,7 +38,7 @@ parser.add_argument(
 )
 
 
-def main(args=None, app=None):  # pylint: disable=missing-docstring
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:  # pylint: disable=missing-docstring
     args = parser.parse_args(args, app=app)
     go_ahead = ""
 

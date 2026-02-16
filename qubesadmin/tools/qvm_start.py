@@ -165,7 +165,7 @@ def get_drive_assignment(app, drive_str):
     return assignment
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-start`.
 
     :param list args: Optional arguments to override those delivered from \

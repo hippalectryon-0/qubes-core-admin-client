@@ -212,7 +212,7 @@ def uses_legacy_options(args, app):
     return False
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-pool`.'''
     if uses_legacy_options(args, app):
         return 0

@@ -36,7 +36,7 @@ parser.add_argument(
 )
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-pause`.
 
     :param list args: Optional arguments to override those delivered from \

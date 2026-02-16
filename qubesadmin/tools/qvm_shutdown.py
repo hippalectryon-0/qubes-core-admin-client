@@ -69,7 +69,7 @@ def failed_domains(vms):
             if not (vm.get_power_state() == 'Halted'
                 or (vm.klass == 'DispVM' and vm.get_power_state() == 'NA'))]
 
-def main(args=None, app=None):  # pylint: disable=missing-docstring
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:  # pylint: disable=missing-docstring
     args = parser.parse_args(args, app=app)
 
     force = args.force or bool(args.all_domains)

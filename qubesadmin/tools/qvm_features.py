@@ -49,7 +49,7 @@ parser.add_argument('--unset', '--default', '--delete', '-D',
     help='unset the feature')
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-features`.
 
     :param list args: Optional arguments to override those delivered from \

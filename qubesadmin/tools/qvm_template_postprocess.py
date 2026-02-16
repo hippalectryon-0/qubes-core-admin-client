@@ -441,7 +441,7 @@ def is_chroot():
         return False
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main function of qvm-template-postprocess'''
     args = parser.parse_args(args, app=app)
 

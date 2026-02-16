@@ -752,7 +752,7 @@ def get_parser():
     return parser
 
 
-def main(args=None, app=None):
+def main(args: Namespace | None=None, app: QubesBase | None=None) -> None:
     '''Main routine of :program:`qvm-ls`.
 
     :param list args: Optional arguments to override those delivered from \
