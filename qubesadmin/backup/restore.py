@@ -2004,7 +2004,7 @@ class BackupRestore(object):
         handlers = {}
         vms_size = 0
         for vm_info in self._templates_first(restore_info.values()):
-            vm = vm_info.restored_vm
+            vm: QubesVM = vm_info.restored_vm
             if vm and vm_info.subdir:
                 if isinstance(vm_info, self.Dom0ToRestore) and \
                         vm_info.good_to_go:
