@@ -33,7 +33,7 @@ import subprocess
 import sys
 import typing
 from argparse import Namespace
-from typing import TextIO, Iterable, Sequence, NoReturn
+from typing import TextIO, Iterable, Sequence, NoReturn, Literal
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -386,7 +386,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
         Setting ``version`` argument to '' will disable ``--version`` option.
     '''
 
-    def __init__(self, vmname_nargs: int | None=None,
+    def __init__(self, vmname_nargs: int | Literal["?", "*", "+"] | None=None,
                  show_forceroot: bool=False, version: str | None=None,
             **kwargs):
 
