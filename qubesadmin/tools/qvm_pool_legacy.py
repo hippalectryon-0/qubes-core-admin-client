@@ -70,7 +70,7 @@ def list_pools(app: QubesBase) -> None:
 class _Remove(argparse.Action):
     ''' Action for argument parser that removes a pool '''
 
-    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+    def __init__(self, option_strings: Sequence[str], dest: str,
                  default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
@@ -78,16 +78,16 @@ class _Remove(argparse.Action):
                          default=default,
                          help='remove pool')
 
-    def __call__(self, parser: ArgumentParser, namespace: Namespace, name: str,
+    def __call__(self, parser: ArgumentParser, namespace: Namespace, values: str,
                  option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'remove')
-        setattr(namespace, 'name', name)
+        setattr(namespace, 'name', values)
 
 
 class _Add(argparse.Action):
     ''' Action for argument parser that adds a pool. '''
 
-    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+    def __init__(self, option_strings: Sequence[str], dest: str,
                  default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
@@ -100,6 +100,7 @@ class _Add(argparse.Action):
                  values:  str | Sequence | None,
                  option_string: str | None=None)\
             -> None:
+        assert isinstance(values, Sequence)
         name, driver = values
         setattr(namespace, 'command', 'add')
         setattr(namespace, 'name', name)
@@ -109,7 +110,7 @@ class _Add(argparse.Action):
 class _Set(qubesadmin.tools.PoolsAction):
     ''' Action for argument parser that sets pool options. '''
 
-    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+    def __init__(self, option_strings: Sequence[str], dest: str,
                  default: str | None=None, metavar: str | None=None):
         super().__init__(option_strings=option_strings,
                          dest=dest,
@@ -118,16 +119,17 @@ class _Set(qubesadmin.tools.PoolsAction):
                          help='modify pool (use -o to specify '
                               'modifications)')
 
-    def __call__(self, parser: ArgumentParser, namespace: Namespace, name: str,
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+                 values: object,
                  option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'set')
-        super().__call__(parser, namespace, name, option_string)
+        super().__call__(parser, namespace, values, option_string)
 
 
 class _Options(argparse.Action):
     ''' Action for argument parser that parsers options. '''
 
-    def __init__(self, option_strings: Sequence[str], dest: str | None=None,
+    def __init__(self, option_strings: Sequence[str], dest: str,
                  default: str | None=None, metavar: str | None = 'options'):
         super().__init__(
             option_strings=option_strings,

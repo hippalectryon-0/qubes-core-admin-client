@@ -335,7 +335,7 @@ class PoolsAction(QubesAction):
     # pylint: disable=too-few-public-methods
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: typing.Any,  # noqa:ANN401
+                 values: object,
                  option_string: str | None=None) -> None:
         ''' Set ``namespace.vmname`` to ``values`` '''
         if hasattr(namespace, self.dest) and getattr(namespace, self.dest):

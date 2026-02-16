@@ -25,7 +25,7 @@ from __future__ import print_function
 import argparse
 import sys
 from argparse import Namespace
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import qubesadmin
 import qubesadmin.exc
