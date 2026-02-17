@@ -24,12 +24,17 @@
 from __future__ import print_function
 
 import sys
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
+from qubesadmin.app import QubesBase
+from qubesadmin.tools import QubesArgumentParser
 
-def mode_query(args):
+
+def mode_query(args: Namespace) -> int:
     '''Query/list tags'''
     if not hasattr(args, 'tag') or args.tag is None:
         # list
@@ -44,21 +49,21 @@ def mode_query(args):
     return 0
 
 
-def mode_add(args):
+def mode_add(args: Namespace) -> int:
     '''Add tag'''
     for tag in args.tag:
         args.domains[0].tags.add(tag)
     return 0
 
 
-def mode_del(args):
+def mode_del(args: Namespace) -> int:
     '''Delete tag'''
     for tag in args.tag:
         args.domains[0].tags.discard(tag)
     return 0
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     ''' Return qvm-tags tool command line parser '''
     parser = qubesadmin.tools.QubesArgumentParser(
         vmname_nargs=1,
@@ -93,7 +98,7 @@ def get_parser():
     return parser
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     '''Main routine of :program:`qvm-tags`.
 
     :param list args: Optional arguments to override those delivered from \
@@ -101,11 +106,11 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
     '''
 
     parser = get_parser()
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     try:
         return args.func(args)
     except qubesadmin.exc.QubesException as e:
-        parser.error_runtime(e)
+        parser.error_runtime(str(e))
 
 
 if __name__ == '__main__':
