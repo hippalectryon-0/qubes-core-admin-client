@@ -25,12 +25,11 @@
 from __future__ import print_function
 
 import argparse
-from argparse import _SubParsersAction
+from argparse import _SubParsersAction, Namespace
 import os
 import sys
 
 import collections
-from argparse import Namespace
 from typing import Iterable
 
 import qubesadmin

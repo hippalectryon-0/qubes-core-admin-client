@@ -24,15 +24,18 @@ that's not supported by default by xcffib.
 import io
 import struct
 import xcffib
+from xcffib import Unpacker, VoidCookie
 
 
 class XkbUseExtensionReply(xcffib.Reply):
     """Helper class to parse XkbUseExtensionReply
     Contains hardcoded values based on X11/XKBproto.h"""
     # pylint: disable=too-few-public-methods
-    def __init__(self, unpacker):
+    def __init__(self, unpacker: Unpacker):
         if isinstance(unpacker, xcffib.Protobj):
-            unpacker = xcffib.MemoryUnpacker(unpacker.pack())
+            unpacker = xcffib.MemoryUnpacker(
+                unpacker.pack()#type:ignore
+            )
         xcffib.Reply.__init__(self, unpacker)
         base = unpacker.offset
         self.major_version, self.minor_version = unpacker.unpack(
@@ -78,9 +81,11 @@ class XkbGetStateReply(xcffib.Reply):
         "INT16": "h",
     }
 
-    def __init__(self, unpacker):
+    def __init__(self, unpacker: Unpacker):
         if isinstance(unpacker, xcffib.Protobj):
-            unpacker = xcffib.MemoryUnpacker(unpacker.pack())
+            unpacker = xcffib.MemoryUnpacker(
+                unpacker.pack()#type:ignore
+            )
         xcffib.Reply.__init__(self, unpacker)
         base = unpacker.offset
 
@@ -105,13 +110,14 @@ class XkbExtension(xcffib.Extension):
     """Helper class to load and use Xkb xcffib extension; needed
     because there is not XKB support in xcffib."""
     # pylint: disable=invalid-name,missing-function-docstring
-    def UseExtension(self, is_checked=True):
+    def UseExtension(self, is_checked: bool = True) -> VoidCookie:
         buf = io.BytesIO()
         buf.write(struct.pack("=xx2xHH", 1, 0))
         return self.send_request(0, buf, XkbGetStateCookie,
                                  is_checked=is_checked)
 
-    def GetState(self, deviceSpec=0x100, is_checked=True):
+    def GetState(self, deviceSpec: int = 0x100, is_checked: bool = True) \
+            -> VoidCookie:
         buf = io.BytesIO()
         buf.write(struct.pack("=xx2xHxx", deviceSpec))
         return self.send_request(4, buf, XkbGetStateCookie,

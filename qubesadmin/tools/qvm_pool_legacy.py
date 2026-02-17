@@ -44,7 +44,8 @@ class _Info(qubesadmin.tools.PoolsAction):
         # pylint: disable=redefined-builtin
         super().__init__(option_strings, help=help, **kwargs)
 
-    def __call__(self, parser: ArgumentParser, namespace: Namespace,
+    def __call__(self, parser: ArgumentParser,#type:ignore #legacy stuff
+                 namespace: Namespace,
                  values:  str | Sequence | None,
                  option_string: str | None=None)\
             -> None:
@@ -56,13 +57,13 @@ def pool_info(pool: Pool) -> None:
     ''' Prints out pool name and config '''
     data = [("name", pool.name)]
     data += [i for i in sorted(pool.config.items()) if i[0] != 'name']
-    qubesadmin.tools.print_table(data)
+    qubesadmin.tools.print_table(data) #type:ignore #legacy stuff
 
 
 def list_pools(app: QubesBase) -> None:
     ''' Prints out all known pools and their drivers '''
     result = [('NAME', 'DRIVER')]
-    for pool in app.pools.values():
+    for pool in app.pools.values(): #type:ignore #legacy stuff
         result += [(pool.name, pool.driver)]
     qubesadmin.tools.print_table(result)
 
@@ -78,7 +79,7 @@ class _Remove(argparse.Action):
                          default=default,
                          help='remove pool')
 
-    def __call__(self, parser: ArgumentParser,
+    def __call__(self, parser: ArgumentParser, #type:ignore #legacy stuff
                  namespace: Namespace, values: str,
                  option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'remove')

@@ -43,9 +43,9 @@ class QvmCheckVmNameAction(qubesadmin.tools.VmNameAction):
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
 
-    def parse_qubes_app(self, parent_parser: ArgumentParser,
+    def parse_qubes_app(self, parser: ArgumentParser,
                         namespace: Namespace) -> None:
-        # pylint: disable=arguments-renamed
+        # pylint: disable=redefined-outer-name
         assert hasattr(namespace, 'app')
         setattr(namespace, 'domains', [])
         setattr(namespace, 'invalid_domains', [])
@@ -59,7 +59,7 @@ class QvmCheckVmNameAction(qubesadmin.tools.VmNameAction):
             ]
         else:
             if hasattr(namespace, 'exclude') and namespace.exclude:
-                parent_parser.error('--exclude can only be used with --all')
+                parser.error('--exclude can only be used with --all')
 
             for vm_name in getattr(namespace, self.dest):
                 try:
@@ -83,6 +83,7 @@ class QvmCheckArgumentParser(qubesadmin.tools.QubesArgumentParser):
         self._mutually_exclusive_groups.append(vm_name_group)
 
 
+assert __doc__ is not None
 parser = QvmCheckArgumentParser(description=__doc__)
 parser.add_argument("--running", action="store_true", dest="running",
                     default=False,
@@ -128,7 +129,7 @@ def get_filters(args: Namespace) -> list[dict[str, Any]]: # noqa:ANN401
 
 def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     """Main function of qvm-check tool"""
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     domains = args.domains
     invalid_domains = set(args.invalid_domains)
     return_code = 0
