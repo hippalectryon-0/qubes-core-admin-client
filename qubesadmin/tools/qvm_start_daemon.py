@@ -29,6 +29,8 @@ import logging
 import re
 import functools
 import sys
+from typing import Any, SupportsIndex, Callable, Iterable
+
 import xcffib
 import xcffib.xproto  # pylint: disable=unused-import
 
@@ -37,12 +39,16 @@ import qubesadmin.events
 import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.vm
+from qubesadmin.app import QubesBase
+from qubesadmin.events import EventsDispatcher
 from qubesadmin.tools import xcffibhelpers
 
 # pylint: disable=wrong-import-position,wrong-import-order
 from Xlib import X, XK
 from Xlib.display import Display
 from Xlib.error import DisplayConnectionError
+
+from qubesadmin.vm import QubesVM
 
 GUI_DAEMON_PATH = "/usr/bin/qubes-guid"
 PACAT_DAEMON_PATH = "/usr/bin/pacat-simple-vchan"
@@ -195,7 +201,7 @@ parser.add_argument(
 )
 
 
-def retrieve_gui_daemon_options(vm, guivm):
+def retrieve_gui_daemon_options(vm: QubesVM, guivm: QubesVM) -> dict:
     """
     Construct a list of GUI daemon options based on VM features.
 
@@ -221,9 +227,9 @@ def retrieve_gui_daemon_options(vm, guivm):
         elif kind == "str":
             value = feature_value
         else:
-            assert False, kind
+            raise ValueError(f"Wrong option kind: {kind}")
 
-        if not validator(value):
+        if not validator(value): # type:ignore
             message = (
                 f"{vm.name}: Ignoring invalid feature:\n"
                 f"{feature}={feature_value}"
@@ -247,7 +253,7 @@ def retrieve_gui_daemon_options(vm, guivm):
     return options
 
 
-def serialize_gui_daemon_options(options):
+def serialize_gui_daemon_options(options: dict) -> str:
     """
     Prepare configuration file content for GUI daemon. Currently, uses libconfig
     format.
@@ -268,9 +274,9 @@ def serialize_gui_daemon_options(options):
             elif kind == "str":
                 serialized = escape_config_string(value)
             else:
-                assert False, kind
+                raise ValueError(f"Wrong option kind: {kind}")
 
-            if not validator(value):
+            if not validator(value): # type:ignore
                 message = f"Ignoring invalid GUI property:\n{name}={value}"
                 log.error(message)
                 if not sys.stdout.isatty():
@@ -297,7 +303,7 @@ NON_ASCII_RE = re.compile(r"[^\x00-\x7F]")
 UNPRINTABLE_CHARACTER_RE = re.compile(r"[\x00-\x1F\x7F]")
 
 
-def escape_config_string(value):
+def escape_config_string(value: str) -> str:
     """
     Convert a string to libconfig format.
 
@@ -355,7 +361,7 @@ class KeyboardLayout:
     """Class to store and parse X Keyboard layout data"""
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, binary_string):
+    def __init__(self, binary_string: bytes):
         split_string = binary_string.split(b"\0")
         self.languages = split_string[2].decode().split(",")
         self.variants = split_string[3].decode().split(",")
@@ -365,7 +371,7 @@ class KeyboardLayout:
         )
         self.current_layout = None
 
-    def get_property(self, layout_num):
+    def get_property(self, layout_num: SupportsIndex) -> str:
         """Return the selected keyboard layout as formatted for keyboard_layout
         property."""
         return "+".join(
@@ -380,7 +386,7 @@ class KeyboardLayout:
 class XWatcher:
     """Watch and react for X events related to the keyboard layout changes."""
 
-    def __init__(self, conn, app):
+    def __init__(self, conn: xcffib.Connection, app: QubesBase):
         self.app = app
         self.current_vm = self.app.domains[self.app.local_name]
 
@@ -422,13 +428,13 @@ class XWatcher:
         self.keyboard_layout = KeyboardLayout(self.get_keyboard_layout())
         self.selected_layout = self.get_selected_layout()
 
-    def initialize_extension(self):
+    def initialize_extension(self) -> Any: #noqa:ANN401
         """Initialize XKB extension (not supported by xcffib by default"""
         ext = self.conn(xcffibhelpers.key)
         ext.UseExtension()
         return ext
 
-    def get_keyboard_layout(self):
+    def get_keyboard_layout(self) -> bytes:
         """Check what is current keyboard layout definition"""
         property_cookie = self.conn.core.GetProperty(
             False,  # delete
@@ -441,12 +447,12 @@ class XWatcher:
         prop_reply = property_cookie.reply()
         return prop_reply.value.buf()
 
-    def get_selected_layout(self):
+    def get_selected_layout(self) -> SupportsIndex:
         """Check which keyboard layout is currently selected"""
         state_reply = self.ext.GetState().reply()
         return state_reply.lockedGroup[0]
 
-    def update_keyboard_layout(self):
+    def update_keyboard_layout(self) -> None:
         """Update current vm's keyboard_layout property"""
         new_property = self.keyboard_layout.get_property(self.selected_layout)
 
@@ -454,7 +460,7 @@ class XWatcher:
             self.current_vm.keyboard_layout = new_property
             self.keyboard_layout.current_layout = new_property
 
-    def event_reader(self, callback):
+    def event_reader(self, callback: Callable) -> None:
         """Poll for X events related to keyboard layout"""
         try:
             for event in iter(self.conn.poll_for_event, None):
@@ -473,11 +479,13 @@ class XWatcher:
             callback()
 
 
-def get_monitor_layout():
+def get_monitor_layout() -> list:
     """Get list of monitors and their size/position"""
     outputs = []
 
-    with subprocess.Popen(["xrandr", "-q"], stdout=subprocess.PIPE) as proc:
+    with subprocess.Popen(["xrandr", "-q"],
+                          stdout=subprocess.PIPE) as proc:
+        assert proc.stdout is not None
         for line in proc.stdout:
             line = line.decode()
             if not line.startswith("Screen") and not line.startswith(" "):
@@ -530,10 +538,10 @@ class DAEMONLauncher:
 
     def __init__(
         self,
-        app: qubesadmin.app.QubesBase,
-        enabled_services,
-        vm_names=None,
-        kde=False,
+        app: QubesBase,
+        enabled_services: Iterable[str],
+        vm_names: list[str] | None=None,
+        kde: bool=False,
     ):
         """Initialize DAEMONLauncher.
 
@@ -551,7 +559,9 @@ class DAEMONLauncher:
         # for cleanup purpose
         self.xid_cache = {}
 
-    async def send_monitor_layout(self, vm, layout=None, startup=False):
+    async def send_monitor_layout(self, vm: QubesVM,
+                                  layout: list | None = None,
+                                  startup: bool = False) -> None:
         """Send monitor layout to a given VM
 
         This function is a coroutine.
@@ -602,7 +612,7 @@ class DAEMONLauncher:
         except subprocess.CalledProcessError as e:
             vm.log.warning("Failed to send monitor layout: %s", e.stderr)
 
-    def send_monitor_layout_all(self):
+    def send_monitor_layout_all(self) -> None:
         """Send monitor layout to all (running) VMs"""
         monitor_layout = get_monitor_layout()
         for vm in self.app.domains:
@@ -619,7 +629,7 @@ class DAEMONLauncher:
             )
 
     @staticmethod
-    def kde_guid_args(vm):
+    def kde_guid_args(vm: QubesVM) -> list[str]:
         """Return KDE-specific arguments for gui-daemon, if applicable"""
 
         guid_cmd = []
@@ -649,7 +659,7 @@ class DAEMONLauncher:
         ]
         return guid_cmd
 
-    def common_guid_args(self, vm):
+    def common_guid_args(self, vm: QubesVM) -> list[str]:
         """Common qubes-guid arguments for PV(H), HVM and Stubdomain"""
 
         guid_cmd = [
@@ -684,28 +694,28 @@ class DAEMONLauncher:
         return guid_cmd
 
     @staticmethod
-    def write_guid_config(config_path, config):
+    def write_guid_config(config_path: str, config: str) -> None:
         """Write guid configuration to a file"""
         with open(config_path, "w", encoding="ascii") as config_file:
             config_file.write(config)
 
     @staticmethod
-    def guid_pidfile(xid):
+    def guid_pidfile(xid: object) -> str:
         """Helper function to construct a GUI pidfile path"""
         return "/var/run/qubes/guid-running.{}".format(xid)
 
     @staticmethod
-    def guid_config_file(xid):
+    def guid_config_file(xid: object) -> str:
         """Helper function to construct a GUI configuration file path"""
         return "/var/run/qubes/guid-conf.{}".format(xid)
 
     @staticmethod
-    def pacat_pidfile(xid):
+    def pacat_pidfile(xid: object) -> str:
         """Helper function to construct an AUDIO pidfile path"""
         return "/var/run/qubes/pacat.{}".format(xid)
 
     @staticmethod
-    def pacat_domid(vm):
+    def pacat_domid(vm: QubesVM) -> object:
         """Determine target domid for an AUDIO daemon"""
         xid = (
             vm.stubdom_xid
@@ -715,7 +725,8 @@ class DAEMONLauncher:
         )
         return xid
 
-    async def start_gui_for_vm(self, vm, monitor_layout=None):
+    async def start_gui_for_vm(self, vm: QubesVM,
+                               monitor_layout: list[str] | None=None) -> None:
         """Start GUI daemon (qubes-guid) connected directly to a VM
 
         This function is a coroutine.
@@ -747,7 +758,9 @@ class DAEMONLauncher:
 
         await self.send_monitor_layout(vm, layout=monitor_layout, startup=True)
 
-    async def start_gui_for_stubdomain(self, vm, force=False):
+    async def start_gui_for_stubdomain(self,
+                                       vm: QubesVM,
+                                       force: bool = False) -> None:
         """Start GUI daemon (qubes-guid) connected to a stubdomain
 
         This function is a coroutine.
@@ -778,7 +791,7 @@ class DAEMONLauncher:
 
         await asyncio.create_subprocess_exec(*guid_cmd)
 
-    async def start_audio_for_vm(self, vm):
+    async def start_audio_for_vm(self, vm: QubesVM) -> None:
         """Start AUDIO daemon (pacat-simple-vchan) connected directly to a VM
 
         This function is a coroutine.
@@ -797,7 +810,8 @@ class DAEMONLauncher:
 
         await asyncio.create_subprocess_exec(*pacat_cmd)
 
-    async def start_gui(self, vm, force_stubdom=False, monitor_layout=None):
+    async def start_gui(self, vm: QubesVM, force_stubdom: bool = False,
+                        monitor_layout: list[str] | None = None) -> None:
         """Start GUI daemon regardless of start event.
 
         This function is a coroutine.
@@ -823,7 +837,7 @@ class DAEMONLauncher:
         if not os.path.exists(self.guid_pidfile(vm.xid)):
             await self.start_gui_for_vm(vm, monitor_layout=monitor_layout)
 
-    async def start_audio(self, vm):
+    async def start_audio(self, vm: QubesVM) -> None:
         """Start AUDIO daemon regardless of start event.
 
         This function is a coroutine.
@@ -846,7 +860,7 @@ class DAEMONLauncher:
         else:
             vm.log.info("AUDIO process exists. Skipping.")
 
-    def on_domain_spawn(self, vm, _event, **kwargs):
+    def on_domain_spawn(self, vm: QubesVM, _event: str, **kwargs) -> None:
         """Handler of 'domain-spawn' event, starts GUI daemon for stubdomain"""
 
         if not self.is_watched(vm) or getattr(vm, "is_preload", False):
@@ -868,9 +882,10 @@ class DAEMONLauncher:
             ):
                 asyncio.ensure_future(self.start_gui_for_stubdomain(vm))
         except qubesadmin.exc.QubesException as e:
-            vm.log.warning("Failed to start GUI for %s: %s", vm.name, str(e))
+            vm.log.warning("Failed to start GUI for %s: %s",
+                           vm.name, str(e))
 
-    def on_domain_start(self, vm, _event, **kwargs):
+    def on_domain_start(self, vm: QubesVM, _event: str, **kwargs) -> None:
         """Handler of 'domain-start' event, starts GUI/AUDIO daemon for
         actual VM"""
 
@@ -888,7 +903,8 @@ class DAEMONLauncher:
             ):
                 asyncio.ensure_future(self.start_gui_for_vm(vm))
         except qubesadmin.exc.QubesException as e:
-            vm.log.warning("Failed to start GUI for %s: %s", vm.name, str(e))
+            vm.log.warning("Failed to start GUI for %s: %s",
+                           vm.name, str(e))
 
         try:
             if (
@@ -899,9 +915,11 @@ class DAEMONLauncher:
             ):
                 asyncio.ensure_future(self.start_audio_for_vm(vm))
         except qubesadmin.exc.QubesException as e:
-            vm.log.warning("Failed to start AUDIO for %s: %s", vm.name, str(e))
+            vm.log.warning("Failed to start AUDIO for %s: %s",
+                           vm.name, str(e))
 
-    def on_connection_established(self, _subject, _event, **_kwargs):
+    def on_connection_established(self, _subject: str,
+                                  _event: object, **_kwargs) -> None:
         """Handler of 'connection-established' event, used to launch GUI/AUDIO
         daemon for domains started before this tool."""
         monitor_layout = get_monitor_layout()
@@ -933,9 +951,10 @@ class DAEMONLauncher:
                     ):
                         asyncio.ensure_future(self.start_gui_for_stubdomain(vm))
             except qubesadmin.exc.QubesDaemonCommunicationError as e:
-                vm.log.warning("Failed to handle %s: %s", vm.name, str(e))
+                vm.log.warning("Failed to handle %s: %s",
+                               vm.name, str(e))
 
-    def on_domain_stopped(self, vm, _event, **_kwargs):
+    def on_domain_stopped(self, vm: QubesVM, _event: str, **_kwargs) -> None:
         """Handler of 'domain-stopped' event, cleans up"""
 
         if not self.is_watched(vm):
@@ -954,7 +973,8 @@ class DAEMONLauncher:
             self.cleanup_guid(stubdom_xid)
             self.cleanup_pacat_process(stubdom_xid)
 
-    def on_property_preload_set(self, vm, _event, **_kwargs):
+    def on_property_preload_set(self, vm: QubesVM, _event: str,
+                                **_kwargs) -> None:
         """Handler of 'property-reset:is_preload' event, used to launch
         GUI/AUDIO daemon after preload is marked as used."""
         if (
@@ -974,15 +994,18 @@ class DAEMONLauncher:
                 asyncio.ensure_future(self.start_audio(vm))
             self.xid_cache[vm.name] = vm.xid, vm.stubdom_xid
         except qubesadmin.exc.QubesDaemonCommunicationError as e:
-            vm.log.warning("Failed to handle %s: %s", vm.name, str(e))
+            vm.log.warning("Failed to handle %s: %s",
+                           vm.name, str(e))
 
-    def on_property_audiovm_set(self, vm, event, **kwargs):
+    def on_property_audiovm_set(self, vm: QubesVM,
+                                event: str, **kwargs) -> None:
         """Handler for catching event related to dynamic AudioVM set/unset"""
         if vm.name not in self.xid_cache:
             try:
                 self.xid_cache[vm.name] = vm.xid, vm.stubdom_xid
             except qubesadmin.exc.QubesDaemonAccessError as e:
-                log.error("vm.name: failed to determine XID: %s", str(e))
+                log.error("vm.name: failed to determine XID: %s",
+                          str(e))
                 return
         xid, stubdom_xid = self.xid_cache[vm.name]
         # We ensure that on_property_audiovm_set is really called with
@@ -1009,7 +1032,7 @@ class DAEMONLauncher:
         ):
             asyncio.ensure_future(self.start_audio(vm))
 
-    def cleanup_guid(self, xid):
+    def cleanup_guid(self, xid: object) -> None:
         """
         Clean up after qubes-guid.
 
@@ -1020,7 +1043,7 @@ class DAEMONLauncher:
         if os.path.exists(config_path):
             os.unlink(config_path)
 
-    def cleanup_pacat_process(self, xid):
+    def cleanup_pacat_process(self, xid: object) -> None:
         """
         Clean up after pacat-simple-vchan.
 
@@ -1044,7 +1067,7 @@ class DAEMONLauncher:
             )
         os.unlink(config_file)
 
-    def register_events(self, events):
+    def register_events(self, events: EventsDispatcher) -> None:
         """Register domain startup events in app.events dispatcher"""
         events.add_handler("domain-spawn", self.on_domain_spawn)
         events.add_handler("domain-start", self.on_domain_start)
@@ -1064,7 +1087,7 @@ class DAEMONLauncher:
         ]:
             events.add_handler(event, self.on_property_audiovm_set)
 
-    def is_watched(self, vm):
+    def is_watched(self, vm: QubesVM) -> bool:
         """
         Should we watch this VM for changes
         """
@@ -1076,7 +1099,7 @@ class DAEMONLauncher:
         return vm.name in self.vm_names
 
 
-def main():
+def main() -> None:
     """Main function of qvm-start-daemon tool"""
 
     only_if_service_enabled = ["guivm", "audiovm"]

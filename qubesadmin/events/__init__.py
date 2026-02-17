@@ -24,7 +24,7 @@ import asyncio
 import fnmatch
 import subprocess
 import typing
-from typing import Callable, Any
+from typing import Callable, Any, TypeAlias, ParamSpec, Concatenate
 from asyncio import StreamWriter, StreamReader
 
 import qubesadmin.config
@@ -33,7 +33,9 @@ from qubesadmin.app import QubesBase
 from qubesadmin.device_protocol import VirtualDevice, Port, UnknownDevice
 from qubesadmin.vm import QubesVM
 
-type Handler = Callable[[QubesVM | None, str, ...], Any]  # noqa: ANN401
+P = ParamSpec
+Handler: TypeAlias = Callable[Concatenate[QubesVM | None, str, P],
+Any]  # noqa: ANN401
 
 class EventsDispatcher:
     ''' Events dispatcher, responsible for receiving events and calling
