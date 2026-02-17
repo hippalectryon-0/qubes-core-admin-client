@@ -26,9 +26,7 @@ import datetime
 import sys
 import itertools
 from argparse import ArgumentParser, Namespace
-from typing import Iterable
-
-from mypyc.ir.ops import Sequence
+from typing import Iterable, Sequence
 
 import qubesadmin.exc
 import qubesadmin.firewall
@@ -46,6 +44,7 @@ class RuleAction(argparse.Action):
 
     Or a mix of them.
     '''
+    # pylint: disable=redefined-outer-name
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
                  option_string: str | None = None) \

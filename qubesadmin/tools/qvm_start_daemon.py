@@ -42,13 +42,12 @@ import qubesadmin.vm
 from qubesadmin.app import QubesBase
 from qubesadmin.events import EventsDispatcher
 from qubesadmin.tools import xcffibhelpers
+from qubesadmin.vm import QubesVM
 
 # pylint: disable=wrong-import-position,wrong-import-order
 from Xlib import X, XK
 from Xlib.display import Display
 from Xlib.error import DisplayConnectionError
-
-from qubesadmin.vm import QubesVM
 
 GUI_DAEMON_PATH = "/usr/bin/qubes-guid"
 PACAT_DAEMON_PATH = "/usr/bin/pacat-simple-vchan"

@@ -229,7 +229,6 @@ def main(args: Sequence[str] | None=None, app: QubesBase | None=None) -> int:
         args.func(args)
     except qubesadmin.exc.QubesException as e:
         parser.error_runtime(str(e))
-        return 1
     return 0
 
 

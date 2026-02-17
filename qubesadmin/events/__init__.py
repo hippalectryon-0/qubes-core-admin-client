@@ -33,7 +33,7 @@ from qubesadmin.app import QubesBase
 from qubesadmin.device_protocol import VirtualDevice, Port, UnknownDevice
 from qubesadmin.vm import QubesVM
 
-P = ParamSpec
+P = ParamSpec # pylint: disable=invalid-name
 Handler: TypeAlias = Callable[Concatenate[QubesVM | None, str, P],
 Any]  # noqa: ANN401
 

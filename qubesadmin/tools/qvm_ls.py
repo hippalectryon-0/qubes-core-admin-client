@@ -175,7 +175,7 @@ def process_vm(vm: QubesVM) -> None:
         PropertyColumn(prop_name)
 
 
-T_c = TypeVar("T_c", bound=Callable)
+T_c = TypeVar("T_c", bound=Callable)# pylint: disable=invalid-name
 
 def flag(field: int) -> Callable:
     '''Mark method as flag field.
@@ -198,7 +198,7 @@ def simple_flag(field: int, letter: str, attr: str, doc: str | None=None)\
     :param str letter: The letter to show.
     '''
 
-    def helper(self: FlagsColumn, vm: QubesVM) -> str | None:
+    def helper(self: "FlagsColumn", vm: QubesVM) -> str | None:
         # pylint: disable=missing-docstring,unused-argument
         try:
             value = getattr(vm, attr)

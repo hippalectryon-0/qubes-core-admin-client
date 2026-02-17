@@ -78,7 +78,8 @@ class _Remove(argparse.Action):
                          default=default,
                          help='remove pool')
 
-    def __call__(self, parser: ArgumentParser, namespace: Namespace, values: str,
+    def __call__(self, parser: ArgumentParser,
+                 namespace: Namespace, values: str,
                  option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'remove')
         setattr(namespace, 'name', values)

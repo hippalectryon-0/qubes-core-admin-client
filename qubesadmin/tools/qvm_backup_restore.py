@@ -32,7 +32,6 @@ from qubesadmin.backup.dispvm import RestoreInDisposableVM
 import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.utils
-from qubesadmin.vm import QubesVM
 
 parser = qubesadmin.tools.QubesArgumentParser()
 

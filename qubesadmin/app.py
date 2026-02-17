@@ -34,7 +34,7 @@ import logging
 import typing
 from logging import Logger
 from subprocess import Popen
-from typing import Generator, Iterable, BinaryIO, IO
+from typing import Generator, Iterable, IO
 
 import qubesadmin.base
 import qubesadmin.exc

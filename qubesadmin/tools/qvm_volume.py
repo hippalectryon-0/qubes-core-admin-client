@@ -29,11 +29,14 @@ import os
 import sys
 
 import collections
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.utils
+from qubesadmin.app import QubesBase
 
 
 def prepare_table(vd_list, full=False):
@@ -383,11 +386,11 @@ def get_parser():
     return parser
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     """Main routine of :program:`qvm-volume`."""
     parser = get_parser()
     try:
-        args = parser.parse_args(args, app=app)
+        args: Namespace = parser.parse_args(args, app=app)
         args.func(args)
     except qubesadmin.exc.QubesException as e:
         parser.print_error(str(e))

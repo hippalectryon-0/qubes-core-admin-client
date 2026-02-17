@@ -21,6 +21,7 @@
 
 import argparse
 from argparse import ArgumentParser
+from argparse import Namespace
 import base64
 import collections
 import configparser
@@ -40,7 +41,6 @@ import subprocess
 import sys
 import tempfile
 import typing
-from argparse import Namespace
 from typing import Sequence, Iterable, Callable, TypeVar
 
 import tqdm
@@ -112,6 +112,7 @@ class RepoOptCallback(argparse.Action):
     """Parser action for storing repository related options, like
     --enablerepo, --disablerepo, etc. Store them in a single list, to preserve
     relative order."""
+    #  pylint: disable=redefined-outer-name
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
                  option_string: str | None = None) -> None:
@@ -157,7 +158,7 @@ def get_parser() -> ArgumentParser:
         metavar='REPOID', dest='repos',
         help=('Enable additional repositories by an id or a glob.'
             ' Can be used more than once.'))
-    parser_main.add_argument('--disablerepo', 
+    parser_main.add_argument('--disablerepo',
                              action=RepoOptCallback,
         default=[],
         metavar='REPOID', dest='repos',
@@ -175,7 +176,7 @@ def get_parser() -> ArgumentParser:
         help='Set repository metadata as expired before running the command.')
     parser_main.add_argument('--cachedir', default=CACHE_DIR,
         help='Specify cache directory.')
-    parser_main.add_argument('--keep-cache', 
+    parser_main.add_argument('--keep-cache',
                              action='store_true', default=False,
         help='Keep downloaded packages in cache dir')
     parser_main.add_argument('--yes', action='store_true',
@@ -232,17 +233,17 @@ def get_parser() -> ArgumentParser:
                 ' locally but not in repos) templates.'))
         parser_x.add_argument('--upgrades', action='store_true',
             help='Show available upgrades.')
-        parser_x.add_argument('--all-versions', 
+        parser_x.add_argument('--all-versions',
                               action='store_true',
             help='Show all available versions, not only the latest.')
         readable = parser_x.add_mutually_exclusive_group()
-        readable.add_argument('--machine-readable', 
+        readable.add_argument('--machine-readable',
                               action='store_true',
             help='Enable machine-readable output.')
-        readable.add_argument('--machine-readable-json', 
+        readable.add_argument('--machine-readable-json',
                               action='store_true',
             help='Enable machine-readable output (JSON).')
-        parser_x.add_argument('templates', nargs='*', 
+        parser_x.add_argument('templates', nargs='*',
                               metavar='TEMPLATESPEC')
 
     # qvm-template search
@@ -251,7 +252,7 @@ def get_parser() -> ArgumentParser:
     parser_search.add_argument('--all', action='store_true',
         help=('Search also in the template description and URL. In addition,'
             ' the criterion are evaluated with OR instead of AND.'))
-    parser_search.add_argument('templates', nargs='*', 
+    parser_search.add_argument('templates', nargs='*',
                                metavar='PATTERN')
 
     # qvm-template remove
@@ -260,7 +261,7 @@ def get_parser() -> ArgumentParser:
     parser_remove.add_argument('--disassoc', action='store_true',
             help=('Also disassociate VMs from the templates to be removed.'
                 ' This creates a dummy template for the VMs to link with.'))
-    parser_remove.add_argument('templates', nargs='*', 
+    parser_remove.add_argument('templates', nargs='*',
                                metavar='TEMPLATE')
 
     # qvm-template purge
@@ -1056,7 +1057,7 @@ def download(
             package_hdrs[name] = package_hdr
     return package_hdrs
 
-T_c = TypeVar("T_c", bound=Callable)
+T_c = TypeVar("T_c", bound=Callable)#pylint: disable=invalid-name
 def locked(func: T_c) -> T_c:
     """Execute given function under a lock in *LOCK_FILE*"""
     @functools.wraps(func)
@@ -1465,7 +1466,7 @@ def list_templates(args: argparse.Namespace,
             print(status.title(), flush=True)
             qubesadmin.tools.print_table(grp)
 
-T_it = TypeVar("T_it", bound=Iterable)
+T_it = TypeVar("T_it", bound=Iterable)#pylint: disable=invalid-name
 def search(args: argparse.Namespace, app: QubesBase) -> None:
     """Command that searches template details for given patterns.
 
