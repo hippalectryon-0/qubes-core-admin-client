@@ -20,7 +20,7 @@
 
 """Storage subsystem."""
 from __future__ import annotations
-from typing import BinaryIO, Generator, TYPE_CHECKING
+from typing import BinaryIO, Generator, TYPE_CHECKING, IO
 
 import qubesadmin.exc
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ class Volume:
         self._info = None
 
     def _qubesd_call(self, func_name: str, payload: bytes | None = None,
-                     payload_stream: BinaryIO | None = None) -> bytes:
+                     payload_stream: IO | None = None) -> bytes:
         """Make a call to qubesd regarding this volume
 
         :param str func_name: API function name, like `Info` or `Resize`
@@ -295,7 +295,7 @@ class Volume:
         """
         self._qubesd_call('Import', payload_stream=stream)
 
-    def import_data_with_size(self, stream: BinaryIO, size: object) -> None:
+    def import_data_with_size(self, stream: IO, size: object) -> None:
         """ Import volume data from a given file-like object, informing qubesd
         that data has a specific size.
 

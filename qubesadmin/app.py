@@ -34,7 +34,7 @@ import logging
 import typing
 from logging import Logger
 from subprocess import Popen
-from typing import Generator, Iterable, BinaryIO
+from typing import Generator, Iterable, BinaryIO, IO
 
 import qubesadmin.base
 import qubesadmin.exc
@@ -649,7 +649,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
     def qubesd_call(
         self, dest: str | None, method: str, arg: str | None=None,
-            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+            payload: bytes | None=None, payload_stream: IO | None=None
     ) -> bytes:
         """
         Execute Admin API method.
@@ -705,7 +705,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
 
     @staticmethod
     def _call_with_stream(command: str | list[str], payload: bytes | None,
-                          payload_stream: BinaryIO)\
+                          payload_stream: IO)\
             -> tuple[Popen, bytes, bytes]:
         """Helper method to pass data to qubesd. Calls a command with
         payload and payload_stream as input.
@@ -849,7 +849,7 @@ class QubesLocal(QubesBase):
 
     def qubesd_call(
         self, dest: str | None, method: str, arg: str | None=None,
-            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+            payload: bytes | None=None, payload_stream: IO | None=None
     ) -> bytes:
         """
         Execute Admin API method.
@@ -1027,7 +1027,7 @@ class QubesRemote(QubesBase):
 
     def qubesd_call(
         self, dest: str | None, method: str, arg: str | None=None,
-            payload: bytes | None=None, payload_stream: BinaryIO | None=None
+            payload: bytes | None=None, payload_stream: IO | None=None
     ) -> bytes:
         """
         Execute Admin API method.

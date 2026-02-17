@@ -31,10 +31,18 @@ import subprocess
 import sys
 
 import grp
+import typing
+from argparse import Namespace
+from typing import Iterable
 
 import qubesadmin
 import qubesadmin.exc
 import qubesadmin.tools
+import qubesadmin.config
+from qubesadmin.app import QubesBase
+from qubesadmin.storage import Pool
+from qubesadmin.vm import QubesVM
+
 try:
     # pylint: disable=wrong-import-position
     import qubesadmin.events.utils
@@ -64,7 +72,7 @@ parser.add_argument('dir', action='store',
     help='Template directory')
 
 
-def get_root_img_size(source_dir):
+def get_root_img_size(source_dir: str) -> int:
     '''Extract size of root.img to be imported'''
     root_path = os.path.join(source_dir, 'root.img')
     # deal with both cases: split tar and non-split tar
@@ -87,7 +95,7 @@ def get_root_img_size(source_dir):
     return root_size
 
 
-def import_root_img(vm, source_dir):
+def import_root_img(vm: QubesVM, source_dir: str) -> None:
     '''Import root.img into VM object'''
 
     # Try not break existing data in the volume in case of import failure. If
@@ -111,14 +119,17 @@ def import_root_img(vm, source_dir):
                 stdin=pkg_f,
                 stdout=subprocess.PIPE
             ) as rpm2archive:
+                assert rpm2archive.stdout is not None
                 with subprocess.Popen(
                     ['tar', 'xzSOf', '-', '--wildcards', '*/root.img.part.*'],
                     stdin=rpm2archive.stdout,
                     stdout=subprocess.PIPE
                 ) as tar_parts:
+                    assert tar_parts.stdout is not None
                     with subprocess.Popen(['tar', 'xSOf', '-'],
                             stdin=tar_parts.stdout,
                             stdout=subprocess.PIPE) as tar_root_img:
+                        assert tar_root_img.stdout is not None
                         rpm2archive.stdout.close()
                         tar_parts.stdout.close()
                         vm.volumes['root'].import_data_with_size(
@@ -133,6 +144,7 @@ def import_root_img(vm, source_dir):
     elif os.path.exists(root_path + '.tar'):
         with subprocess.Popen(['tar', 'xSOf', root_path + '.tar'],
                 stdout=subprocess.PIPE) as tar:
+            assert tar.stdout is not None
             vm.volumes['root'].import_data_with_size(
                 stream=tar.stdout, size=root_size)
         if tar.returncode != 0:
@@ -142,7 +154,7 @@ def import_root_img(vm, source_dir):
             # check if root.img was already overwritten, i.e. if the source
             # and destination paths are the same
             vid = vm.volumes['root'].vid
-            pool = vm.app.pools[vm.volumes['root'].pool]
+            pool = typing.cast(Pool, vm.app.pools[vm.volumes['root'].pool])
             if (pool.driver in ('file', 'file-reflink')
                     and root_path == os.path.join(pool.config['dir_path'],
                                                   vid + '.img')):
@@ -153,12 +165,13 @@ def import_root_img(vm, source_dir):
                 stream=root_file, size=root_size)
 
 
-def reset_private_img(vm):
+def reset_private_img(vm: QubesVM) -> None:
     '''Clear private volume'''
     vm.volumes['private'].clear_data()
 
 
-def import_appmenus(vm, source_dir, skip_generate=True):
+def import_appmenus(vm: QubesVM, source_dir: str, skip_generate: bool=True)\
+        -> None:
     """Import appmenus settings into VM object (later: GUI VM)
 
     :param vm: QubesVM object of just imported template
@@ -181,7 +194,7 @@ def import_appmenus(vm, source_dir, skip_generate=True):
     # store the whitelists in VM features
     # separated by spaces should be ok as there should be no spaces in the file
     # name according to the FreeDesktop spec
-    source_dir = pathlib.Path(source_dir)
+    source_dir: pathlib.Path = pathlib.Path(source_dir)
     try:
         with open(source_dir / 'vm-whitelisted-appmenus.list', 'r',
                   encoding='ascii') as fd:
@@ -220,12 +233,12 @@ def import_appmenus(vm, source_dir, skip_generate=True):
     except subprocess.CalledProcessError as e:
         vm.log.warning('Failed to set default application list: %s', e)
 
-def parse_template_config(path):
+def parse_template_config(path: str) -> dict[str, str]:
     '''Parse template.conf from template package. (KEY=VALUE format)'''
     with open(path, 'r', encoding='ascii') as fd:
         return dict(line.rstrip('\n').split('=', 1) for line in fd)
 
-async def call_postinstall_service(vm):
+async def call_postinstall_service(vm: QubesVM) -> None:
     '''Call qubes.PostInstall service
 
     And adjust related settings (netvm, features).
@@ -250,7 +263,8 @@ async def call_postinstall_service(vm):
                 # pylint: disable=no-member
                 await asyncio.wait_for(
                     qubesadmin.events.utils.wait_for_domain_shutdown([vm]),
-                    qubesadmin.config.defaults['shutdown_timeout'])
+                    typing.cast(int,
+                                qubesadmin.config.defaults['shutdown_timeout']))
             except asyncio.TimeoutError:
                 try:
                     vm.kill()
@@ -258,6 +272,7 @@ async def call_postinstall_service(vm):
                     pass
         else:
             timeout = qubesadmin.config.defaults['shutdown_timeout']
+            assert isinstance(timeout, int)
             while timeout >= 0:
                 if vm.is_halted():
                     break
@@ -271,14 +286,15 @@ async def call_postinstall_service(vm):
     finally:
         vm.netvm = qubesadmin.DEFAULT
 
-def validate_ip(ip):
+def validate_ip(ip: str) -> bool:
     """Check if given string has a valid IP address syntax"""
     try:
-        return all(0 <= int(part) <= 255 for part in ip.split('.', 3))
+        return all(0 <= int(part) <= 255 for part in
+                   ip.split('.', 3))
     except ValueError:
         return False
 
-async def post_install(args):
+async def post_install(args: Namespace) -> int:
     '''Handle post-installation tasks'''
 
     app = args.app
@@ -349,7 +365,8 @@ async def post_install(args):
     return 0
 
 
-def import_template_config(args, conf_path, vm):
+def import_template_config(args: Namespace, conf_path: str, vm: QubesVM) \
+        -> None:
     """
     Parse template.conf and apply its content to the just installed TemplateVM
 
@@ -404,7 +421,7 @@ def import_template_config(args, conf_path, vm):
                 'Currently only supports setting kernel to (none)')
 
 
-def pre_remove(args):
+def pre_remove(args: Namespace) -> int:
     '''Handle pre-removal tasks'''
     app = args.app
     app.log.name = "qvm-template-postprocess"
@@ -429,7 +446,7 @@ def pre_remove(args):
     return 0
 
 
-def is_chroot():
+def is_chroot() -> bool:
     '''Detect if running inside chroot'''
     try:
         stat_root = os.stat('/')
@@ -441,9 +458,10 @@ def is_chroot():
         return False
 
 
-def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:
+def main(args: Iterable[str] | None=None, app: QubesBase | None=None)\
+        -> int | None:
     '''Main function of qvm-template-postprocess'''
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
 
     if is_chroot():
         print('Running in chroot, ignoring request. Import template with:',
