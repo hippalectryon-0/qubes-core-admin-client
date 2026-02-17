@@ -25,6 +25,7 @@
 from __future__ import print_function
 
 import argparse
+from argparse import _SubParsersAction
 import os
 import sys
 
@@ -37,10 +38,13 @@ import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.utils
 from qubesadmin.app import QubesBase
+from qubesadmin.storage import Volume
+from qubesadmin.tools import QubesArgumentParser
 
 
-def prepare_table(vd_list, full=False):
-    """ Converts a list of :py:class:`VolumeData` objects to a list of tupples
+def prepare_table(vd_list: Iterable["VolumeData"], full: bool = False)\
+        -> list[tuple[str, str, str, str]]:
+    """ Converts a list of :py:class:`VolumeData` objects to a list of tuples
         for the :py:func:`qubes.tools.print_table`.
 
         If :program:`qvm-volume` is running in a TTY, it will ommit duplicate
@@ -49,7 +53,7 @@ def prepare_table(vd_list, full=False):
         :param list vd_list: List of :py:class:`VolumeData` objects.
         :param bool full:    If set to true duplicate data is printed even when
                              running from TTY.
-        :returns: list of tupples
+        :returns: list of tuples
     """
     output = []
     output += [('POOL:VOLUME', 'VMNAME', 'VOLUME_NAME', 'REVERT_POSSIBLE')]
@@ -76,7 +80,7 @@ class VolumeData:
         the domains a volume is attached to.
     """
     # pylint: disable=too-few-public-methods
-    def __init__(self, volume):
+    def __init__(self, volume: Volume):
         self.pool = volume.pool
         self.vid = volume.vid
         if volume.revisions:
@@ -85,14 +89,16 @@ class VolumeData:
             self.revisions = 'No'
         self.domains = []
 
-    def __lt__(self, other):
-        return (self.pool, self.vid) < (other.pool, other.vid)
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, VolumeData):
+            return (self.pool, self.vid) < (other.pool, other.vid)
+        return NotImplemented
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{!s}:{!s}".format(self.pool, self.vid)
 
 
-def info_volume(args):
+def info_volume(args: Namespace) -> None:
     """ Show info about selected volume """
     volume = args.volume
     info_items = (
@@ -134,7 +140,7 @@ def info_volume(args):
             print('List of available revisions (for revert): none')
 
 
-def config_volume(args):
+def config_volume(args: Namespace) -> None:
     """ Change property of selected volume """
     volume = args.volume
     if args.property not in ('rw', 'revisions_to_keep', 'ephemeral'):
@@ -143,7 +149,7 @@ def config_volume(args):
     setattr(volume, args.property, args.value)
 
 
-def import_volume(args):
+def import_volume(args: Namespace) -> None:
     """ Import a file into volume """
 
     volume = args.volume
@@ -173,7 +179,7 @@ def import_volume(args):
             input_file.close()
 
 
-def clear_volume(args):
+def clear_volume(args: Namespace) -> None:
     """ Clear the volume data. """
 
     if not args.force:
@@ -185,7 +191,7 @@ def clear_volume(args):
     args.volume.clear_data()
 
 
-def list_volumes(args):
+def list_volumes(args: Namespace) -> None:
     """ Called by the parser to execute the qvm-volume list subcommand. """
     app = args.app
 
@@ -231,7 +237,7 @@ def list_volumes(args):
         prepare_table(result, full=getattr(args, 'full', False)))
 
 
-def revert_volume(args):
+def revert_volume(args: Namespace) -> None:
     """ Revert volume to previous state """
     volume = args.volume
     if args.revision:
@@ -246,7 +252,7 @@ def revert_volume(args):
     volume.revert(revision)
 
 
-def extend_volumes(args):
+def extend_volumes(args: Namespace) -> None:
     """ Called by the parser to execute the :program:`qvm-volume extend`
         subcommand
     """
@@ -262,7 +268,7 @@ def extend_volumes(args):
     volume.resize(size)
 
 
-def init_list_parser(sub_parsers):
+def init_list_parser(sub_parsers: _SubParsersAction) -> None:
     """ Configures the parser for the :program:`qvm-volume list` subcommand """
     # pylint: disable=protected-access
     list_parser = sub_parsers.add_parser('list', aliases=('ls', 'l'),
@@ -280,7 +286,7 @@ def init_list_parser(sub_parsers):
     list_parser.set_defaults(func=list_volumes)
 
 
-def init_revert_parser(sub_parsers):
+def init_revert_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'revert' action related options """
     revert_parser = sub_parsers.add_parser(
         'revert', aliases=('rv', 'r'),
@@ -295,7 +301,7 @@ def init_revert_parser(sub_parsers):
     revert_parser.set_defaults(func=revert_volume)
 
 
-def init_extend_parser(sub_parsers):
+def init_extend_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'extend' action related options """
     extend_parser = sub_parsers.add_parser(
         "resize", aliases=('extend', ), help="resize volume for domain")
@@ -309,7 +315,7 @@ def init_extend_parser(sub_parsers):
     extend_parser.set_defaults(func=extend_volumes)
 
 
-def init_info_parser(sub_parsers):
+def init_info_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'info' action related options """
     info_parser = sub_parsers.add_parser(
         'info', aliases=('i',), help='info about volume')
@@ -323,7 +329,7 @@ def init_info_parser(sub_parsers):
     info_parser.set_defaults(func=info_volume)
 
 
-def init_config_parser(sub_parsers):
+def init_config_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'info' action related options """
     info_parser = sub_parsers.add_parser(
         'config', aliases=('c', 'set', 's'),
@@ -335,7 +341,7 @@ def init_config_parser(sub_parsers):
     info_parser.set_defaults(func=config_volume)
 
 
-def init_import_parser(sub_parsers):
+def init_import_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'import' action related options """
     import_parser = sub_parsers.add_parser(
         'import', help='import volume data')
@@ -350,7 +356,7 @@ def init_import_parser(sub_parsers):
     import_parser.set_defaults(func=import_volume)
 
 
-def init_clear_parser(sub_parsers):
+def init_clear_parser(sub_parsers: _SubParsersAction) -> None:
     """ Add 'clear' action related options """
     clear_parser = sub_parsers.add_parser(
         'clear', help='clear volume data')
@@ -361,7 +367,7 @@ def init_clear_parser(sub_parsers):
     clear_parser.set_defaults(func=clear_volume)
 
 
-def get_parser():
+def get_parser() -> QubesArgumentParser:
     """Create :py:class:`argparse.ArgumentParser` suitable for
     :program:`qvm-volume`.
     """
