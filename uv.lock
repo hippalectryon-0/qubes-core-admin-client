@@ -25,6 +25,7 @@ current-dev = [
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "pylint", specifier = ">=4.0.4" },
     { name = "python3-xlib", specifier = ">=0.15" },
+    { name = "rpm", specifier = ">=0.4.0" },
     { name = "setuptools", specifier = ">=82.0.0" },
     { name = "sphinx", specifier = ">=3.5.3" },
     { name = "types-lxml", specifier = ">=2026.1.1" },
@@ -996,6 +997,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ae/f9/41dc953bbeb056c17d5f7a519f50fdf010bd0553be2d630bc69d1e022703/roman_numerals-4.1.0.tar.gz", hash = "sha256:1af8b147eb1405d5839e78aeb93131690495fe9da5c91856cb33ad55a7f1e5b2", size = 9077, upload-time = "2025-12-17T18:25:34.381Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/54/6f679c435d28e0a568d8e8a7c0a93a09010818634c3c3907fc98d8983770/roman_numerals-4.1.0-py3-none-any.whl", hash = "sha256:647ba99caddc2cc1e55a51e4360689115551bf4476d90e8162cf8c345fe233c7", size = 7676, upload-time = "2025-12-17T18:25:33.098Z" },
+]
+
+[[package]]
+name = "rpm"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/ce/8db44d2b8fd6713a59e391d12b6816854b7bee8121ae7370c2d565de4265/rpm-0.4.0.tar.gz", hash = "sha256:79adbefa82318e2625d6e4fa16666cf88543498a1f2c10dc3879165d1dc3ecee", size = 11237, upload-time = "2025-04-08T08:57:26.261Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/17/96/0f4e9ba318c6e09b76357ee88d6c73101f8799f8ed707cfdc1df131b4234/rpm-0.4.0-py3-none-any.whl", hash = "sha256:0ef697cb5fb73bf9300a13d423529d7ec215239bf95c5ecb145e6610645f6067", size = 5151, upload-time = "2025-04-08T08:57:24.971Z" },
 ]
 
 [[package]]

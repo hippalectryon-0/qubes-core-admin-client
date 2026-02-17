@@ -19,6 +19,7 @@ current-dev = [  # dev-depencencies
     "black>=26.1.0",
     "mypy>=1.19.1",
     "python3-xlib>=0.15",
+    "rpm>=0.4.0",
 ]
 future-dev = [  # those tools are very efficient but not packaged for major distributions yet
     "ruff>=0.15.1",
