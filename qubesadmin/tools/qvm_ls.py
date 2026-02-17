@@ -33,7 +33,8 @@ import collections.abc
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
-from typing import Callable, Iterable, Sequence, TextIO, MutableSequence
+from typing import Callable, Iterable, Sequence, TextIO, MutableSequence, \
+    TypeVar
 
 import qubesadmin
 import qubesadmin.spinner
@@ -174,13 +175,15 @@ def process_vm(vm: QubesVM) -> None:
         PropertyColumn(prop_name)
 
 
+T_c = TypeVar("T_c", bound=Callable)
+
 def flag(field: int) -> Callable:
     '''Mark method as flag field.
 
     :param int field: Which field to fill (counted from 1)
     '''
 
-    def decorator[T: Callable](obj: T)-> T:
+    def decorator(obj: T_c)-> T_c:
         # pylint: disable=missing-docstring
         obj.field = field
         return obj

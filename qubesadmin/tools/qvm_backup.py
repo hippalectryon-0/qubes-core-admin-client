@@ -27,7 +27,7 @@ import os
 import signal
 import sys
 from argparse import Namespace
-from typing import IO, SupportsFloat
+from typing import IO, SupportsFloat, TypeVar
 
 import yaml
 
@@ -121,8 +121,8 @@ def write_backup_profile(output_stream: IO, args: Namespace,
 
     yaml.safe_dump(profile_data, output_stream)
 
-
-def print_progress[T](expected_profile: T, _subject: object, _event: object,
+T = TypeVar("T")
+def print_progress(expected_profile: T, _subject: object, _event: object,
                    backup_profile: T,
                    progress: SupportsFloat) -> None:
     '''Event handler for reporting backup progress'''

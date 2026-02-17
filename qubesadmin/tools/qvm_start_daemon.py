@@ -276,7 +276,7 @@ def serialize_gui_daemon_options(options: dict) -> str:
             else:
                 raise ValueError(f"Wrong option kind: {kind}")
 
-            if not validator(value): # type:ignore
+            if not validator(value):
                 message = f"Ignoring invalid GUI property:\n{name}={value}"
                 log.error(message)
                 if not sys.stdout.isatty():

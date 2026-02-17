@@ -47,7 +47,7 @@ import concurrent.futures.thread
 
 import collections
 from subprocess import Popen
-from typing import Callable, Iterable, IO, Generator, BinaryIO
+from typing import Callable, Iterable, IO, Generator, BinaryIO, TypeVar
 
 import qubesadmin
 import qubesadmin.vm
@@ -352,7 +352,7 @@ def _fix_threading_after_fork() -> None:
         # mimic threading._after_fork()
         getattr(thread, '_set_tstate_lock')()
 
-
+T = TypeVar("T")
 
 class ExtractWorker3(Process):
     '''Process for handling inner tar layer of backup archive'''
@@ -549,7 +549,7 @@ class ExtractWorker3(Process):
             self.tar2_current_file = None
         self.tar2_process = None
 
-    def _data_import_wrapper[T](self, close_fds: Iterable[int],
+    def _data_import_wrapper(self, close_fds: Iterable[int],
                              data_func: Callable[..., T],
                              tar2_process: Popen) -> T:
         '''Close not needed file descriptors, handle output size reported

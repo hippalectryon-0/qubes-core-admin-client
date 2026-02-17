@@ -22,11 +22,12 @@
 from __future__ import annotations
 
 import typing
-from typing import Iterator, Generator
+from typing import Iterator, Generator, TypeVar
 
 if typing.TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
 
+T = TypeVar('T')
 
 class Features:
     '''Manager of the features.
@@ -78,7 +79,7 @@ class Features:
     @typing.overload
     def get(self, item: str) -> str | None: ...
     @typing.overload
-    def get[T](self, item: str, default: T) -> str | T: ...
+    def get(self, item: str, default: T) -> str | T: ...
     # Overloaded to handle default None return type
     def get(self, item: str, default: object = None) -> object:
         '''Get a feature, return default value if missing.'''
@@ -92,7 +93,7 @@ class Features:
     @typing.overload
     def check_with_template(self, item: str) -> str | None: ...
     @typing.overload
-    def check_with_template[T](self, item: str, default: T) -> str | T: ...
+    def check_with_template(self, item: str, default: T) -> str | T: ...
     # Overloaded to handle default None return type
     def check_with_template(self, feature: str,
                             default: object = None) -> object:
