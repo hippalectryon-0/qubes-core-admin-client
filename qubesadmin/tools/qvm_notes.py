@@ -148,7 +148,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
                     mode="w+",
                     prefix=qube.name + "_qube_",
                     suffix="_notes.txt",
-                    delete_on_close=False,
+                    delete=False,
                 ) as temp:
                     temp.write(qube.get_notes())
                     temp.close()
