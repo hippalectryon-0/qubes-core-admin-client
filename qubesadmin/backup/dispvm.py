@@ -87,8 +87,6 @@ def skip(_option: Option, _value: ValidArgValue) -> list[str]:
 class RestoreInDisposableVM:
     """Perform backup restore with actual archive extraction isolated
     within DisposableVM"""
-    #dispvm: typing.Optional[qubesadmin.vm.QubesVM]
-
     #: map of args attr -> original option
     arguments = {
         'quiet': Option(('--quiet', '-q'), handle_verbose),

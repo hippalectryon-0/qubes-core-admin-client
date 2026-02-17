@@ -26,8 +26,6 @@ future-dev = [  # those tools are very efficient but not packaged for major dist
     "ty>=0.0.16",
 ]
 
-[tool.ty.rules]
-
 [tool.ruff]
 preview = true
 line-length = 80

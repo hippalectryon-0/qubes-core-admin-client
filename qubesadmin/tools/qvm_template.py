@@ -41,8 +41,7 @@ import sys
 import tempfile
 import typing
 from argparse import Namespace
-from collections.abc import dict_values
-from typing import Sequence, Iterable, Any, Callable, TypeVar
+from typing import Sequence, Iterable, Callable, TypeVar
 
 import tqdm
 import xdg.BaseDirectory
@@ -55,6 +54,7 @@ import qubesadmin.utils
 import qubesadmin.tools
 import qubesadmin.tools.qvm_kill
 import qubesadmin.tools.qvm_remove
+from qubesadmin.app import QubesBase
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin.vm import QubesVM
 
@@ -112,9 +112,10 @@ class RepoOptCallback(argparse.Action):
     """Parser action for storing repository related options, like
     --enablerepo, --disablerepo, etc. Store them in a single list, to preserve
     relative order."""
-    def __call__(self, parser_arg: ArgumentParser, namespace: Namespace,
+    def __call__(self, parser: ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
                  option_string: str | None = None) -> None:
+        assert option_string is not None
         operation = option_string.lstrip('-')
         repo_actions = getattr(namespace, self.dest)
         repo_actions.append((operation, values))
@@ -432,7 +433,7 @@ def is_managed_template(vm: QubesVM) -> bool:
     return vm.features.get('template-name', None) == vm.name
 
 
-def get_managed_template_vm(app: qubesadmin.app.QubesBase, name: str
+def get_managed_template_vm(app: QubesBase, name: str
                             ) -> QubesVM:
     """Return the QubesVM object associated with the given name if it exists
     and is managed by qvm-template, otherwise raise a parser error."""
@@ -460,7 +461,7 @@ def confirm_action(msg: str, affected: list[str]) -> None:
 
 def qrexec_popen(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         service: str,
         stdout: typing.Union[int, typing.IO] = subprocess.PIPE,
         filter_esc: bool = True) -> subprocess.Popen:
@@ -541,7 +542,7 @@ def _append_keys(payload: str, releasever: str) -> str:
 
     return f"\n{WRAPPER_PAYLOAD_BEGIN}\n{encoded_keys}{WRAPPER_PAYLOAD_END}"
 
-def qrexec_payload(args: argparse.Namespace, app: qubesadmin.app.QubesBase,
+def qrexec_payload(args: argparse.Namespace, app: QubesBase,
                    spec: str, refresh: bool) -> str:
     """Return payload string for the ``qubes.Template*`` qrexec calls.
 
@@ -590,7 +591,7 @@ def qrexec_payload(args: argparse.Namespace, app: qubesadmin.app.QubesBase,
 
 def qrexec_repoquery(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         spec: str = '*',
         refresh: bool = False) -> list[Template]:
     """Query template information from repositories.
@@ -609,6 +610,9 @@ def qrexec_repoquery(
     """
     payload = qrexec_payload(args, app, spec, refresh)
     proc = qrexec_popen(args, app, 'qubes.TemplateSearch')
+    assert proc.stdin is not None
+    assert proc.stdout is not None
+    assert proc.stderr is not None
     proc.stdin.write(payload.encode('UTF-8'))
     proc.stdin.close()
     stdout = proc.stdout.read(1 << 20).decode('ascii', 'strict')
@@ -684,11 +688,11 @@ def qrexec_repoquery(
 
 def qrexec_download(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         spec: str,
         path: str,
         key: str,
-        dlsize: typing.Optional[int] = None,
+        dlsize: int | None = None,
         refresh: bool = False) -> None:
     """Download a template from repositories.
 
@@ -717,9 +721,13 @@ def qrexec_download(
             '/dev/stdin',
             path
         ], stdin=subprocess.PIPE, stdout=subprocess.PIPE) as rpmcanon:
+            assert rpmcanon.stdin is not None
+            assert rpmcanon.stdout is not None
             # Don't filter ESCs for binary files
             proc = qrexec_popen(args, app, 'qubes.TemplateDownload',
                                 stdout=rpmcanon.stdin, filter_esc=False)
+            assert proc.stdin is not None
+            assert proc.stdout is not None
             rpmcanon.stdin.close()
             proc.stdin.write(payload.encode('UTF-8'))
             proc.stdin.close()
@@ -750,7 +758,7 @@ def qrexec_download(
 
 
 def get_keys_for_repos(repo_files: list[str],
-                       releasever: str) -> typing.Dict[str, str]:
+                       releasever: str) -> dict[str, str]:
     """List gpg keys
 
     Returns a dict reponame -> key path
@@ -772,7 +780,8 @@ def get_keys_for_repos(repo_files: list[str],
 
 
 def verify_rpm(path: str, key: str, *, nogpgcheck: bool = False,
-               template_name: typing.Optional[str] = None) -> rpm.hdr:
+               template_name: str | None = None)\
+        -> rpm.hdr:#type:ignore
     """Verify the digest and signature of a RPM package and return the package
     header.
 
@@ -810,12 +819,13 @@ def verify_rpm(path: str, key: str, *, nogpgcheck: bool = False,
                     raise SignatureVerificationError(
                         f"Signature verification failed: {output.decode()}")
             fd.seek(0)
-        tset = rpm.TransactionSet()
+        tset = rpm.TransactionSet()#type:ignore
         # even if gpgcheck is not disabled, the database path is wrong
-        tset.setVSFlags(rpm.RPMVSF_MASK_NOSIGNATURES)
+        tset.setVSFlags(rpm.RPMVSF_MASK_NOSIGNATURES)#type:ignore
         hdr = tset.hdrFromFdno(fd)
     if template_name is not None:
-        if hdr[rpm.RPMTAG_NAME] != PACKAGE_NAME_PREFIX + template_name:
+        if (hdr[rpm.RPMTAG_NAME]#type:ignore
+                != PACKAGE_NAME_PREFIX + template_name):
             raise SignatureVerificationError(
                 'Downloaded package does not match expected template name')
     return hdr
@@ -870,12 +880,12 @@ def extract_rpm(name: str, path: str, target: str) -> bool:
 
 def filter_version(
         query_res: Iterable[Template],
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         version_selector: VersionSelector = VersionSelector.LATEST) \
-        -> dict_values[str, Template]:
+         -> list[Template]:
     """Select only one version for given template name"""
     # We only select one package for each distinct package name
-    results: typing.Dict[str, Template] = {}
+    results: dict[str, Template] = {}
 
     for entry in query_res:
         evr = (entry.epoch, entry.version, entry.release)
@@ -884,17 +894,20 @@ def filter_version(
             if entry.name not in results:
                 insert = True
             if entry.name in results \
-                    and rpm.labelCompare(results[entry.name].evr, evr) < 0:
+                    and rpm.labelCompare(#type:ignore
+                results[entry.name].evr, evr) < 0:
                 insert = True
             if entry.name in results \
-                    and rpm.labelCompare(results[entry.name].evr, evr) == 0 \
+                    and rpm.labelCompare(#type:ignore
+                results[entry.name].evr, evr) == 0 \
                     and 'testing' not in entry.reponame:
                 # for the same-version matches, prefer non-testing one
                 insert = True
         elif version_selector == VersionSelector.REINSTALL:
             vm = get_managed_template_vm(app, entry.name)
             cur_ver = query_local_evr(vm)
-            if rpm.labelCompare(evr, cur_ver) == 0:
+            if rpm.labelCompare(#type:ignore
+                    evr, cur_ver) == 0:
                 insert = True
         elif version_selector in [VersionSelector.LATEST_LOWER,
                                   VersionSelector.LATEST_HIGHER]:
@@ -903,21 +916,23 @@ def filter_version(
             cmp_res = -1 \
                 if version_selector == VersionSelector.LATEST_LOWER \
                 else 1
-            if rpm.labelCompare(evr, cur_ver) == cmp_res:
+            if rpm.labelCompare(#type:ignore
+                    evr, cur_ver) == cmp_res:
                 if entry.name not in results \
-                        or rpm.labelCompare(results[entry.name].evr, evr) < 0:
+                        or rpm.labelCompare(#type:ignore
+                    results[entry.name].evr, evr) < 0:
                     insert = True
         if insert:
             results[entry.name] = entry
 
-    return results.values()
+    return list(results.values())
 
 
 def get_dl_list(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         version_selector: VersionSelector = VersionSelector.LATEST
-) -> typing.Dict[str, DlEntry]:
+) -> dict[str, DlEntry]:
     """Return list of templates that needs to be downloaded.
 
     :param args: Arguments received by the application.
@@ -928,7 +943,7 @@ def get_dl_list(
     :return: Dictionary that maps to ``DlEntry`` the names of templates that
         needs to be downloaded
     """
-    full_candid: typing.Dict[str, DlEntry] = {}
+    full_candid: dict[str, DlEntry] = {}
     for template in args.templates:
         # Skip local RPMs
         if template.endswith('.rpm'):
@@ -957,7 +972,8 @@ def get_dl_list(
         # Merge & choose the template with the highest version
         for entry in query_res:
             if entry.name not in full_candid \
-                    or rpm.labelCompare(full_candid[entry.name].evr,
+                    or rpm.labelCompare(#type:ignore
+                full_candid[entry.name].evr,
                                         entry.evr) < 0:
                 full_candid[entry.name] = \
                     DlEntry(entry.evr, entry.reponame, entry.dlsize)
@@ -967,11 +983,12 @@ def get_dl_list(
 
 def download(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
-        path_override: typing.Optional[str] = None,
-        dl_list: typing.Optional[typing.Dict[str, DlEntry]] = None,
+        app: QubesBase,
+        path_override: str | None = None,
+        dl_list: dict[str, DlEntry] | None = None,
         version_selector: VersionSelector = VersionSelector.LATEST) \
-        -> typing.Dict[str, rpm.hdr]:
+        -> dict[str,
+        rpm.hdr]:#type:ignore
     """Command that downloads template packages.
 
     :param args: Arguments received by the application.
@@ -1043,7 +1060,9 @@ T_c = TypeVar("T_c", bound=Callable)
 def locked(func: T_c) -> T_c:
     """Execute given function under a lock in *LOCK_FILE*"""
     @functools.wraps(func)
-    def wrapper(*args, **kwargs) -> T_c:
+    def wrapper(*args, **kwargs) -> object:
+            # Nb: with p3.12+ we can properly type this
+            # Callable[T] -> T
         with open(LOCK_FILE, 'w', encoding='ascii') as lock:
             try:
                 fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1055,13 +1074,13 @@ def locked(func: T_c) -> T_c:
                 return func(*args, **kwargs)
             finally:
                 os.remove(LOCK_FILE)
-    return wrapper
+    return wrapper #type:ignore
 
 
 @locked
 def install(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         version_selector: VersionSelector = VersionSelector.LATEST,
         override_existing: bool = False) -> None:
     """Command that installs template packages.
@@ -1096,7 +1115,7 @@ def install(
             if not package_hdr:
                 parser.error(f"Package '{rpmfile}' verification failed.")
 
-        package_name = package_hdr[rpm.RPMTAG_NAME]
+        package_name = package_hdr[rpm.RPMTAG_NAME] #type:ignore
         if not package_name.startswith(PACKAGE_NAME_PREFIX):
             parser.error(f"Illegal package name for package '{rpmfile}'.")
         # Remove prefix to get the real template name
@@ -1114,11 +1133,11 @@ def install(
         if override_existing:
             vm = get_managed_template_vm(app, name)
             pkg_evr = (
-                str(package_hdr[rpm.RPMTAG_EPOCHNUM]),
-                package_hdr[rpm.RPMTAG_VERSION],
-                package_hdr[rpm.RPMTAG_RELEASE])
+                str(package_hdr[rpm.RPMTAG_EPOCHNUM]), #type:ignore
+                package_hdr[rpm.RPMTAG_VERSION], #type:ignore
+                package_hdr[rpm.RPMTAG_RELEASE]) #type:ignore
             vm_evr = query_local_evr(vm)
-            cmp_res = rpm.labelCompare(pkg_evr, vm_evr)
+            cmp_res = rpm.labelCompare(pkg_evr, vm_evr) #type:ignore
             if version_selector == VersionSelector.REINSTALL \
                     and cmp_res != 0:
                 parser.error(f'Same version of template \'{name}\' not found.')
@@ -1230,34 +1249,36 @@ def install(
 
             tpl.features['template-name'] = name
             tpl.features['template-epoch'] = \
-                package_hdr[rpm.RPMTAG_EPOCHNUM]
+                package_hdr[rpm.RPMTAG_EPOCHNUM] #type:ignore
             tpl.features['template-version'] = \
-                package_hdr[rpm.RPMTAG_VERSION]
+                package_hdr[rpm.RPMTAG_VERSION] #type:ignore
             tpl.features['template-release'] = \
-                package_hdr[rpm.RPMTAG_RELEASE]
+                package_hdr[rpm.RPMTAG_RELEASE] #type:ignore
             tpl.features['template-reponame'] = reponame
             tpl.features['template-buildtime'] = \
                 datetime.datetime.fromtimestamp(
-                        int(package_hdr[rpm.RPMTAG_BUILDTIME]),
+                        int(package_hdr[rpm.RPMTAG_BUILDTIME]), #type:ignore
                         tz=datetime.timezone.utc) \
                     .strftime(DATE_FMT)
             tpl.features['template-installtime'] = \
                 datetime.datetime.now(
                     tz=datetime.timezone.utc).strftime(DATE_FMT)
             tpl.features['template-license'] = \
-                package_hdr[rpm.RPMTAG_LICENSE]
+                package_hdr[rpm.RPMTAG_LICENSE] #type:ignore
             tpl.features['template-url'] = \
-                package_hdr[rpm.RPMTAG_URL]
+                package_hdr[rpm.RPMTAG_URL] #type:ignore
             tpl.features['template-summary'] = \
-                package_hdr[rpm.RPMTAG_SUMMARY]
+                package_hdr[rpm.RPMTAG_SUMMARY] #type:ignore
             tpl.features['template-description'] = \
-                package_hdr[rpm.RPMTAG_DESCRIPTION].replace('\n', '|')
+                package_hdr[
+                    rpm.RPMTAG_DESCRIPTION #type:ignore
+                ].replace('\n', '|')
         if rpmfile.startswith(args.cachedir) and not args.keep_cache:
             os.remove(rpmfile)
 
 T = TypeVar("T")
 def list_templates(args: argparse.Namespace,
-                   app: qubesadmin.app.QubesBase, command: str) -> None:
+                   app: QubesBase, command: str) -> None:
     """Command that lists templates.
 
     :param args: Arguments received by the application.
@@ -1281,7 +1302,7 @@ def list_templates(args: argparse.Namespace,
     def list_to_human_output(tpls: list) -> list:
         outputs = []
         for status, grp in itertools.groupby(tpls, lambda x: x[0]):
-            def convert(row: Iterable[T]) -> T:
+            def convert(row: T_it) -> T_it:
                 return row[1:]
             outputs.append((status, list(map(convert, grp))))
         return outputs
@@ -1410,7 +1431,9 @@ def list_templates(args: argparse.Namespace,
         for entry in query_res:
             evr = (entry.epoch, entry.version, entry.release)
             if entry.name in local:
-                if rpm.labelCompare(local[entry.name], evr) < 0:
+                if (
+                        rpm.labelCompare(#type:ignore
+                            local[entry.name], evr) < 0):
                     append(entry, TemplateState.UPGRADABLE)
 
     if len(tpl_list) == 0:
@@ -1442,8 +1465,8 @@ def list_templates(args: argparse.Namespace,
             print(status.title(), flush=True)
             qubesadmin.tools.print_table(grp)
 
-
-def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
+T_it = TypeVar("T_it", bound=Iterable)
+def search(args: argparse.Namespace, app: QubesBase) -> None:
     """Command that searches template details for given patterns.
 
     :param args: Arguments received by the application.
@@ -1458,8 +1481,10 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
     # Get latest version for each template
     query_res_tmp = []
     for _, grp in itertools.groupby(sorted(query_res), lambda x: x[0]):
-        def compare(lhs: T, rhs: T) -> T:
-            return lhs if rpm.labelCompare(lhs[1:4], rhs[1:4]) > 0 else rhs
+        def compare(lhs: T_it, rhs: T_it) -> T_it:
+            return lhs if (
+                    rpm.labelCompare(#type:ignore
+                lhs[1:4], rhs[1:4]) > 0) else rhs
 
         query_res_tmp.append(functools.reduce(compare, grp))
     query_res = query_res_tmp
@@ -1479,7 +1504,7 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
         (WEIGHT_URL, 'URL')]
 
     search_res_by_idx: \
-        typing.Dict[int, list[tuple[int, str, bool]]] = \
+        dict[int, list[tuple[int, str, bool]]] = \
         collections.defaultdict(list)
     for keyword in args.templates:
         for idx, entry in enumerate(query_res):
@@ -1502,7 +1527,7 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
             if keywords != set(x[1] for x in search_res_by_idx[idx]):
                 del search_res_by_idx[idx]
 
-    def key_func(x: object) -> tuple:
+    def key_func(x: tuple[int, list[tuple[int, str, bool]]]) -> tuple:
         # ORDER BY weight DESC, list_of_needles ASC, name ASC
         idx, needles = x
         weight = sum(t[0] for t in needles)
@@ -1535,7 +1560,7 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
 
 def remove(
         args: argparse.Namespace,
-        app: qubesadmin.app.QubesBase,
+        app: QubesBase,
         disassoc: bool = False,
         purge: bool = False,
         dummy: str = 'dummy'
@@ -1618,7 +1643,7 @@ def remove(
     qubesadmin.tools.qvm_remove.main(['--force', '--'] + remove_list, app)
 
 
-def clean(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
+def clean(args: argparse.Namespace, app: QubesBase) -> None:
     """Command that cleans the local package cache.
 
     :param args: Arguments received by the application.
@@ -1630,7 +1655,7 @@ def clean(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
     shutil.rmtree(args.cachedir)
 
 
-def repolist(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
+def repolist(args: argparse.Namespace, app: QubesBase) -> None:
     """Command that lists configured repositories.
 
     :param args: Arguments received by the application.
@@ -1643,8 +1668,8 @@ def repolist(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
     # instead of top-level. Any other operation still work in case where
     # a failure occurs with python3-dnf.
     try:
-        import dnf.repo
-        import dnf.conf
+        import dnf.repo#type:ignore
+        import dnf.conf#type:ignore
     except ModuleNotFoundError:
         print("Error: Python module 'dnf' not found.", file=sys.stderr)
         sys.exit(1)
@@ -1710,19 +1735,23 @@ def repolist(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
         qubesadmin.tools.print_table(table)
 
 
-def migrate_from_rpmdb(app: QubesVM) -> None:
+def migrate_from_rpmdb(app: QubesBase) -> None:
     """Migrate templates stored in rpmdb, into 'features' set on the VM itself.
     """
 
     if os.getuid() != 0:
         parser.error('This command needs to be run as root')
-    rpm_ts = rpm.TransactionSet()
+    rpm_ts = rpm.TransactionSet()#type:ignore
     pkgs_to_remove = []
     for pkg in rpm_ts.dbMatch():
-        if not pkg[rpm.RPMTAG_NAME].startswith('qubes-template-'):
+        if not pkg[
+            rpm.RPMTAG_NAME#type:ignore
+        ].startswith('qubes-template-'):
             continue
         try:
-            vm = app.domains[pkg[rpm.RPMTAG_NAME][len('qubes-template-'):]]
+            vm = app.domains[
+                pkg[rpm.RPMTAG_NAME#type:ignore
+            ][len('qubes-template-'):]]
         except KeyError:
             # no longer present, remove from rpmdb
             pkgs_to_remove.append(pkg)
@@ -1733,23 +1762,32 @@ def migrate_from_rpmdb(app: QubesVM) -> None:
             continue
         try:
             vm.features['template-name'] = vm.name
-            vm.features['template-epoch'] = pkg[rpm.RPMTAG_EPOCHNUM]
-            vm.features['template-version'] = pkg[rpm.RPMTAG_VERSION]
-            vm.features['template-release'] = pkg[rpm.RPMTAG_RELEASE]
+            vm.features['template-epoch'] = (
+                pkg)[rpm.RPMTAG_EPOCHNUM]#type:ignore
+            vm.features['template-version'] = (
+                pkg)[rpm.RPMTAG_VERSION]#type:ignore
+            vm.features['template-release'] = (
+                pkg)[rpm.RPMTAG_RELEASE]#type:ignore
             vm.features['template-reponame'] = '@commandline'
             vm.features['template-buildtime'] = \
                 datetime.datetime.fromtimestamp(
-                    pkg[rpm.RPMTAG_BUILDTIME], tz=datetime.timezone.utc).\
+                    pkg[rpm.RPMTAG_BUILDTIME]#type:ignore
+                    , tz=datetime.timezone.utc).\
                 strftime(DATE_FMT)
             vm.features['template-installtime'] = \
                 datetime.datetime.fromtimestamp(
-                    pkg[rpm.RPMTAG_INSTALLTIME], tz=datetime.timezone.utc).\
+                    pkg[rpm.RPMTAG_INSTALLTIME]#type:ignore
+                    , tz=datetime.timezone.utc).\
                 strftime(DATE_FMT)
-            vm.features['template-license'] = pkg[rpm.RPMTAG_LICENSE]
-            vm.features['template-url'] = pkg[rpm.RPMTAG_URL]
-            vm.features['template-summary'] = pkg[rpm.RPMTAG_SUMMARY]
+            vm.features['template-license'] = (
+                pkg)[rpm.RPMTAG_LICENSE]#type:ignore
+            vm.features['template-url'] = (
+                pkg)[rpm.RPMTAG_URL]#type:ignore
+            vm.features['template-summary'] = (
+                pkg)[rpm.RPMTAG_SUMMARY]#type:ignore
             vm.features['template-description'] = \
-                pkg[rpm.RPMTAG_DESCRIPTION].replace('\n', '|')
+                (pkg[rpm.RPMTAG_DESCRIPTION]#type:ignore
+                 .replace('\n', '|'))
             vm.installed_by_rpm = False
         except Exception as e:  # pylint: disable=broad-except
             print('Failed to set template {} metadata: {}'.format(vm.name, e))
@@ -1757,11 +1795,13 @@ def migrate_from_rpmdb(app: QubesVM) -> None:
         pkgs_to_remove.append(pkg)
     subprocess.check_call(
         ['rpm', '-e', '--justdb'] +
-        [p[rpm.RPMTAG_NAME] for p in pkgs_to_remove])
+        [
+            p[rpm.RPMTAG_NAME]  #type:ignore
+         for p in pkgs_to_remove])
 
 
-def main(args: typing.Optional[typing.Sequence[str]] = None,
-         app: typing.Optional[qubesadmin.app.QubesBase] = None) -> int:
+def main(args: Sequence[str] | None = None,
+         app: QubesBase | None = None) -> int:
     """Main routine of **qvm-template**.
 
     :param args: Override arguments received by the application. Optional
