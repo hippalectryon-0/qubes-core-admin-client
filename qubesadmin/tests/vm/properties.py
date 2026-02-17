@@ -21,6 +21,8 @@
 # pylint: disable=missing-docstring
 
 import qubesadmin.tests.vm
+import qubesadmin.exc
+import qubesadmin.vm
 
 
 class TC_00_Properties(qubesadmin.tests.vm.VMTestCase):

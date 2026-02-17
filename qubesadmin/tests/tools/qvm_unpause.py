@@ -21,6 +21,7 @@
 # pylint: disable=missing-docstring
 
 import qubesadmin.tests
+import qubesadmin.tests.tools
 import qubesadmin.tools.qvm_unpause
 
 

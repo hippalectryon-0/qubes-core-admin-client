@@ -547,7 +547,7 @@ class DispVM(QubesVM):
     """Disposable VM"""
 
     @classmethod
-    def from_appvm(cls, app: QubesBase, appvm: QubesVM | None,
+    def from_appvm(cls, app: QubesBase, appvm: QubesVM | str | None,
                    redirect_dispvm_calls: bool=False) -> DispVMWrapper:
         """Returns a wrapper for calling service in a new DispVM based on given
         AppVM. If *appvm* is none, use default DispVM template

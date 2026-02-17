@@ -146,10 +146,10 @@ class _AssertNotRaisesContext:
 
 
 class QubesTest(qubesadmin.app.QubesBase):
-    expected_service_calls = None
-    expected_calls = None
-    actual_calls = None
-    service_calls = None
+    expected_service_calls: dict
+    expected_calls: dict
+    actual_calls: list
+    service_calls: list
 
     def __init__(self):
         super().__init__()
