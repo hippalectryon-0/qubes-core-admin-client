@@ -305,11 +305,14 @@ class PropertyHolder:
             return str(value)
         if prop_type == 'bool':
             if value == '':
-                raise AttributeError  # TODO should likely be `raise` ?
+                # TODO shouldn't that at least be ValueError ?
+                #  but then we need to properly propagate that modification
+                return AttributeError
             return value == "True"
         if prop_type == 'int':
             if value == '':
-                raise AttributeError  # TODO same as above
+                # TODO same as above
+                return AttributeError
             return int(value)
         if prop_type == 'vm':
             if value == '':
@@ -341,9 +344,7 @@ class PropertyHolder:
                     if char == ord('n'):
                         yield ord('\n')
                     elif char == ord('\\'):
-                        raise ValueError
-                        # v TODO see comment below
-                        # yield char
+                        yield char
                     escaped = False
                 elif char == ord('\\'):
                     escaped = True
@@ -364,7 +365,7 @@ class PropertyHolder:
             # TODO this will fail if unescape returns some `str` ??
             #  Did we maybe copy-paste `unescape` from somewhere else
             #  but we only use it for ints ?
-            line_bytes = bytes(unescape(line))
+            line_bytes = bytes(list(unescape(line)))
             name, property_str = line_bytes.split(b' ', 1)
             name = name.decode()
             is_default, value = self._deserialize_property(property_str)
