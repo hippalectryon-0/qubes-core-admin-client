@@ -26,3 +26,4 @@ WORKDIR /workspace
 USER devcontainer
 ENV PATH=$HOME/.local/bin:$PATH
 ENV ENABLE_SLOW_TESTS=1
+#COPY --chown=devcontainer:devcontainer . /workspace
