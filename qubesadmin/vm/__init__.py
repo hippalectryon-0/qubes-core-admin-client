@@ -43,7 +43,7 @@ if typing.TYPE_CHECKING:
     import qubesadmin.base
     from qubesadmin.storage import Volume
 
-Klass = Literal["AppVM", "AdminVM", "TemplateVM", "DispVM"]
+Klass = Literal["AppVM", "AdminVM", "TemplateVM", "DispVM", "StandaloneVM"]
 PowerState = Literal["Transient", "Running", "Halted", "Paused",
 "Suspended", "Halting", "Dying", "Crashed", "NA"]
 

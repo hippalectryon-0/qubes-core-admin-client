@@ -221,7 +221,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         )
         # TODO ensure we can cast here without breaking anything
         for e in vmclass:
-            assert e in Klass
+            assert e in typing.get_args(Klass)
         return typing.cast(list[Klass], sorted(vmclass))
 
     def list_deviceclass(self) -> list[str]:  # TODO make Literal ?
