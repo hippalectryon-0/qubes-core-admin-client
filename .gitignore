@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.egg-info/
 build/
 doc/_build/
 pkgs/

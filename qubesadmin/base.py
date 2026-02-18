@@ -25,9 +25,9 @@ import typing
 from typing import BinaryIO, Any, Generator, TypeAlias, TypeVar, Generic
 
 import qubesadmin.exc
-from qubesadmin.vm import QubesVM
 
 if typing.TYPE_CHECKING:
+    from qubesadmin.vm import QubesVM
     from qubesadmin.app import QubesBase
 
 DEFAULT = object()
@@ -382,6 +382,9 @@ class PropertyHolder:
             for class_ in cls.__mro__:
                 for key in class_.__dict__:
                     props.add(key)
+                if hasattr(class_, "__annotations__"):
+                    for key in class_.__annotations__:
+                        props.add(key)
             cls._local_properties_set = props
 
         return cls._local_properties_set
@@ -400,6 +403,8 @@ class PropertyHolder:
                     qubesadmin.exc.QubesVMNotFoundError):
                 raise qubesadmin.exc.QubesPropertyAccessError(key)
         else:
+            # Dynamic import because qubesadmin.vm import base.py
+            from qubesadmin.vm import QubesVM
             if isinstance(value, QubesVM):
                 value = value.name
             if value is None:
