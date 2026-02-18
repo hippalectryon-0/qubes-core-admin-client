@@ -2,10 +2,11 @@
 all: build
 
 PYTHON ?= python3
+PIP ?= pip3
 
 .PHONY: build
 build:
-	$(PYTHON) setup.py build
+	$(PYTHON) -m build
 
 .PHONY: install
 install:
@@ -22,6 +23,14 @@ install:
 		$(DESTDIR)/etc/qubes/post-install.d/30-keyboard-layout-service.sh
 	install -D scripts/qvm-console $(DESTDIR)/usr/bin/qvm-console
 
+.PHONY: install-pip
+install-pip:
+	$(PIP) install .
+
+.PHONY: install-editable
+install-editable:
+	$(PIP) install -e .
+
 clean:
 	rm -rf test-packages/__pycache__ qubesadmin/__pycache__
 	rm -rf qubesadmin/*/__pycache__ qubesadmin/tests/*/__pycache__
@@ -29,3 +38,4 @@ clean:
 	rm -f .coverage
 	rm -rf debian/changelog.*
 	rm -rf pkgs
+	rm -rf build/ dist/ *.egg-info .eggs/

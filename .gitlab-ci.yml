@@ -23,9 +23,10 @@ checks:tests:
   - sudo dnf install -y zstd
   - sudo dnf install -y --enablerepo=qubes-host-r4.3-current-testing scrypt
   - pip3 install --quiet -r ci/requirements.txt
+  - pip3 install build coverage
   - git config --global --add safe.directory "$PWD"
   script:
-  - python3 setup.py build
+  - python3 -m build
   # simulate "normal" qubes env for most tests
   - xvfb-run ./run-tests
   - xvfb-run python3 -m coverage xml
