@@ -73,7 +73,7 @@ class PropertyAction(argparse.Action):
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
                  option_string: str | None=None) -> None:
-        assert values is str
+        assert isinstance(values, str)
         try:
             prop, value = values.split('=', 1)
         except ValueError:
