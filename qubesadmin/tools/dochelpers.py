@@ -180,7 +180,7 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
             sub_cmds = title.strip('{}').split(',')
 
         for cmd in sub_cmds:
-            sub_cmd = self.command + ' ' + cmd
+            sub_cmd = f"{self.command} {cmd}"
 
             try:
                 args = self.sub_commands[cmd]

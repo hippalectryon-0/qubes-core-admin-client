@@ -48,7 +48,7 @@ class BackupTestCase(qubesadmin.tests.QubesTestCase):
         try:
             return super().make_vm_name(name)
         except AttributeError:
-            return 'test-' + name
+            return f"test-{name}"
 
     def setUp(self):
         super().setUp()

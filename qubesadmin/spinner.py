@@ -101,7 +101,7 @@ class QubesSpinner(AbstractSpinner):
         self.stream.flush()
 
     def hide(self):
-        self.stream.write('\r' + ' ' * self.hidelen + '\r')
+        self.stream.write(f"\r{' ' * self.hidelen}\r")
         self.stream.flush()
 
     def update(self):
@@ -135,7 +135,7 @@ class QubesSpinnerEnterpriseEdition(QubesSpinner):
 
     def hide(self):
         if self.stream_isatty:
-            hideseq = '\r' + ' ' * self.hidelen + '\r'
+            hideseq = f"\r{' ' * self.hidelen}\r"
             if self.has_terminfo:
                 hideseq_l = (curses.tigetstr('cr'), curses.tigetstr('clr_eol'))
                 if all(seq is not None for seq in hideseq_l):

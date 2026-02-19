@@ -153,8 +153,7 @@ def main(args=None, app=None):  # pylint: disable=missing-docstring
         failed = failed_domains(args.domains)
         if failed:
             parser.error_runtime(
-                'Failed to shut down: ' +
-                ', '.join(vm.name for vm in failed),
+                f"Failed to shut down: {', '.join((vm.name for vm in failed))}",
                 len(failed))
 
 

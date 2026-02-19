@@ -126,7 +126,7 @@ def info_volume(args):
         if revisions:
             print('List of available revisions (for revert):')
             for rev in revisions:
-                print('  ' + rev)
+                print(f"  {rev}")
         else:
             print('List of available revisions (for revert): none')
 

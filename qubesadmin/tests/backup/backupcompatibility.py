@@ -826,7 +826,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
 
     def create_appmenus(self, dirname, template, flist):
         for name in flist:
-            fname = os.path.join(dirname, name + ".desktop")
+            fname = os.path.join(dirname, f"{name}.desktop")
             with open(fname, "w", encoding="utf-8") as f_list:
                 f_list.write(template.format(name=name,
                                              comment=name,
@@ -997,27 +997,27 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
         os.mkdir(self.fullpath('dom0-home'))
         os.mkdir(self.fullpath('dom0-home/user'))
         for dom0_dir in self.dom0_dirs:
-            os.mkdir(self.fullpath('dom0-home/user/' + dom0_dir))
+            os.mkdir(self.fullpath(f"dom0-home/user/{dom0_dir}"))
         for dom0_fname in self.dom0_files:
-            with open(self.fullpath('dom0-home/user/' + dom0_fname), 'w',
+            with open(self.fullpath(f"dom0-home/user/{dom0_fname}"), 'w',
                       encoding="utf-8") as dom0_f:
                 dom0_f.write('some content')
 
     def assertDirectoryExists(self, path):
         if not os.path.exists(path):
-            self.fail(path + ' missing')
+            self.fail(f"{path} missing")
         if not os.path.isdir(path):
-            self.fail(path + ' is not a directory')
+            self.fail(f"{path} is not a directory")
 
     def assertFileExists(self, path):
         if not os.path.exists(path):
-            self.fail(path + ' missing')
+            self.fail(f"{path} missing")
         if not os.path.isfile(path):
-            self.fail(path + ' is not a file')
+            self.fail(f"{path} is not a file")
 
     def assertDom0Restored(self, timestamp):
         expected_dir = os.path.expanduser(
-            '~/home-restore-' + timestamp + '/dom0-home/user')
+            f"~/home-restore-{timestamp}/dom0-home/user")
         self.assertTrue(os.path.exists(expected_dir))
         for dom0_dir in self.dom0_dirs:
             self.assertDirectoryExists(os.path.join(expected_dir, dom0_dir))
@@ -1116,9 +1116,9 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
         if basedir is None:
             basedir = self.backupdir
         if output_name is None:
-            output_name = f_name + '.enc'
+            output_name = f"{f_name}.enc"
         if f_name == 'backup-header':
-            scrypt_pass = 'backup-header!' + password
+            scrypt_pass = f"backup-header!{password}"
         else:
             scrypt_pass = f'20161020T123455-1234!{f_name}!{password}'
         with subprocess.Popen(['scrypt', 'enc', '-P', '-t', '0.1',
@@ -1131,10 +1131,10 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
 
     def calculate_hmac(self, f_name, algorithm="sha512", password="qubes"):
         with open(self.fullpath(f_name), "r", encoding="utf-8") as f_data:
-            with open(self.fullpath(f_name+".hmac"), "w",
+            with open(self.fullpath(f"{f_name}.hmac"), "w",
                       encoding="utf-8") as f_hmac:
                 subprocess.check_call(
-                    ["openssl", "dgst", "-"+algorithm, "-hmac", password],
+                    ["openssl", "dgst", f"-{algorithm}", "-hmac", password],
                     stdin=f_data, stdout=f_hmac)
 
     def append_backup_stream(self, f_name, stream, basedir=None):
@@ -1173,9 +1173,9 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                 os.makedirs(stage1_dir)
             subprocess.check_call(["split", "--numeric-suffixes",
                                    "--suffix-length=3",
-                                   "--bytes="+str(100*1024*1024), "-",
+                                   f"--bytes={100 * 1024 * 1024!s}", "-",
                                    os.path.join(stage1_dir,
-                                                os.path.basename(f_name+"."))],
+                                                os.path.basename(f"{f_name}."))],
                                   stdin=data)
             data.close()
             if encryptor:
@@ -1190,7 +1190,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
             self.calculate_hmac(os.path.join("stage1", part_with_dir))
             self.append_backup_stream(part_with_dir, stream,
                                       basedir=self.fullpath("stage1"))
-            self.append_backup_stream(part_with_dir+".hmac", stream,
+            self.append_backup_stream(f"{part_with_dir}.hmac", stream,
                                       basedir=self.fullpath("stage1"))
 
     def handle_v4_file(self, f_name, subdir, stream, compressed="gzip"):
@@ -1212,9 +1212,9 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                 os.makedirs(stage1_dir)
             subprocess.check_call(["split", "--numeric-suffixes",
                                    "--suffix-length=3",
-                                   "--bytes="+str(100*1024*1024), "-",
+                                   f"--bytes={100 * 1024 * 1024!s}", "-",
                                    os.path.join(stage1_dir,
-                                                os.path.basename(f_name+"."))],
+                                                os.path.basename(f"{f_name}."))],
                                   stdin=data)
             data.close()
 
@@ -1275,7 +1275,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                             subdir = vm_dir
                         self.handle_v3_file(
                             os.path.join(vm_dir, f_name),
-                            subdir+'/', output,
+                            f"{subdir}/", output,
                             compressed=compressed,
                             encrypted=encrypted)
 
@@ -1287,7 +1287,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                     subdir = vm_dir
                 self.handle_v3_file(
                     os.path.join(vm_dir, "."),
-                    subdir+'/', output,
+                    f"{subdir}/", output,
                     compressed=compressed,
                     encrypted=encrypted)
 
@@ -1324,7 +1324,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                 for vmname, subdir in MANGLED_SUBDIRS_R4.items():
                     qubesxml = re.sub(
                         rf'backup-path">[a-z-]*/{vmname}'.encode(),
-                        ('backup-path">' + subdir).encode(),
+                        f"backup-path\">{subdir}".encode(),
                         qubesxml)
                 f_qubesxml.write(qubesxml)
 
@@ -1344,7 +1344,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                         subdir = MANGLED_SUBDIRS_R4[vm_name]
                         self.handle_v4_file(
                             os.path.join(vm_dir, f_name),
-                            subdir+'/', output, compressed=compressed)
+                            f"{subdir}/", output, compressed=compressed)
 
             self.handle_v4_file(
                 'dom0-home/user',
@@ -1365,36 +1365,36 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
 
             if self.storage_pool and vm['label'] == 'scarlet':
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.CreateInPool.' + vm['klass'],
+                    ('dom0', f"admin.vm.CreateInPool.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     f'name={name} label=scarlet pool={self.storage_pool}'.encode())] = \
                     b'2\0QubesLabelNotFoundError\0\0No such label\0'
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.CreateInPool.' + vm['klass'],
+                    ('dom0', f"admin.vm.CreateInPool.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     f'name={name} label=red pool={self.storage_pool}'.encode())] = \
                     b'0\0'
             elif vm['label'] == 'scarlet':
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.Create.' + vm['klass'],
+                    ('dom0', f"admin.vm.Create.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     f'name={name} label=scarlet'.encode())] =\
                     b'2\0QubesLabelNotFoundError\0\0No such label\0'
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.Create.' + vm['klass'],
+                    ('dom0', f"admin.vm.Create.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     f'name={name} label=red'.encode())] =\
                     b'0\0'
             elif self.storage_pool:
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.CreateInPool.' + vm['klass'],
+                    ('dom0', f"admin.vm.CreateInPool.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     'name={} label={} pool={}'.format(
                         name, vm['label'], self.storage_pool).encode())] = \
                     b'0\0'
             else:
                 self.app.expected_calls[
-                    ('dom0', 'admin.vm.Create.' + vm['klass'],
+                    ('dom0', f"admin.vm.Create.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
                     f"name={name} label={vm['label']}".encode())] =\
                     b'0\0'

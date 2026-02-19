@@ -30,7 +30,7 @@ import io
 import qubesadmin
 import qubesadmin.app
 
-QREXEC_ALLOWED_CHARS = string.ascii_letters + string.digits + "_-+."
+QREXEC_ALLOWED_CHARS = f"{string.ascii_letters}{string.digits}_-+."
 
 class TestVM:
     def __init__(self, name, **kwargs):

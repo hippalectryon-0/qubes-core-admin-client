@@ -171,7 +171,7 @@ def rules_list_raw(vm):
     :return: None
     '''
     for rule in vm.firewall.rules:
-        sys.stdout.write(rule.rule + '\n')
+        sys.stdout.write(f"{rule.rule}\n")
 
 
 def rules_add(vm, args):

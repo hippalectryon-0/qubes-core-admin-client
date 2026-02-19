@@ -71,7 +71,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
     def name(self, new_value):
         self.qubesd_call(
             self._method_dest,
-            self._method_prefix + "Set",
+            f"{self._method_prefix}Set",
             "name",
             str(new_value).encode("utf-8"),
         )
@@ -537,7 +537,7 @@ class DispVM(QubesVM):
         """
 
         if appvm:
-            method_dest = "@dispvm:" + str(appvm)
+            method_dest = f"@dispvm:{appvm!s}"
         else:
             method_dest = "@dispvm"
 

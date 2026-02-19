@@ -425,7 +425,7 @@ def confirm_action(msg: str, affected: typing.List[str]) -> None:
     """Confirm user action."""
     print(msg)
     for name in affected:
-        print('  ' + name)
+        print(f"  {name}")
 
     confirm = ''
     while confirm != 'y':
@@ -484,7 +484,7 @@ def _encode_key(path):
     if not _is_file_in_repo_templates_keys_dir(path):
         return ""
 
-    encoded_key = "#" + path + "\n"
+    encoded_key = f"#{path}\n"
     with open(path, "rb") as key:
         encoded_key += f"#{base64.b64encode(key.read()).decode('ascii')}\n"
     return encoded_key
@@ -545,20 +545,20 @@ def qrexec_payload(args: argparse.Namespace, app: qubesadmin.app.QubesBase,
 
     payload = ''
     for repo_op, repo_id in args.repos:
-        check_newline(repo_id, '--' + repo_op)
+        check_newline(repo_id, f"--{repo_op}")
         payload += f'--{repo_op}={repo_id}\n'
     if refresh:
         payload += '--refresh\n'
     check_newline(args.releasever, '--releasever')
     payload += f'--releasever={args.releasever}\n'
     check_newline(spec, 'template name')
-    payload += spec + '\n'
+    payload += f"{spec}\n"
     payload += '---\n'
 
     repo_config = ""
     for path in args.repo_files:
         with open(path, 'r', encoding='utf-8') as fd:
-            repo_config += fd.read() + '\n'
+            repo_config += f"{fd.read()}\n"
     payload += repo_config
 
     payload += _append_keys(repo_config, args.releasever)
@@ -684,11 +684,11 @@ def qrexec_download(
     """
     with tempfile.TemporaryDirectory() as rpmdb_dir:
         subprocess.check_call(
-            ['rpmkeys', '--dbpath=' + rpmdb_dir, '--import', key])
+            ['rpmkeys', f"--dbpath={rpmdb_dir}", '--import', key])
         payload = qrexec_payload(args, app, spec, refresh)
         with subprocess.Popen([
             'rpmcanon',
-            '--dbpath=' + rpmdb_dir,
+            f"--dbpath={rpmdb_dir}",
             '--report-progress',
             '--',
             '/dev/stdin',
@@ -770,11 +770,11 @@ def verify_rpm(path: str, key: str, *, nogpgcheck: bool = False,
         if not nogpgcheck:
             with tempfile.TemporaryDirectory() as rpmdb_dir:
                 subprocess.check_call(
-                    ['rpmkeys', '--dbpath=' + rpmdb_dir, '--import', key])
+                    ['rpmkeys', f"--dbpath={rpmdb_dir}", '--import', key])
                 try:
                     output = subprocess.check_output([
                         'rpmkeys',
-                        '--dbpath=' + rpmdb_dir,
+                        f"--dbpath={rpmdb_dir}",
                         '--define=_pkgverify_level all',
                         '--define=_pkgverify_flags 0x0',
                         '--checksig',
@@ -972,7 +972,7 @@ def download(
     with tempfile.TemporaryDirectory(dir=path) as dl_dir:
         for name, entry in dl_list.items():
             version_str = build_version_str(entry.evr)
-            spec = PACKAGE_NAME_PREFIX + name + '-' + version_str
+            spec = f"{PACKAGE_NAME_PREFIX}{name}-{version_str}"
             target = os.path.join(path, f'{spec}.rpm')
             target_temp = os.path.join(dl_dir, f'{spec}.rpm.UNTRUSTED')
             repo_key = keys.get(entry.reponame)
@@ -1198,7 +1198,7 @@ def install(
             subprocess.check_call(cmdline + [
                 'post-install',
                 name,
-                target + PATH_PREFIX + '/' + name])
+                f"{target}{PATH_PREFIX}/{name}"])
 
             app.domains.refresh_cache(force=True)
             tpl = app.domains[name]
@@ -1462,7 +1462,7 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
                 needle_types += [(entry.description, WEIGHT_DESCRIPTION),
                                  (entry.url, WEIGHT_URL)]
             for key, weight in needle_types:
-                if fnmatch.fnmatch(key, '*' + keyword + '*'):
+                if fnmatch.fnmatch(key, f"*{keyword}*"):
                     exact = keyword == key
                     if exact and weight == WEIGHT_NAME:
                         weight = WEIGHT_NAME_EXACT
@@ -1493,7 +1493,7 @@ def search(args: argparse.Namespace, app: qubesadmin.app.QubesBase) -> None:
         exact = all(x[-1] for x in needles)
         match = 'Exactly Matched' if exact else 'Matched'
         keywords = sorted(list(set(x[1] for x in needles)))
-        return ' & '.join(fields) + ' ' + match + ': ' + ', '.join(keywords)
+        return f"{' & '.join(fields)} {match}: {', '.join(keywords)}"
 
     last_header = ''
     for idx, needles in search_res:
@@ -1800,7 +1800,7 @@ def main(args: typing.Optional[typing.Sequence[str]] = None,
         else:
             parser.error(f'Command \'{p_args.command}\' not supported.')
     except Exception as e:  # pylint: disable=broad-except
-        print('ERROR: ' + str(e), file=sys.stderr)
+        print(f"ERROR: {e!s}", file=sys.stderr)
         app.log.debug(str(e), exc_info=sys.exc_info())
         return 1
 

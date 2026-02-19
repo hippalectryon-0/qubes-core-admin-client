@@ -70,7 +70,7 @@ class Action(RuleChoice):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'action=' + str(self)
+        return f"action={self!s}"
 
 
 class Proto(RuleChoice):
@@ -82,7 +82,7 @@ class Proto(RuleChoice):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'proto=' + str(self)
+        return f"proto={self!s}"
 
 
 class DstHost(RuleOption):
@@ -90,7 +90,7 @@ class DstHost(RuleOption):
     def __init__(self, value, prefixlen=None):
         # TODO: in python >= 3.3 ipaddress module could be used
         if value.count('/') > 1:
-            raise ValueError('Too many /: ' + value)
+            raise ValueError(f"Too many /: {value}")
         if not value.count('/'):
             # add prefix length to bare IP addresses
             try:
@@ -102,7 +102,7 @@ class DstHost(RuleOption):
                 if self.prefixlen < 0 or self.prefixlen > 128:
                     raise ValueError(
                         'netmask for IPv6 must be between 0 and 128')
-                value += '/' + str(self.prefixlen)
+                value += f"/{self.prefixlen!s}"
                 self.type = 'dst6'
             except socket.error:
                 try:
@@ -117,12 +117,12 @@ class DstHost(RuleOption):
                     if self.prefixlen < 0 or self.prefixlen > 32:
                         raise ValueError(
                             'netmask for IPv4 must be between 0 and 32')
-                    value += '/' + str(self.prefixlen)
+                    value += f"/{self.prefixlen!s}"
                     self.type = 'dst4'
                 except socket.error:
                     self.type = 'dsthost'
                     self.prefixlen = 0
-                    safe_set = string.ascii_lowercase + string.digits + '-._'
+                    safe_set = f"{string.ascii_lowercase}{string.digits}-._"
                     if not all(c in safe_set for c in value):
                         raise ValueError('Invalid hostname')
         else:
@@ -146,7 +146,7 @@ class DstHost(RuleOption):
                         raise ValueError(
                             'Invalid number of dots in IPv4 address')
                 except socket.error:
-                    raise ValueError('Invalid IP address: ' + host)
+                    raise ValueError(f"Invalid IP address: {host}")
 
         super().__init__(value)
 
@@ -157,7 +157,7 @@ class DstHost(RuleOption):
             # 0.0.0.0/0 or ::/0, doesn't limit to any particular host,
             # so skip it
             return None
-        return self.type + '=' + str(self)
+        return f"{self.type}={self!s}"
 
 
 class DstPorts(RuleOption):
@@ -182,7 +182,7 @@ class DstPorts(RuleOption):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'dstports=' + '{!s}-{!s}'.format(*self.range)
+        return f"dstports={'{!s}-{!s}'.format(*self.range)}"
 
 
 class IcmpType(RuleOption):
@@ -196,7 +196,7 @@ class IcmpType(RuleOption):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'icmptype=' + str(self)
+        return f"icmptype={self!s}"
 
 
 class SpecialTarget(RuleChoice):
@@ -206,7 +206,7 @@ class SpecialTarget(RuleChoice):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'specialtarget=' + str(self)
+        return f"specialtarget={self!s}"
 
 
 class Expire(RuleOption):
@@ -218,7 +218,7 @@ class Expire(RuleOption):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'expire=' + str(self)
+        return f"expire={self!s}"
 
     @property
     def expired(self):
@@ -238,7 +238,7 @@ class Comment(RuleOption):
     @property
     def rule(self):
         '''API representation of this rule element'''
-        return 'comment=' + str(self)
+        return f"comment={self!s}"
 
 
 class Rule:

@@ -108,7 +108,7 @@ def main(args=None, app=None):
         if hasattr(args, 'value'):
             parser.error('cannot both set and unset a value')
         try:
-            del vm.features['service.' + args.service]
+            del vm.features[f"service.{args.service}"]
         except KeyError:
             pass
         except qubesadmin.exc.QubesException as err:
@@ -116,13 +116,13 @@ def main(args=None, app=None):
 
     elif hasattr(args, 'value'):
         try:
-            vm.features['service.' + args.service] = parse_bool(args.value)
+            vm.features[f"service.{args.service}"] = parse_bool(args.value)
         except qubesadmin.exc.QubesException as err:
             parser.error_runtime(str(err))
 
     else:
         try:
-            print('on' if vm.features['service.' + args.service] else 'off')
+            print('on' if vm.features[f"service.{args.service}"] else 'off')
             return 0
         except KeyError:
             return 1

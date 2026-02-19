@@ -59,7 +59,7 @@ class Label:
     def icon(self):
         '''freedesktop icon name, suitable for use in
         :py:meth:`PyQt4.QtGui.QIcon.fromTheme`'''
-        return 'appvm-' + self.name
+        return f"appvm-{self.name}"
 
     @property
     def index(self):

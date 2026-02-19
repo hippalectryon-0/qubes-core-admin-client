@@ -128,7 +128,7 @@ def get_drive_assignment(app, drive_str):
                     'losetup', '-f', '--show', port_id,
                     user='root')
                 untrusted_loop_name = untrusted_loop_name.strip()
-                allowed_chars = string.ascii_lowercase + string.digits + '/'
+                allowed_chars = f"{string.ascii_lowercase}{string.digits}/"
                 allowed_chars = allowed_chars.encode('ascii')
                 if not all(c in allowed_chars for c in untrusted_loop_name):
                     raise qubesadmin.exc.QubesException(

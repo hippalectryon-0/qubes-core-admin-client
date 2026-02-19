@@ -73,7 +73,7 @@ class Core2VM(qubesadmin.backup.BackupVM):
         port = node.get('port')
         toport = node.get('toport')
         if port and toport:
-            dstports = port + '-' + toport
+            dstports = f"{port}-{toport}"
         elif port:
             dstports = port
         else:
@@ -366,7 +366,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
 
         # First build qid->name map
         for vm_class_name in vm_classes:
-            vms_of_class = tree.findall("Qubes" + vm_class_name)
+            vms_of_class = tree.findall(f"Qubes{vm_class_name}")
             for element in vms_of_class:
                 qid = element.get('qid', None)
                 name = element.get('name', None)
@@ -385,13 +385,13 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
         # Then load all VMs - since we have qid_map, no need to preserve
         # specific load older.
         for vm_class_name in vm_classes:
-            vms_of_class = tree.findall("Qubes" + vm_class_name)
+            vms_of_class = tree.findall(f"Qubes{vm_class_name}")
             for element in vms_of_class:
                 self.import_core2_vm(element)
 
         # ... and load other VMs
         for vm_class_name in ["AppVm", "HVm", "NetVm", "ProxyVm"]:
-            vms_of_class = tree.findall("Qubes" + vm_class_name)
+            vms_of_class = tree.findall(f"Qubes{vm_class_name}")
             # first non-template based, then template based
             sorted_vms_of_class = sorted(vms_of_class,
                 key=lambda x: str(x.get('template_qid')).lower() != "none")
@@ -403,7 +403,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
 
         # After importing all VMs, set netvm references, in the same order
         for vm_class_name in vm_classes:
-            for element in tree.findall("Qubes" + vm_class_name):
+            for element in tree.findall(f"Qubes{vm_class_name}"):
                 try:
                     self.set_netvm_dependency(element)
                 except (ValueError, LookupError) as err:

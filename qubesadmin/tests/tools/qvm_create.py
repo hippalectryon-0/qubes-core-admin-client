@@ -115,7 +115,7 @@ class TC_00_qvm_create(qubesadmin.tests.QubesTestCase):
                 ('new-vm', 'admin.vm.volume.ImportWithSize', 'root',
                  b'9\nroot data')] = b'0\0'
             qubesadmin.tools.qvm_create.main(['-l', 'red', '-C', 'StandaloneVM',
-                '--root-copy-from=' + root_file.name, 'new-vm'],
+                f"--root-copy-from={root_file.name}", 'new-vm'],
                 app=self.app)
             self.assertAllCalled()
             self.assertTrue(os.path.exists(root_file.name))
@@ -137,7 +137,7 @@ class TC_00_qvm_create(qubesadmin.tests.QubesTestCase):
                 ('new-vm', 'admin.vm.volume.ImportWithSize', 'root',
                  b'9\nroot data')] = b'0\0'
             qubesadmin.tools.qvm_create.main(['-l', 'red', '-C', 'StandaloneVM',
-                '--root-move-from=' + root_file.name, 'new-vm'],
+                f"--root-move-from={root_file.name}", 'new-vm'],
                 app=self.app)
             self.assertAllCalled()
             self.assertFalse(os.path.exists(root_file.name))
@@ -149,8 +149,8 @@ class TC_00_qvm_create(qubesadmin.tests.QubesTestCase):
             with self.assertRaises(SystemExit):
                 qubesadmin.tools.qvm_create.main(['-l', 'red',
                     '-C', 'StandaloneVM',
-                    '--root-copy-from=' + root_file.name,
-                    '--root-move-from=' + root_file.name,
+                    f"--root-copy-from={root_file.name}",
+                    f"--root-move-from={root_file.name}",
                     'new-vm'],
                     app=self.app)
             self.assertAllCalled()
@@ -302,7 +302,7 @@ class TC_00_qvm_create(qubesadmin.tests.QubesTestCase):
             with self.assertRaises(SystemExit):
                 with qubesadmin.tests.tools.StderrBuffer() as stderr:
                     qubesadmin.tools.qvm_create.main(['-l', 'red',
-                        '--root-copy-from=' + root_file.name, 'new-vm'],
+                        f"--root-copy-from={root_file.name}", 'new-vm'],
                         app=self.app)
             self.assertIn('--root-copy-from', stderr.getvalue())
             self.assertAllCalled()

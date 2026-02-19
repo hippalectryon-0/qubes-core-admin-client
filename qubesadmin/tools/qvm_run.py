@@ -279,7 +279,7 @@ def run_command_single(args, vm):
             ):
                 service = "qubes.VMRootExec"
                 args.user = None
-            service += "+" + qubesadmin.utils.encode_for_vmexec(all_args)
+            service += f"+{qubesadmin.utils.encode_for_vmexec(all_args)}"
         else:
             service = "qubes.VMShell"
             if args.gui and args.dispvm:

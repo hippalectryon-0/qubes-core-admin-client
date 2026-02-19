@@ -437,7 +437,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                 if ignore_volumes and volume.name in ignore_volumes:
                     continue
                 default_pool = getattr(
-                    self.app, "default_pool_" + volume.name, volume.pool
+                    self.app, f"default_pool_{volume.name}", volume.pool
                 )
                 if default_pool != volume.pool:
                     if pools is None:
@@ -845,7 +845,7 @@ class QubesLocal(QubesBase):
             command = [
                 "env",
                 "QREXEC_REMOTE_DOMAIN=dom0",
-                "QREXEC_REQUESTED_TARGET=" + dest,
+                f"QREXEC_REQUESTED_TARGET={dest}",
                 method_path,
                 arg,
             ]
@@ -938,7 +938,7 @@ class QubesLocal(QubesBase):
             # in subprocess call related to falling back to C locale
             env = os.environ.copy()
             env["LC_ALL"] = "C"
-            cmd = "/etc/qubes-rpc/" + service
+            cmd = f"/etc/qubes-rpc/{service}"
             arg = ""
             if not os.path.exists(cmd) and "+" in service:
                 cmd, arg = cmd.split("+", 1)
@@ -1003,7 +1003,7 @@ class QubesRemote(QubesBase):
         """
         service_name = method
         if arg is not None:
-            service_name += "+" + arg
+            service_name += f"+{arg}"
         command = [qubesadmin.config.QREXEC_CLIENT_VM, dest, service_name]
         if payload_stream:
             (p, stdout, stderr) = self._call_with_stream(
