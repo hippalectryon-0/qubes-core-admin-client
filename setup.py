@@ -20,8 +20,7 @@ def get_console_scripts():
             if basename in ['__init__', 'dochelpers', 'xcffibhelpers']\
                     or ext != '.py':
                 continue
-            yield basename.replace('_', '-'), 'qubesadmin.tools.{}'.format(
-                basename)
+            yield basename.replace('_', '-'), f'qubesadmin.tools.{basename}'
 
 # create simple scripts that run much faster than "console entry points"
 class CustomInstall(setuptools.command.install.install):
@@ -35,12 +34,12 @@ class CustomInstall(setuptools.command.install.install):
            path = os.path.join(bin, file)
            with open(path, "w") as f:
                f.write(
-"""#!/usr/bin/python3
-from {} import main
+f"""#!/usr/bin/python3
+from {pkg} import main
 import sys
 if __name__ == '__main__':
-	sys.exit(main())
-""".format(pkg))
+\tsys.exit(main())
+""")
 
            os.chmod(path, 0o755)
         setuptools.command.install.install.run(self)
