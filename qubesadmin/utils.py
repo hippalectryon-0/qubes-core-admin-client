@@ -80,10 +80,10 @@ def size_to_human(size):
     if size < 1024:
         return str(size)
     if size < 1024 * 1024:
-        return str(round(size / 1024.0, 1)) + ' KiB'
+        return f"{round(size / 1024.0, 1)!s} KiB"
     if size < 1024 * 1024 * 1024:
-        return str(round(size / (1024.0 * 1024), 1)) + ' MiB'
-    return str(round(size / (1024.0 * 1024 * 1024), 1)) + ' GiB'
+        return f"{round(size / (1024.0 * 1024), 1)!s} MiB"
+    return f"{round(size / (1024.0 * 1024 * 1024), 1)!s} GiB"
 
 
 def get_entry_point_one(group, name):

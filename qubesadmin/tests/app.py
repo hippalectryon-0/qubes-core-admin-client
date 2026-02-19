@@ -1030,15 +1030,15 @@ class TC_20_QubesLocal(unittest.TestCase):
                 'test-vm', 'test.service',
                 'some-arg', payload=payload, payload_stream=payload_stream)
         self.assertEqual(value, b'return-value')
-        self.assertTrue(os.path.exists(self.tmpdir + '/env'))
-        with open(self.tmpdir + '/env', encoding="utf-8") as env:
+        self.assertTrue(os.path.exists(f"{self.tmpdir}/env"))
+        with open(f"{self.tmpdir}/env", encoding="utf-8") as env:
             self.assertIn('QREXEC_REMOTE_DOMAIN=dom0\n', env)
             self.assertIn('QREXEC_REQUESTED_TARGET=test-vm\n', env)
-        self.assertTrue(os.path.exists(self.tmpdir + '/args'))
-        with open(self.tmpdir + '/args', encoding="utf-8") as args:
+        self.assertTrue(os.path.exists(f"{self.tmpdir}/args"))
+        with open(f"{self.tmpdir}/args", encoding="utf-8") as args:
             self.assertEqual(args.read(), 'some-arg\n')
-        self.assertTrue(os.path.exists(self.tmpdir + '/payload'))
-        with open(self.tmpdir + '/payload', 'rb') as payload_f:
+        self.assertTrue(os.path.exists(f"{self.tmpdir}/payload"))
+        with open(f"{self.tmpdir}/payload", 'rb') as payload_f:
             self.assertEqual(payload_f.read(), expected)
 
     @mock.patch('os.isatty', lambda fd: fd == 2)

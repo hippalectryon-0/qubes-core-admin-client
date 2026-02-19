@@ -235,7 +235,7 @@ class RestoreInDisposableVM:
 
         # backup location, replace by qrexec service to be called
         new_positional_args.append(
-            'qubes.RestoreById+' + self.storage_access_id)
+            f"qubes.RestoreById+{self.storage_access_id}")
         if self.args.vms:
             new_positional_args.extend(self.args.vms)
 

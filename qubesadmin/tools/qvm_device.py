@@ -100,7 +100,7 @@ class Line:
     def assignments(self):
         """list of frontends the device is assigned to"""
         fronts = (
-            f'{"*" if self.assignment else ""}' + front
+            f"{'*' if self.assignment else ''}{front}"
             for front in self.frontends
         )
         return ", ".join(fronts)
@@ -445,7 +445,7 @@ def info_device(args):
         print(device.description)
         print(f"device ID: {device.device_id}")
         for key, value in device.data.items():
-            print(key.replace("_", " ") + ":", value)
+            print(f"{key.replace('_', ' ')}:", value)
 
 
 def init_list_parser(sub_parsers):
@@ -741,7 +741,7 @@ def main(args=None, app=None):
         devclass = basename[4:]
 
     # Special treatment for '--list-device-classes' (alias --list-classes)
-    sys_args = ["--" + arg for arg in args] if args else []
+    sys_args = [f"--{arg}" for arg in args] if args else []
     curr_action = sys.argv[1:] + sys_args
     if set(curr_action).intersection(
         {"--list-device-classes", "--list-classes"}

@@ -68,8 +68,8 @@ def get_root_img_size(source_dir):
     '''Extract size of root.img to be imported'''
     root_path = os.path.join(source_dir, 'root.img')
     # deal with both cases: split tar and non-split tar
-    part_path = root_path + '.part.00'
-    tar_path = root_path + '.tar'
+    part_path = f"{root_path}.part.00"
+    tar_path = f"{root_path}.tar"
     if os.path.exists(part_path) or os.path.exists(tar_path):
         # get just file root_size from the tar header
         path = part_path if os.path.exists(part_path) else tar_path
@@ -96,7 +96,7 @@ def import_root_img(vm, source_dir):
     root_size = get_root_img_size(source_dir)
 
     root_path = os.path.join(source_dir, 'root.img')
-    if os.path.exists(root_path + '.part.00'):
+    if os.path.exists(f"{root_path}.part.00"):
         rpm_symlink = os.path.join(source_dir, 'template.rpm')
         if not os.path.exists(rpm_symlink) or not os.path.islink(rpm_symlink):
             raise qubesadmin.exc.QubesException(
@@ -130,8 +130,8 @@ def import_root_img(vm, source_dir):
         ):
             raise qubesadmin.exc.QubesException(
                 'root.img extraction failed')
-    elif os.path.exists(root_path + '.tar'):
-        with subprocess.Popen(['tar', 'xSOf', root_path + '.tar'],
+    elif os.path.exists(f"{root_path}.tar"):
+        with subprocess.Popen(['tar', 'xSOf', f"{root_path}.tar"],
                 stdout=subprocess.PIPE) as tar:
             vm.volumes['root'].import_data_with_size(
                 stream=tar.stdout, size=root_size)
@@ -145,7 +145,7 @@ def import_root_img(vm, source_dir):
             pool = vm.app.pools[vm.volumes['root'].pool]
             if (pool.driver in ('file', 'file-reflink')
                     and root_path == os.path.join(pool.config['dir_path'],
-                                                  vid + '.img')):
+                                                  f"{vid}.img")):
                 vm.log.info('root.img already in place, do not re-import')
                 return
         with open(root_path, 'rb') as root_file:
@@ -172,8 +172,7 @@ def import_appmenus(vm, source_dir, skip_generate=True):
             user = qubes_group.gr_mem[0]
             cmd_prefix = ['runuser', '-u', user, '--', 'env', 'DISPLAY=:0']
         except KeyError as e:
-            vm.log.warning('Default user not found, not importing appmenus: ' +
-                           str(e))
+            vm.log.warning(f"Default user not found, not importing appmenus: {e!s}")
             return
     else:
         cmd_prefix = []
@@ -288,17 +287,17 @@ async def post_install(args):
         # reinstall
         vm = app.domains[args.name]
         if app.qubesd_connection_type == 'socket' and \
-                args.dir == '/var/lib/qubes/vm-templates/' + args.name:
+                args.dir == f"/var/lib/qubes/vm-templates/{args.name}":
             # VM exists and uses the same directory as target vm - on
             # final cleanup remove only some files, not the whole directory
             local_reinstall = True
     except KeyError:
         if app.qubesd_connection_type == 'socket' and \
-                args.dir == '/var/lib/qubes/vm-templates/' + args.name:
+                args.dir == f"/var/lib/qubes/vm-templates/{args.name}":
             # vm.create_on_disk() need to create the directory on its own,
             # move it away from its way
             tmp_sourcedir = os.path.join('/var/lib/qubes/vm-templates',
-                'tmp-' + args.name)
+                f"tmp-{args.name}")
             shutil.move(args.dir, tmp_sourcedir)
             args.dir = tmp_sourcedir
 
@@ -335,7 +334,7 @@ async def post_install(args):
         if local_reinstall:
             # remove only imported root img
             root_path = os.path.join(args.dir, 'root.img')
-            for root_part in glob.glob(root_path + '.part.*'):
+            for root_part in glob.glob(f"{root_path}.part.*"):
                 os.unlink(root_part)
         else:
             shutil.rmtree(args.dir)

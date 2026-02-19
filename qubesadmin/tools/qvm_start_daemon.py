@@ -206,10 +206,10 @@ def retrieve_gui_daemon_options(vm, guivm):
     options = {}
 
     for name, kind, validator in GUI_DAEMON_OPTIONS:
-        feature = "gui-" + name.replace("_", "-")
+        feature = f"gui-{name.replace('_', '-')}"
         feature_value = vm.features.get(feature, None)
         if feature_value is None:
-            feature = "gui-default-" + name.replace("_", "-")
+            feature = f"gui-default-{name.replace('_', '-')}"
             feature_value = guivm.features.get(feature, None)
         if feature_value is None:
             continue
@@ -323,7 +323,7 @@ def escape_config_string(value):
     value = UNPRINTABLE_CHARACTER_RE.sub(
         lambda m: rf"\x{ord(m.group(0)):02x}", value
     )
-    return '"' + value + '"'
+    return f"\"{value}\""
 
 
 # "LVDS connected 1024x768+0+0 (normal left inverted right) 304mm x 228mm"
@@ -644,7 +644,7 @@ class DAEMONLauncher:
         guid_cmd += [
             "-p",
             "_KDE_NET_WM_COLOR_SCHEME=s:{}".format(
-                os.path.join(data_dir, "qubes-kde", vm.label.name + ".colors")
+                os.path.join(data_dir, "qubes-kde", f"{vm.label.name}.colors")
             ),
         ]
         return guid_cmd
@@ -659,7 +659,7 @@ class DAEMONLauncher:
             "-c",
             vm.label.color,
             "-i",
-            os.path.join(QUBES_ICON_DIR, vm.label.icon) + ".png",
+            f"{os.path.join(QUBES_ICON_DIR, vm.label.icon)}.png",
             "-l",
             str(vm.label.index),
         ]

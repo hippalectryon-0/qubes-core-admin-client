@@ -233,17 +233,17 @@ class TC_00_qvm_template_postprocess(qubesadmin.tests.QubesTestCase):
                 'vm-whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in default_menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
         with open(os.path.join(self.source_dir.name,
                 'whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
         with open(os.path.join(self.source_dir.name,
                 'netvm-whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in netvm_menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
 
         self.app.expected_calls[('dom0', 'admin.vm.List', None, None)] = \
             b'0\0test-vm class=TemplateVM state=Halted\n'
@@ -293,17 +293,17 @@ class TC_00_qvm_template_postprocess(qubesadmin.tests.QubesTestCase):
                 'vm-whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in default_menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
         with open(os.path.join(self.source_dir.name,
                 'whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
         with open(os.path.join(self.source_dir.name,
                 'netvm-whitelisted-appmenus.list'), 'w',
                 encoding="utf-8") as f_list:
             for entry in netvm_menu_items:
-                f_list.write(entry + '\n')
+                f_list.write(f"{entry}\n")
         self.app.expected_calls[(
             'test-vm',
             'admin.vm.feature.Set',

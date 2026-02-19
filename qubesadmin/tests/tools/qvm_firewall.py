@@ -96,7 +96,7 @@ class TC_00_RuleAction(qubesadmin.tests.QubesTestCase):
     def test_006_dsthost_aliases(self):
         args = RuleNamespace()
         for name in ['dsthost', 'dst4', 'dst6']:
-            self.action(None, args, [name + '=127.0.0.1', 'accept'])
+            self.action(None, args, [f"{name}=127.0.0.1", 'accept'])
             self.assertEqual(args.rule,
                 qubesadmin.firewall.Rule(
                     None, action='accept', dsthost='127.0.0.1/32'))

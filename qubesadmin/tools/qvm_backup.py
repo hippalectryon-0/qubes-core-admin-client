@@ -143,7 +143,7 @@ def main(args=None, app=None):
             # first write the backup profile without passphrase, to display
             # summary
             profile_path = os.path.join(
-                backup_profile_dir, profile_name + '.conf')
+                backup_profile_dir, f"{profile_name}.conf")
             with open(profile_path, 'w', encoding='utf-8') as f_profile:
                 write_backup_profile(f_profile, args)
         else:

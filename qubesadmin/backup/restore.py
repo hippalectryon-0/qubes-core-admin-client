@@ -490,7 +490,7 @@ class ExtractWorker3(Process):
             without trailing slash
         '''
         for fname, data_func in self.handlers.items():
-            if not fname.startswith(dirname + '/'):
+            if not fname.startswith(f"{dirname}/"):
                 continue
             if not os.path.exists(fname):
                 # for example firewall.xml
@@ -537,7 +537,7 @@ class ExtractWorker3(Process):
             # if that was whole-directory archive, handle
             # relocated files now
             inner_name = self.tar2_current_file.rsplit('.', 1)[0] \
-                .replace(self.base_dir + '/', '')
+                .replace(f"{self.base_dir}/", '')
             if os.path.basename(inner_name) == '.':
                 self.handle_dir(
                     os.path.dirname(inner_name))
@@ -662,11 +662,11 @@ class ExtractWorker3(Process):
                     self.cleanup_tar2(wait=True, terminate=False)
 
                 inner_name = filename[:-len('.000')].replace(
-                    self.base_dir + '/', '')
+                    f"{self.base_dir}/", '')
                 redirect_stdout = None
                 if os.path.basename(inner_name) == '.':
                     if (inner_name in self.handlers or
-                            any(x.startswith(os.path.dirname(inner_name) + '/')
+                            any(x.startswith(f"{os.path.dirname(inner_name)}/")
                             for x in self.handlers)):
                         tar2_cmdline = ['tar',
                             f"-{'t' if self.verify_only else 'x'}",
@@ -712,11 +712,11 @@ class ExtractWorker3(Process):
                     self.decryptor_process = subprocess.Popen(
                         ["openssl", "enc",
                          "-d",
-                         "-" + self.crypto_algorithm,
+                         f"-{self.crypto_algorithm}",
                          "-md",
                          "MD5",
                          "-pass",
-                         "pass:" + self.passphrase],
+                         f"pass:{self.passphrase}"],
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE)
 
@@ -1042,7 +1042,7 @@ class BackupRestore:
                 vmproc.stdin.flush()
 
             # Send to tar2qfile the VMs that should be extracted
-            vmproc.stdin.write((" ".join(filelist) + "\n").encode())
+            vmproc.stdin.write(f"{' '.join(filelist)}\n".encode())
             vmproc.stdin.flush()
             self.processes_to_kill_on_cancel.append(vmproc)
 
@@ -1069,7 +1069,7 @@ class BackupRestore:
             tar1_command = ['tar',
                             '-ixv',
                             '--checkpoint=10000',
-                            '--checkpoint-action=exec=' + checkpoint_command,
+                            f"--checkpoint-action=exec={checkpoint_command}",
                             '--occurrence=1',
                             '-C', self.tmpdir] + filelist
 
@@ -1146,17 +1146,17 @@ class BackupRestore:
                 HMAC_MAX_SIZE:
             raise QubesException(f'HMAC file {hmacfile} too large')
 
-        if hmacfile != filename + ".hmac":
+        if hmacfile != f"{filename}.hmac":
             raise QubesException(
                 f"ERROR: expected hmac for {filename}, but got {hmacfile}")
 
         if algorithm == 'scrypt':
             # in case of 'scrypt' _verify_hmac is only used for backup header
             assert filename == HEADER_FILENAME
-            self._verify_and_decrypt(hmacfile, HEADER_FILENAME + '.dec')
+            self._verify_and_decrypt(hmacfile, f"{HEADER_FILENAME}.dec")
             f_name = os.path.join(self.tmpdir, filename)
             with open(f_name, 'rb') as f_one:
-                with open(f_name + '.dec', 'rb') as f_two:
+                with open(f"{f_name}.dec", 'rb') as f_two:
                     if f_one.read() != f_two.read():
                         raise QubesException(
                             f'Invalid hmac on {filename}')
@@ -1164,7 +1164,7 @@ class BackupRestore:
 
         with open(os.path.join(self.tmpdir, filename), 'rb') as f_input:
             with subprocess.Popen(
-                    ["openssl", "dgst", "-" + algorithm, "-hmac", passphrase],
+                    ["openssl", "dgst", f"-{algorithm}", "-hmac", passphrase],
                     stdin=f_input,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE) as hmac_proc:
@@ -1179,7 +1179,7 @@ class BackupRestore:
                     encoding='ascii') as f_hmac:
                 hmac = load_hmac(f_hmac.read())
         except UnicodeDecodeError as err:
-            raise QubesException('Cannot load hmac file: ' + str(err))
+            raise QubesException(f"Cannot load hmac file: {err!s}")
         if hmac and load_hmac(hmac_stdout.decode('ascii')) == hmac:
             os.unlink(os.path.join(self.tmpdir, hmacfile))
             self.log.debug(
@@ -1317,7 +1317,7 @@ class BackupRestore:
             )
         else:
             filename = HEADER_FILENAME
-            hmacfile = HEADER_FILENAME + '.hmac'
+            hmacfile = f"{HEADER_FILENAME}.hmac"
             self.log.debug("Got backup header and hmac: %s, %s",
                 filename, hmacfile)
 
@@ -1861,7 +1861,7 @@ class BackupRestore:
                 if vm_info.name != vm_info.vm.name:
                     summary_line += f" <-- Will be renamed to '{vm_info.name}'"
 
-            summary += summary_line + "\n"
+            summary += f"{summary_line}\n"
 
         return summary
 
@@ -1993,7 +1993,7 @@ class BackupRestore:
                             continue
                         data_func = functools.partial(
                             self._handle_volume_data, vm, volume)
-                        img_path = os.path.join(vm_info.subdir, name + '.img')
+                        img_path = os.path.join(vm_info.subdir, f"{name}.img")
                         handlers[img_path] = data_func
                     handlers[os.path.join(vm_info.subdir, 'firewall.xml')] = \
                         functools.partial(vm_info.vm.handle_firewall_xml, vm)

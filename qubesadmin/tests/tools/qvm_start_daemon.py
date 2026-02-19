@@ -101,12 +101,12 @@ class TC_00_qvm_start_gui(qubesadmin.tests.QubesTestCase):
         for name, _kind, _validator in GUI_DAEMON_OPTIONS:
             self.app.expected_calls[
                 ('test-vm', 'admin.vm.feature.Get',
-                 'gui-' + name.replace('_', '-'), None)] = \
+                 f"gui-{name.replace('_', '-')}", None)] = \
                 b'2\x00QubesFeatureNotFoundError\x00\x00Feature not set\x00'
 
             self.app.expected_calls[
                 ('gui-vm', 'admin.vm.feature.Get',
-                 'gui-default-' + name.replace('_', '-'), None)] = \
+                 f"gui-default-{name.replace('_', '-')}", None)] = \
                 b'2\x00QubesFeatureNotFoundError\x00\x00Feature not set\x00'
 
     def run_common_args(self):

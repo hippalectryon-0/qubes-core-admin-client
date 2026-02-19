@@ -58,7 +58,7 @@ class Volume:
         `payload` and `payload_stream` can be used.
         """
         if self._vm is not None:
-            method = 'admin.vm.volume.' + func_name
+            method = f"admin.vm.volume.{func_name}"
             dest = self._vm
             arg = self._vm_name
         else:
@@ -66,7 +66,7 @@ class Volume:
                 raise NotImplementedError(
                     'payload_stream not implemented for '
                     'admin.pool.volume.* calls')
-            method = 'admin.pool.volume.' + func_name
+            method = f"admin.pool.volume.{func_name}"
             dest = 'dom0'
             arg = self._pool
             if payload is not None:
@@ -278,7 +278,7 @@ class Volume:
         :param stream: file-like object, must support fileno()
         :param size: size of data in bytes
         """
-        size_line = str(size) + '\n'
+        size_line = f"{size!s}\n"
         self._qubesd_call(
             'ImportWithSize', payload=size_line.encode(),
             payload_stream=stream)

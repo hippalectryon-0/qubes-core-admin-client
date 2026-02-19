@@ -86,7 +86,7 @@ class Column:
 
         value = self.format(vm) or '-'
         if insertion > 0 and self.ls_head == 'NAME':
-            value = '└─' + value
+            value = f"└─{value}"
             value = '  ' * (insertion-1) + value
         return value
 
@@ -521,7 +521,7 @@ class Table:
         else:
             for vm in sorted(self.domains):
                 try:
-                    stream.write('|'.join(self.get_row(vm)) + '\n')
+                    stream.write(f"{'|'.join(self.get_row(vm))}\n")
                 except qubesadmin.exc.QubesVMNotFoundError:
                     continue
 
@@ -569,7 +569,7 @@ class _HelpColumnsAction(argparse.Action):
             for column in sorted(Column.columns.values()))
         text += '\n\nAdditionally any VM property may be used as a column, ' \
                 'see qvm-prefs --help-properties for available values'
-        print(text + '\n')
+        print(f"{text}\n")
         sys.exit(0)
 
 

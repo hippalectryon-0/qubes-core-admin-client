@@ -142,14 +142,14 @@ def main(args=None, app=None):
             try:
                 with tempfile.NamedTemporaryFile(
                     mode="w+",
-                    prefix=qube.name + "_qube_",
+                    prefix=f"{qube.name}_qube_",
                     suffix="_notes.txt",
                     delete_on_close=False,
                 ) as temp:
                     temp.write(qube.get_notes())
                     temp.close()
                     last_modified = os.path.getmtime(temp.name)
-                    edit_cmd = "${VISUAL:-${EDITOR:-vi}} " + temp.name
+                    edit_cmd = f"${{VISUAL:-${{EDITOR:-vi}}}} {temp.name}"
                     subprocess.run(edit_cmd, shell=True, check=True)
                     if last_modified != os.path.getmtime(temp.name):
                         with open(temp.name, encoding="utf-8") as notes_file:

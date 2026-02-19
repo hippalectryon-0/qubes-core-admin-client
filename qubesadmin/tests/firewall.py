@@ -446,6 +446,6 @@ class TC_11_Firewall(qubesadmin.tests.QubesTestCase):
         )
         rules = [qubesadmin.firewall.Rule(rule) for rule in rules_txt]
         self.app.expected_calls[('test-vm', 'admin.vm.firewall.Set', None,
-        ''.join(rule + '\n' for rule in rules_txt).encode('ascii'))] = b'0\0'
+        ''.join(f"{rule}\n" for rule in rules_txt).encode('ascii'))] = b'0\0'
         self.vm.firewall.rules = rules
         self.assertAllCalled()

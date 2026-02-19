@@ -131,7 +131,7 @@ class PropertyHolder:
         if self._properties is None:
             properties_str = self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'List',
+                f"{self._method_prefix}List",
                 None,
                 None)
             self._properties = properties_str.decode('ascii').splitlines()
@@ -146,7 +146,7 @@ class PropertyHolder:
         '''
         help_text = self.qubesd_call(
             self._method_dest,
-            self._method_prefix + 'Help',
+            f"{self._method_prefix}Help",
             name,
             None)
         return help_text.decode('ascii')
@@ -172,7 +172,7 @@ class PropertyHolder:
         try:
             property_str = self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'Get',
+                f"{self._method_prefix}Get",
                 item,
                 None)
         except (qubesadmin.exc.QubesDaemonAccessError,
@@ -195,14 +195,14 @@ class PropertyHolder:
         try:
             property_str = self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'GetDefault',
+                f"{self._method_prefix}GetDefault",
                 item,
                 None)
         except (qubesadmin.exc.QubesDaemonAccessError,
                 qubesadmin.exc.QubesVMNotFoundError):
             raise qubesadmin.exc.QubesPropertyAccessError(item)
         if not property_str:
-            raise AttributeError(item + ' has no default')
+            raise AttributeError(f"{item} has no default")
         (prop_type, value) = property_str.split(b' ', 1)
         return self._parse_type_value(prop_type, value)
 
@@ -241,7 +241,7 @@ class PropertyHolder:
         try:
             property_str = self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'Get',
+                f"{self._method_prefix}Get",
                 item,
                 None)
         except (qubesadmin.exc.QubesDaemonNoResponseError,
@@ -335,7 +335,7 @@ class PropertyHolder:
         try:
             properties_str = self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'GetAll',
+                f"{self._method_prefix}GetAll",
                 None,
                 None)
         except qubesadmin.exc.QubesDaemonNoResponseError:
@@ -371,7 +371,7 @@ class PropertyHolder:
             try:
                 self.qubesd_call(
                     self._method_dest,
-                    self._method_prefix + 'Reset',
+                    f"{self._method_prefix}Reset",
                     key,
                     None)
             except (qubesadmin.exc.QubesDaemonNoResponseError,
@@ -385,7 +385,7 @@ class PropertyHolder:
             try:
                 self.qubesd_call(
                     self._method_dest,
-                    self._method_prefix + 'Set',
+                    f"{self._method_prefix}Set",
                     key,
                     str(value).encode('utf-8'))
             except (qubesadmin.exc.QubesDaemonNoResponseError,
@@ -398,7 +398,7 @@ class PropertyHolder:
         try:
             self.qubesd_call(
                 self._method_dest,
-                self._method_prefix + 'Reset',
+                f"{self._method_prefix}Reset",
                 name
             )
         except (qubesadmin.exc.QubesDaemonNoResponseError,

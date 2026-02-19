@@ -85,7 +85,7 @@ class DeviceSerializer:
     ALLOWED_CHARS_KEY = set(
         string.digits + string.ascii_letters + r"!#$%&()*+,-./:;<>?@[\]^_{|}~"
     )
-    ALLOWED_CHARS_PARAM = ALLOWED_CHARS_KEY.union(set(string.punctuation + " "))
+    ALLOWED_CHARS_PARAM = ALLOWED_CHARS_KEY.union(set(f"{string.punctuation} "))
 
     @classmethod
     def unpack_properties(
@@ -731,7 +731,7 @@ class DeviceInterface:
                     f"for given {devclass=}",
                     file=sys.stderr,
                 )
-            if not all(c in string.hexdigits + "*" for c in ifc_padded):
+            if not all(c in f"{string.hexdigits}*" for c in ifc_padded):
                 raise ProtocolError("Invalid characters in interface encoding")
             devclass_code = devclass[0].lower()
             if devclass_code not in string.ascii_lowercase:
@@ -753,7 +753,7 @@ class DeviceInterface:
                 )
                 ifc_full = ifc_padded
             elif len(ifc_padded) == 6:
-                ifc_full = "?" + ifc_padded
+                ifc_full = f"?{ifc_padded}"
             else:
                 ifc_full = ifc_padded
 
@@ -813,7 +813,7 @@ class DeviceInterface:
         if self.devclass in ("usb", "pci"):
             # try subclass first as in `lspci`
             result = self._load_classes(self.devclass).get(
-                self._interface_encoding[1:-2] + "**", None
+                f"{self._interface_encoding[1:-2]}**", None
             )
             if result is None or result.lower() in (
                 "none",
@@ -833,7 +833,7 @@ class DeviceInterface:
             ):
                 # if not, try class
                 result = self._load_classes(self.devclass).get(
-                    self._interface_encoding[1:-4] + "****", None
+                    f"{self._interface_encoding[1:-4]}****", None
                 )
             if result is None or result.lower() in (
                 "none",
@@ -876,10 +876,10 @@ class DeviceInterface:
                 elif line.startswith("\t") and class_id:
                     (subclass_id, _, subclass_name) = line[1:].split(" ", 2)
                     # store both prog-if specific entry and generic one
-                    result[class_id + subclass_id + "**"] = subclass_name
+                    result[f"{class_id}{subclass_id}**"] = subclass_name
                 elif line.startswith("C "):
                     (_, class_id, _, class_name) = line.split(" ", 3)
-                    result[class_id + "****"] = class_name
+                    result[f"{class_id}****"] = class_name
                     subclass_id = None
 
         return result
@@ -1125,7 +1125,7 @@ class DeviceInfo(VirtualDevice):
 
         for key, value in self.data.items():
             properties += b" " + DeviceSerializer.pack_property(
-                "_" + key, value
+                f"_{key}", value
             )
 
         return properties
@@ -1473,7 +1473,7 @@ class DeviceAssignment:
 
         for key, value in self.options.items():
             properties += b" " + DeviceSerializer.pack_property(
-                "_" + key, value
+                f"_{key}", value
             )
 
         return properties
