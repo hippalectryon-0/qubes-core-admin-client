@@ -151,8 +151,7 @@ class EventsDispatcher:
             if not reconnect:
                 break
             self.app.log.warning(
-                'Connection to qubesd terminated, reconnecting in {} '
-                'seconds'.format(qubesadmin.config.QUBESD_RECONNECT_DELAY))
+                f'Connection to qubesd terminated, reconnecting in {qubesadmin.config.QUBESD_RECONNECT_DELAY} seconds')
             # avoid busy-loop if qubesd is dead
             await asyncio.sleep(qubesadmin.config.QUBESD_RECONNECT_DELAY)
 

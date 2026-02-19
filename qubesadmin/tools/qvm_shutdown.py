@@ -129,15 +129,13 @@ def main(args=None, app=None):  # pylint: disable=missing-docstring
                 current_vms = failed_domains(current_vms)
                 if not current_vms:
                     break
-                args.app.log.info('Waiting for shutdown ({}): {}'.format(
-                    timeout, ', '.join([str(vm) for vm in current_vms])))
+                args.app.log.info(f"Waiting for shutdown ({timeout}): {', '.join([str(vm) for vm in current_vms])}")
                 time.sleep(1)
                 timeout -= 1
             if not args.dry_run:
                 if current_vms:
                     args.app.log.info(
-                        'Killing remaining qubes: {}'
-                        .format(', '.join([str(vm) for vm in current_vms])))
+                        f"Killing remaining qubes: {', '.join([str(vm) for vm in current_vms])}")
                 for vm in current_vms:
                     try:
                         vm.kill()

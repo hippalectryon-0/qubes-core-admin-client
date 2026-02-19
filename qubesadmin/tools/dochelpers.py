@@ -89,8 +89,7 @@ def prepare_manpage(command):
         stream.write('.. option:: ')
         if action.metavar:
             stream.write(', '.join(
-                '{}{}{}'.format(option, '=' if option.startswith('--') else ' ',
-                                action.metavar) for option in
+                f"{option}{'=' if option.startswith('--') else ' '}{action.metavar}" for option in
                 sorted(action.option_strings)))
         else:
             stream.write(', '.join(sorted(action.option_strings)))
@@ -150,8 +149,7 @@ class OptionsCheckVisitor(docutils.nodes.SparseNodeVisitor):
         left_over_args = self.args - ignored_options
         if left_over_args:
             raise sphinx.errors.SphinxError(
-                'Undocumented arguments for command {!r}: {!r}'.format(
-                    self.command, ', '.join(sorted(left_over_args))))
+                f"Undocumented arguments for command {self.command!r}: {', '.join(sorted(left_over_args))!r}")
 
 
 class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
@@ -219,8 +217,7 @@ class CommandCheckVisitor(docutils.nodes.SparseNodeVisitor):
         """
         if self.sub_commands:
             raise sphinx.errors.SphinxError(
-                'Undocumented commands for {!r}: {!r}'.format(
-                    self.command, ', '.join(sorted(self.sub_commands.keys()))))
+                f"Undocumented commands for {self.command!r}: {', '.join(sorted(self.sub_commands.keys()))!r}")
 
 
 class ManpageCheckVisitor(docutils.nodes.SparseNodeVisitor):

@@ -5582,7 +5582,7 @@ CPE_NAME="cpe:/o:ITL:qubes:4.2"
                 tempfile.NamedTemporaryFile(prefix="sslkey-") as ssl_key:
             mock_file_in_keysdir.return_value = True
             repo_str1 = \
-'''[qubes-templates-itl]
+f'''[qubes-templates-itl]
 name = Qubes Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-itl
 #baseurl = http://yum.qubesosfasa4zl44o4tws22di6kepyzfeqv3tg4e3ztknltfxqrymdad.onion/r$releasever/templates-itl
@@ -5591,10 +5591,10 @@ enabled = 1
 fastestmirror = 1
 metadata_expire = 7d
 gpgcheck = 1
-gpgkey = file://{}
-'''.format(gpg_key_primary.name)
+gpgkey = file://{gpg_key_primary.name}
+'''
             repo_str2 = \
-'''[qubes-templates-itl-testing]
+f'''[qubes-templates-itl-testing]
 name = Qubes Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-itl-testing
 #baseurl = http://yum.qubesosfasa4zl44o4tws22di6kepyzfeqv3tg4e3ztknltfxqrymdad.onion/r$releasever/templates-itl-testing
@@ -5602,12 +5602,10 @@ metalink = https://yum.qubes-os.org/r$releasever/templates-itl-testing/repodata/
 enabled = 0
 fastestmirror = 1
 gpgcheck = 1
-gpgkey = file://{}
-sslclientcert = {}
-sslclientkey = {}
-'''.format(gpg_key_primary.name,
-           ssl_cert.name,
-           ssl_key.name)
+gpgkey = file://{gpg_key_primary.name}
+sslclientcert = {ssl_cert.name}
+sslclientkey = {ssl_key.name}
+'''
             repo_conf1.write(repo_str1.encode())
             repo_conf1.flush()
             repo_conf2.write(repo_str2.encode())
@@ -5728,7 +5726,7 @@ gpgkey = file:///etc/qubes/repo-templates/keys/RPM-GPG-KEY-qubes-$releasever-pri
         with tempfile.NamedTemporaryFile() as repo_conf, \
              tempfile.NamedTemporaryFile() as gpg_key:
             repo_str = \
-'''[qubes-templates-itl]
+f'''[qubes-templates-itl]
 name = Qubes Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-itl
 #baseurl = http://yum.qubesosfasa4zl44o4tws22di6kepyzfeqv3tg4e3ztknltfxqrymdad.onion/r$releasever/templates-itl
@@ -5737,8 +5735,8 @@ enabled = 1
 fastestmirror = 1
 metadata_expire = 7d
 gpgcheck = 1
-gpgkey = file://{}
-'''.format(gpg_key.name)
+gpgkey = file://{gpg_key.name}
+'''
 
             repo_conf.write(repo_str.encode())
             repo_conf.flush()

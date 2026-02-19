@@ -628,10 +628,7 @@ def get_parser():
         vmname_nargs=argparse.ZERO_OR_MORE,
         formatter_class=argparse.RawTextHelpFormatter,
         description='List Qubes domains and their parameters.',
-        epilog='available formats (see --help-formats):\n{}\n\n'
-               'available columns (see --help-columns):\n{}'.format(
-                wrapper.fill(', '.join(sorted(formats.keys()))),
-                wrapper.fill(', '.join(sorted(sorted(Column.columns.keys()))))))
+        epilog=f"available formats (see --help-formats):\n{wrapper.fill(', '.join(sorted(formats.keys())))}\n\navailable columns (see --help-columns):\n{wrapper.fill(', '.join(sorted(sorted(Column.columns.keys()))))}")
 
     parser_format = parser.add_argument_group(title='formatting options')
     parser_format_exclusive = parser_format.add_mutually_exclusive_group()

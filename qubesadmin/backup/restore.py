@@ -702,8 +702,7 @@ class ExtractWorker3(Process):
                         # Replaces 'cat' for compressed dom0-home!
                         tar2_cmdline = [tar_compress_cmd, "-d"]
                     else:
-                        tar2_cmdline.insert(-1, "--use-compress-program=%s " %
-                                            tar_compress_cmd)
+                        tar2_cmdline.insert(-1, f"--use-compress-program={tar_compress_cmd} ")
 
                 self.log.debug("Running command %s", str(tar2_cmdline))
                 # pylint: disable=consider-using-with
@@ -1062,9 +1061,7 @@ class BackupRestore:
 
             # slow down the restore if there is too little space in the temp dir
             checkpoint_command = \
-                'while [ $(stat -f --format=%a "{}") -lt {} ]; ' \
-                'do sleep 1; done' \
-                .format(self.tmpdir, 500 * 1024 * 1024 // block_size)
+                f'while [ $(stat -f --format=%a "{self.tmpdir}") -lt {500 * 1024 * 1024 // block_size} ]; do sleep 1; done'
 
             tar1_command = ['tar',
                             '-ixv',
@@ -1186,9 +1183,7 @@ class BackupRestore:
                 "File verification OK -> Sending file %s", filename)
             return True
         raise QubesException(
-            "ERROR: invalid hmac for file {0}: {1}. "
-            "Is the passphrase correct?".
-            format(filename, load_hmac(hmac_stdout.decode('ascii'))))
+            f"ERROR: invalid hmac for file {filename}: {load_hmac(hmac_stdout.decode('ascii'))}. Is the passphrase correct?")
 
     def _verify_and_decrypt(self, filename: str,
                             output: str | None=None) -> str:
@@ -1253,8 +1248,7 @@ class BackupRestore:
         for proc in self.processes_to_kill_on_cancel:
             if proc.wait() != 0:
                 raise QubesException(
-                    "Backup header retrieval failed (exit code {}): {}".format(
-                        proc.wait(), extract_stderr)
+                    f"Backup header retrieval failed (exit code {proc.wait()}): {extract_stderr}"
                 )
 
         if retrieve_proc_returncode != 0:
@@ -1262,26 +1256,17 @@ class BackupRestore:
                 if allow_none:
                     return None
                 raise QubesException(
-                    "unable to read the qubes backup file {0} ({1}): {2}".
-                    format(
-                        self.backup_location,
-                        retrieve_proc.wait(),
-                        extract_stderr
-                    ))
+                    f"unable to read the qubes backup file {self.backup_location} ({retrieve_proc.wait()}): {extract_stderr}")
         actual_files = filelist.decode('ascii').splitlines()
         if sorted(actual_files) != sorted(files):
             raise QubesException(
-                'unexpected files in archive: got {!r}, expected {!r}'.format(
-                    actual_files, files
-                ))
+                f'unexpected files in archive: got {actual_files!r}, expected {files!r}')
         for fname in files:
             if not os.path.exists(os.path.join(self.tmpdir, fname)):
                 if allow_none:
                     return None
                 raise QubesException(
-                    'Unable to retrieve file {} from backup {}: {}'.format(
-                        fname, self.backup_location, extract_stderr
-                    )
+                    f'Unable to retrieve file {fname} from backup {self.backup_location}: {extract_stderr}'
                 )
         return files
 
@@ -1564,18 +1549,13 @@ class BackupRestore:
                         'retrieved backup size exceed expected size, if you '
                         'believe this is ok, use --ignore-size-limit option')
                 raise QubesException(
-                    "unable to read the qubes backup file {} ({}): {}"
-                    .format(self.backup_location,
-                        retrieve_proc.returncode, error_pipe.read(
-                        MAX_STDERR_BYTES)))
+                    f"unable to read the qubes backup file {self.backup_location} ({retrieve_proc.returncode}): {error_pipe.read(MAX_STDERR_BYTES)}")
             # wait for other processes (if any)
             for proc in self.processes_to_kill_on_cancel:
                 proc.wait()
                 if proc.returncode != 0:
                     raise QubesException(
-                        "Backup completed, "
-                        "but VM sending it reported an error (exit code {})".
-                        format(proc.returncode))
+                        f"Backup completed, but VM sending it reported an error (exit code {proc.returncode})")
 
             if filename and filename != "EOF":
                 raise QubesException(
@@ -1941,8 +1921,7 @@ class BackupRestore:
         statvfs = os.statvfs(self.tmpdir)
         # require 1GB in /var/tmp
         if statvfs.f_frsize * statvfs.f_bavail < 1024 ** 3:
-            raise QubesException("Too little space in {}, needs at least 1GB".
-                format(self.tmpdir))
+            raise QubesException(f"Too little space in {self.tmpdir}, needs at least 1GB")
 
     def restore_do(self, restore_info: dict) -> None:
         '''

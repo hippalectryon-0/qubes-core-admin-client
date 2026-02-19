@@ -1549,9 +1549,7 @@ def remove(
         remove_list_copy = remove_list.copy()
         for confirm_n in range(repeat):
             confirm_action(
-                'This will completely remove the selected VM(s){}...'.format(
-                    f' (confirmation {confirm_n + 1} of {repeat})'
-                    if repeat > 1 else ''),
+                f"This will completely remove the selected VM(s){(f' (confirmation {confirm_n + 1} of {repeat})' if repeat > 1 else '')}...",
                 remove_list_copy)
 
     if disassoc:

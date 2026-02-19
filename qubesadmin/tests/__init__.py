@@ -139,8 +139,7 @@ class _AssertNotRaisesContext:
 
         if issubclass(exc_type, self.expected):
             raise self.failureException(
-                "{!r} raised, traceback:\n{!s}".format(
-                    exc_value, ''.join(traceback.format_tb(traceback_))))
+                f"{exc_value!r} raised, traceback:\n{''.join(traceback.format_tb(traceback_))!s}")
         # pass through
         return False
 

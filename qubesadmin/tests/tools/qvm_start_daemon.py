@@ -658,9 +658,7 @@ HDMI1 connected 2560x1920+0+0 (normal left inverted right x axis y axis) 372mm x
 '''.splitlines()
         dpi = 150
         self.assertEqual(qubesadmin.tools.qvm_start_daemon.get_monitor_layout(),
-                         ['2560 1920 0 0 {} {}\n'.format(
-                             int(2560 / dpi * 254 / 10),
-                             int(1920 / dpi * 254 / 10))])
+                         [f'2560 1920 0 0 {int(2560 / dpi * 254 / 10)} {int(1920 / dpi * 254 / 10)}\n'])
 
     @unittest.mock.patch('subprocess.Popen')
     def test_052_get_monitor_layout_hidpi2(self, proc_mock):
@@ -671,9 +669,7 @@ HDMI1 connected 2560x1920+0+0 (normal left inverted right x axis y axis) 310mm x
 '''.splitlines()
         dpi = 200
         self.assertEqual(qubesadmin.tools.qvm_start_daemon.get_monitor_layout(),
-                         ['2560 1920 0 0 {} {}\n'.format(
-                             int(2560 / dpi * 254 / 10),
-                             int(1920 / dpi * 254 / 10))])
+                         [f'2560 1920 0 0 {int(2560 / dpi * 254 / 10)} {int(1920 / dpi * 254 / 10)}\n'])
 
     @unittest.mock.patch('subprocess.Popen')
     def test_052_get_monitor_layout_hidpi3(self, proc_mock):
@@ -684,9 +680,7 @@ HDMI1 connected 2560x1920+0+0 (normal left inverted right x axis y axis) 206mm x
 '''.splitlines()
         dpi = 300
         self.assertEqual(qubesadmin.tools.qvm_start_daemon.get_monitor_layout(),
-                         ['2560 1920 0 0 {} {}\n'.format(
-                             int(2560 / dpi * 254 / 10),
-                             int(1920 / dpi * 254 / 10))])
+                         [f'2560 1920 0 0 {int(2560 / dpi * 254 / 10)} {int(1920 / dpi * 254 / 10)}\n'])
 
     def test_060_send_monitor_layout(self):
         loop = asyncio.new_event_loop()
