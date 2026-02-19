@@ -87,10 +87,10 @@ parser.add_argument("--networked", action="store_true", dest="networked",
 def print_msg(log, domains, status):
     """Print message in appropriate form about given valid domain(s)"""
     if not domains:
-        log.info("None of qubes: {!s}".format(', '.join(status)))
+        log.info(f"None of qubes: {', '.join(status)!s}")
     else:
         for vm in sorted(list(domains)):
-            log.info("{!s}: {!s}".format(vm.name, ', '.join(status)))
+            log.info(f"{vm.name!s}: {', '.join(status)!s}")
 
 
 def get_filters(args):
@@ -148,7 +148,7 @@ def main(args=None, app=None):
     if invalid_domains:
         if args.verbose:
             for vm in invalid_domains:
-                log.warning("{!s}: {!s}".format(vm, 'non-existent!'))
+                log.warning(f"{vm!s}: non-existent!")
         return_code = 1
 
     return return_code

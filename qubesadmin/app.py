@@ -256,8 +256,8 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             see :py:meth:`pool_driver_parameters` for a list
         """
         # sort parameters only to ease testing, not required by API
-        payload = "name={}\n".format(name) + "".join(
-            "{}={}\n".format(key, value)
+        payload = f"name={name}\n" + "".join(
+            f"{key}={value}\n"
             for key, value in sorted(kwargs.items())
         )
         self.qubesd_call(
@@ -356,13 +356,13 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             raise ValueError("only one of pool= and pools= can be used")
 
         method_prefix = "admin.vm.Create."
-        payload = "name={} label={}".format(name, label)
+        payload = f"name={name} label={label}"
         if pool:
-            payload += " pool={}".format(str(pool))
+            payload += f" pool={pool!s}"
             method_prefix = "admin.vm.CreateInPool."
         if pools:
             payload += "".join(
-                " pool:{}={}".format(vol, str(pool))
+                f" pool:{vol}={pool!s}"
                 for vol, pool in sorted(pools.items())
             )
             method_prefix = "admin.vm.CreateInPool."
@@ -445,13 +445,13 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     pools[volume.name] = volume.pool
 
         method_prefix = "admin.vm.Create."
-        payload = "name={} label={}".format(new_name, label)
+        payload = f"name={new_name} label={label}"
         if pool:
-            payload += " pool={}".format(str(pool))
+            payload += f" pool={pool!s}"
             method_prefix = "admin.vm.CreateInPool."
         if pools:
             payload += "".join(
-                " pool:{}={}".format(vol, str(pool))
+                f" pool:{vol}={pool!s}"
                 for vol, pool in sorted(pools.items())
             )
             method_prefix = "admin.vm.CreateInPool."
@@ -483,7 +483,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     pass
                 except qubesadmin.exc.QubesException as e:
                     dst_vm.log.error(
-                        "Failed to set {!s} property: {!s}".format(prop, e)
+                        f"Failed to set {prop!s} property: {e!s}"
                     )
                     if not ignore_errors:
                         raise
@@ -495,7 +495,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     dst_vm.tags.add(tag)
                 except qubesadmin.exc.QubesException as e:
                     dst_vm.log.error(
-                        "Failed to add {!s} tag: {!s}".format(tag, e)
+                        f"Failed to add {tag!s} tag: {e!s}"
                     )
                     if not ignore_errors:
                         raise
@@ -510,7 +510,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     dst_vm.features[feature] = value
                 except qubesadmin.exc.QubesException as e:
                     dst_vm.log.error(
-                        "Failed to set {!s} feature: {!s}".format(feature, e)
+                        f"Failed to set {feature!s} feature: {e!s}"
                     )
                     if not ignore_errors:
                         raise
@@ -521,7 +521,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                     dst_vm.set_notes(vm_notes)
             except qubesadmin.exc.QubesException as e:
                 dst_vm.log.error(
-                    'Failed to clone qube notes: {!s}'.format(e))
+                    f'Failed to clone qube notes: {e!s}')
                 if not ignore_errors:
                     raise
 
@@ -596,7 +596,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                 if ignore_volumes and dst_volume.name in ignore_volumes:
                     continue
                 src_volume = src_vm.volumes[dst_volume.name]
-                dst_vm.log.info("Cloning {} volume".format(dst_volume.name))
+                dst_vm.log.info(f"Cloning {dst_volume.name} volume")
                 dst_volume.clone(src_volume)
 
         except qubesadmin.exc.QubesException:
@@ -840,7 +840,7 @@ class QubesLocal(QubesBase):
             )
             if not os.path.exists(method_path):
                 raise qubesadmin.exc.QubesDaemonCommunicationError(
-                    "{} not found".format(method_path)
+                    f"{method_path} not found"
                 )
             command = [
                 "env",
@@ -864,7 +864,7 @@ class QubesLocal(QubesBase):
                 "Failed to connect to qubesd service: %s", str(e)
             )
 
-        call_header = "{}+{} dom0 name {}\0".format(method, arg or "", dest)
+        call_header = f"{method}+{arg or ''} dom0 name {dest}\x00"
         client_socket.sendall(call_header.encode("ascii"))
         if payload is not None:
             client_socket.sendall(payload)
@@ -968,9 +968,7 @@ class QubesLocal(QubesBase):
             [qubesadmin.config.QREXEC_CLIENT]
             + qrexec_opts
             + [
-                "{}:QUBESRPC {}{} dom0".format(
-                    user, service, "" if "+" in service else "+"
-                )
+                f"{user}:QUBESRPC {service}{'' if '+' in service else '+'} dom0"
             ],
             **kwargs,
         )

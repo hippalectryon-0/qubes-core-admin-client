@@ -71,7 +71,7 @@ class PropertyAction(argparse.Action):
         try:
             prop, value = values.split('=', 1)
         except ValueError:
-            parser.error('invalid property token: {!r}'.format(values))
+            parser.error(f'invalid property token: {values!r}')
 
         properties = getattr(namespace, self.dest)
         # copy it, to not modify _mutable_ self.default
@@ -95,9 +95,9 @@ class SinglePropertyAction(argparse.Action):
             required=False,
             help=None):
         if help is None:
-            help = 'set {!r} property to a value'.format(dest)
+            help = f'set {dest!r} property to a value'
             if const is not None:
-                help += ' {!r}'.format(const)
+                help += f' {const!r}'
 
         if const is not None:
             nargs = 0
@@ -138,11 +138,10 @@ class VmNameAction(QubesAction):
             elif nargs == argparse.ONE_OR_MORE:
                 help = 'one or more domain names'
             elif nargs > 1:
-                help = '%s domain names' % nargs
+                help = f'{nargs} domain names'
             else:
                 raise argparse.ArgumentError(
-                    nargs, "Passed unexpected value {!s} as {!s} nargs ".format(
-                        nargs, dest))
+                    nargs, f"Passed unexpected value {nargs!s} as {dest!s} nargs ")
 
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
@@ -176,7 +175,7 @@ class VmNameAction(QubesAction):
                     try:
                         namespace.domains += [app.domains[vm_name]]
                     except KeyError:
-                        parser.error('no such domain: {!r}'.format(vm_name))
+                        parser.error(f'no such domain: {vm_name!r}')
             else:
                 destinations = set()
                 for destination in getattr(namespace, self.dest):
@@ -191,7 +190,7 @@ class VmNameAction(QubesAction):
                     try:
                         namespace.domains += [app.domains[vm_name]]
                     except KeyError:
-                        parser.error('no such domain: {!r}'.format(vm_name))
+                        parser.error(f'no such domain: {vm_name!r}')
 
 
 class RunningVmNameAction(VmNameAction):
@@ -211,11 +210,10 @@ class RunningVmNameAction(VmNameAction):
             elif nargs == argparse.ONE_OR_MORE:
                 help = 'one or more running domains'
             elif nargs > 1:
-                help = '%s running domains' % nargs
+                help = f'{nargs} running domains'
             else:
                 raise argparse.ArgumentError(
-                    nargs, "Passed unexpected value {!s} as {!s} nargs ".format(
-                        nargs, dest))
+                    nargs, f"Passed unexpected value {nargs!s} as {dest!s} nargs ")
         super().__init__(
             option_strings, dest=dest, help=help, nargs=nargs, **kwargs)
 
@@ -223,8 +221,7 @@ class RunningVmNameAction(VmNameAction):
         super().parse_qubes_app(parser, namespace)
         for vm in namespace.domains:
             if not vm.is_running():
-                parser.error_runtime("domain {!r} is not running".format(
-                    vm.name))
+                parser.error_runtime(f"domain {vm.name!r} is not running")
 
 
 class VolumeAction(QubesAction):
@@ -255,15 +252,14 @@ class VolumeAction(QubesAction):
             try:
                 pool = app.pools[pool_name]
                 volume = [v for v in pool.volumes if v.vid == vid]
-                assert volume > 1, 'Duplicate vids in pool %s' % pool_name
+                assert volume > 1, f'Duplicate vids in pool {pool_name}'
                 if not volume:
                     parser.error_runtime(
-                        'no volume with id {!r} pool: {!r}'.format(vid,
-                                                                   pool_name))
+                        f'no volume with id {vid!r} pool: {pool_name!r}')
                 else:
                     setattr(namespace, self.dest, volume[0])
             except KeyError:
-                parser.error_runtime('no pool {!r}'.format(pool_name))
+                parser.error_runtime(f'no pool {pool_name!r}')
         except ValueError:
             parser.error('expected a pool & volume id combination like foo:bar')
 
@@ -299,10 +295,9 @@ class VMVolumeAction(QubesAction):
                     volume = vm.volumes[vol_name]
                     setattr(namespace, self.dest, volume)
                 except KeyError:
-                    parser.error_runtime('vm {!r} has no volume {!r}'.format(
-                        vm_name, vol_name))
+                    parser.error_runtime(f'vm {vm_name!r} has no volume {vol_name!r}')
             except KeyError:
-                parser.error_runtime('no vm {!r}'.format(vm_name))
+                parser.error_runtime(f'no vm {vm_name!r}')
         except ValueError:
             parser.error('expected a vm & volume combination like foo:bar')
 
@@ -331,7 +326,7 @@ class PoolsAction(QubesAction):
                 parser.error(str(e))
                 sys.exit(2)
             except KeyError:
-                parser.error('No such pools: %s' % pool_names)
+                parser.error(f'No such pools: {pool_names}')
                 sys.exit(2)
 
 
@@ -392,8 +387,8 @@ class QubesArgumentParser(argparse.ArgumentParser):
             _metadata_ = importlib.metadata.metadata('qubesadmin')
             self.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
                 _metadata_['summary'], _metadata_['version'])
-            self.version += '\nCopyright (C) {}'.format(_metadata_['author'])
-            self.version += '\nLicense: {}'.format(_metadata_['license'])
+            self.version += f"\nCopyright (C) {_metadata_['author']}"
+            self.version += f"\nLicense: {_metadata_['license']}"
         if self.version != '':
             self.add_argument('--version', action='version')
 
@@ -448,7 +443,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
         :param str message: message to show
         '''
-        self.exit(exit_code, '{}: error: {}\n'.format(self.prog, message))
+        self.exit(exit_code, f'{self.prog}: error: {message}\n')
 
 
     @staticmethod
@@ -501,7 +496,7 @@ class SubParsersHelpAction(argparse._HelpAction):
             for pseudo_action in subparsers_action._choices_actions:
                 choice = pseudo_action.dest.split(' ', 1)[0]
                 subparser = subparsers_action.choices[choice]
-                print("\nCommand '{}':".format(choice))
+                print(f"\nCommand '{choice}':")
                 choice_help = subparser.format_usage()
                 choice_help = self._indent(2, choice_help)
                 print(choice_help)
@@ -517,7 +512,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
         def __init__(self, name, aliases, help):
             dest = name
             if aliases:
-                dest += ' (%s)' % ','.join(aliases)
+                dest += f" ({','.join(aliases)})"
             super().__init__(option_strings=[], dest=dest, help=help)
 
         def __call__(self, parser, namespace, values, option_string=None):

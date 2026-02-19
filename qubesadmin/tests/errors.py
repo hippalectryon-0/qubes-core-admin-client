@@ -48,7 +48,7 @@ class TC_00_Errors(qubesadmin.tests.QubesTestCase):
             with self.assertRaises(qubesadmin.exc.QubesException) as context:
                 list(self.app.domains)
         except TypeError as e:
-            self.fail('TypeError: {!s}'.format(e))
+            self.fail(f'TypeError: {e!s}')
         self.assertEqual(str(context.exception), 'An error occurred: 1, 2')
 
     def test_010_empty(self):

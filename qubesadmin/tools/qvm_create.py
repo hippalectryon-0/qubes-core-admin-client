@@ -154,7 +154,7 @@ def main(args=None, app=None):
     try:
         args.app.get_vm_class(args.cls)
     except KeyError:
-        parser.error('no such domain class: {!r}'.format(args.cls))
+        parser.error(f'no such domain class: {args.cls!r}')
 
     try:
         if args.cls == 'StandaloneVM' and 'template' in args.properties:
@@ -174,7 +174,7 @@ def main(args=None, app=None):
                 pool=pool,
                 pools=pools)
     except qubesadmin.exc.QubesException as e:
-        args.app.log.error('Error creating VM: {!s}'.format(e))
+        args.app.log.error(f'Error creating VM: {e!s}')
         return 1
 
     retcode = 0
@@ -183,8 +183,7 @@ def main(args=None, app=None):
             setattr(vm, prop, value)
         except qubesadmin.exc.QubesException as e:
             args.app.log.error(
-                'Error setting property {} (but VM created): {!s}'.
-                format(prop, e))
+                f'Error setting property {prop} (but VM created): {e!s}')
             retcode = 2
 
     if root_source_path:
@@ -196,8 +195,7 @@ def main(args=None, app=None):
                 os.unlink(root_source_path)
         except qubesadmin.exc.QubesException as e:
             args.app.log.error(
-                'Error importing root volume (but VM created): {}'.
-                format(e))
+                f'Error importing root volume (but VM created): {e}')
             retcode = 3
 
     return retcode

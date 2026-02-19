@@ -91,7 +91,7 @@ def main(args=None, app=None):  # pylint: disable=missing-docstring
                     pass
                 except qubesadmin.exc.QubesException as e:
                     if not args.wait:
-                        vm.log.error('Shutdown error: {}'.format(e))
+                        vm.log.error(f'Shutdown error: {e}')
                     else:
                         remaining_domains.add(vm)
         if not args.wait:

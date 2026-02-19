@@ -230,7 +230,7 @@ class Expire(RuleOption):
         '''Human readable representation'''
         now = datetime.datetime.utcnow()
         duration = (self.datetime - now).total_seconds()
-        return "{:+.0f}s".format(duration)
+        return f"{duration:+.0f}s"
 
 
 class Comment(RuleOption):
@@ -280,8 +280,7 @@ class Rule:
             setattr(self, rule_opt, value)
 
         if rule_dict:
-            raise ValueError('Unknown rule elements: {!r}'.format(
-                rule_dict))
+            raise ValueError(f'Unknown rule elements: {rule_dict!r}')
 
         if self.action is None:
             raise ValueError('missing action=')
@@ -408,7 +407,7 @@ class Rule:
         return NotImplemented
 
     def __repr__(self):
-        return 'Rule(\'{}\')'.format(self.rule)
+        return f'Rule(\'{self.rule}\')'
 
 
 class Firewall:
@@ -453,7 +452,7 @@ class Firewall:
         if rules is None:
             rules = self._rules
         self.vm.qubesd_call(None, 'admin.vm.firewall.Set',
-            payload=(''.join('{}\n'.format(rule.rule)
+            payload=(''.join(f'{rule.rule}\n'
                 for rule in rules)).encode('ascii'))
 
     @property

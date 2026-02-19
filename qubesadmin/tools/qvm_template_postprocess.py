@@ -215,8 +215,7 @@ def import_appmenus(vm, source_dir, skip_generate=True):
             '--set-default-whitelist={!s}'.format(
                 source_dir / 'vm-whitelisted-appmenus.list'), vm.name])
         subprocess.check_call(cmd_prefix + ['qvm-appmenus',
-            '--set-whitelist={!s}'.format(
-                source_dir / 'whitelisted-appmenus.list'), vm.name])
+            f"--set-whitelist={source_dir / 'whitelisted-appmenus.list'!s}", vm.name])
     except subprocess.CalledProcessError as e:
         vm.log.warning('Failed to set default application list: %s', e)
 
@@ -416,7 +415,7 @@ def pre_remove(args):
     for appvm in tpl.appvms:
         dependant_vms = True
         app.log.error(
-            'ERROR! Qube "{}" uses this template'.format(appvm.name))
+            f'ERROR! Qube "{appvm.name}" uses this template')
     if dependant_vms:
         app.log.warning(
                 'WARNING! Do not use dnf to uninstall templates!')

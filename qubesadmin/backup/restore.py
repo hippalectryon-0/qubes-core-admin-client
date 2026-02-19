@@ -208,7 +208,7 @@ class BackupHeader:
                 continue
             header = self.known_headers[key]
             if key in seen:
-                raise QubesException("Duplicated header line: {}".format(key))
+                raise QubesException(f"Duplicated header line: {key}")
             seen.add(key)
             if getattr(self, header.field, None) is not None:
                 # ignore options already set (potentially forced values)
@@ -234,7 +234,7 @@ class BackupHeader:
                         "Unusual compression filter '{f}' found. Use "
                         "--compression-filter={f} to use it anyway.".format(
                             f=value))
-                raise QubesException("Invalid value for header: {}".format(key))
+                raise QubesException(f"Invalid value for header: {key}")
             setattr(self, header.field, value)
 
         self.validate()
@@ -256,23 +256,23 @@ class BackupHeader:
             for key in expected_attrs:
                 if getattr(self, key) is None:
                     raise QubesException(
-                        "Backup header lack '{}' info".format(key))
+                        f"Backup header lack '{key}' info")
         else:
             raise QubesException(
-                "Unsupported backup version {}".format(self.version))
+                f"Unsupported backup version {self.version}")
 
     def save(self, filename: str) -> None:
         '''Save backup header into a file'''
         with open(filename, "w", encoding='utf-8') as f_header:
             # make sure 'version' is the first key
-            f_header.write('version={}\n'.format(self.version))
+            f_header.write(f'version={self.version}\n')
             for key, header in self.known_headers.items():
                 if key == 'version':
                     continue
                 attr = header.field
                 if getattr(self, attr) is None:
                     continue
-                f_header.write("{!s}={!s}\n".format(key, getattr(self, attr)))
+                f_header.write(f"{key!s}={getattr(self, attr)!s}\n")
 
 def launch_proc_with_pty(args: list[str], stdin: int | None=None,
                          stdout: int | None=None, stderr: int | None=None,
@@ -327,7 +327,7 @@ def launch_scrypt(action: str, input_name: str, output_name: str,
         actual_prompt = typing.cast(IO, p.stderr).read(len(prompt))
         if actual_prompt != prompt:
             raise QubesException(
-                'Unexpected prompt from scrypt: {}'.format(actual_prompt))
+                f'Unexpected prompt from scrypt: {actual_prompt}')
         pty.write(passphrase.encode('utf-8') + b'\n')
         pty.flush()
     # save it here, so garbage collector would not close it (which would kill
@@ -630,7 +630,7 @@ class ExtractWorker3(Process):
                 self.collect_tar_output()
                 details = "\n".join(self.tar2_stderr)
             else:
-                details = "%s failed" % run_error
+                details = f"{run_error} failed"
             if self.decryptor_process:
                 self.decryptor_process.terminate()
                 self.decryptor_process.wait()
@@ -669,7 +669,7 @@ class ExtractWorker3(Process):
                             any(x.startswith(os.path.dirname(inner_name) + '/')
                             for x in self.handlers)):
                         tar2_cmdline = ['tar',
-                            '-%s' % ("t" if self.verify_only else "x"),
+                            f"-{'t' if self.verify_only else 'x'}",
                             inner_name]
                     else:
                         # ignore this directory
@@ -680,7 +680,7 @@ class ExtractWorker3(Process):
 
                 elif inner_name in self.handlers:
                     tar2_cmdline = ['tar',
-                        '-%svvO' % ("t" if self.verify_only else "x"),
+                        f"-{'t' if self.verify_only else 'x'}vvO",
                         inner_name]
                     redirect_stdout = subprocess.PIPE
                 else:
@@ -1128,7 +1128,7 @@ class BackupRestore:
             '''
             if any(ord(x) not in range(128) for x in hmac_text):
                 raise QubesException(
-                    "Invalid content of {}".format(hmacfile))
+                    f"Invalid content of {hmacfile}")
             hmac_text_list = hmac_text.strip().split("=")
             if len(hmac_text_list) > 1:
                 hmac_text = hmac_text_list[1].strip()
@@ -1144,13 +1144,11 @@ class BackupRestore:
 
         if os.stat(os.path.join(self.tmpdir, hmacfile)).st_size > \
                 HMAC_MAX_SIZE:
-            raise QubesException('HMAC file {} too large'.format(
-                hmacfile))
+            raise QubesException(f'HMAC file {hmacfile} too large')
 
         if hmacfile != filename + ".hmac":
             raise QubesException(
-                "ERROR: expected hmac for {}, but got {}".
-                format(filename, hmacfile))
+                f"ERROR: expected hmac for {filename}, but got {hmacfile}")
 
         if algorithm == 'scrypt':
             # in case of 'scrypt' _verify_hmac is only used for backup header
@@ -1161,7 +1159,7 @@ class BackupRestore:
                 with open(f_name + '.dec', 'rb') as f_two:
                     if f_one.read() != f_two.read():
                         raise QubesException(
-                            'Invalid hmac on {}'.format(filename))
+                            f'Invalid hmac on {filename}')
                     return True
 
         with open(os.path.join(self.tmpdir, filename), 'rb') as f_input:
@@ -1174,7 +1172,7 @@ class BackupRestore:
 
         if hmac_stderr:
             raise QubesException(
-                "ERROR: verify file {0}: {1}".format(filename, hmac_stderr))
+                f"ERROR: verify file {filename}: {hmac_stderr}")
         self.log.debug("Loading hmac for file %s", filename)
         try:
             with open(os.path.join(self.tmpdir, hmacfile), 'r',
@@ -1213,27 +1211,20 @@ class BackupRestore:
         else:
             fulloutput = os.path.join(self.tmpdir, origname)
         if origname == HEADER_FILENAME:
-            passphrase = '{filename}!{passphrase}'.format(
-                filename=origname,
-                passphrase=self.passphrase)
+            passphrase = f'{origname}!{self.passphrase}'
         else:
-            passphrase = '{backup_id}!{filename}!{passphrase}'.format(
-                backup_id=self.header_data.backup_id,
-                filename=origname,
-                passphrase=self.passphrase)
+            passphrase = f'{self.header_data.backup_id}!{origname}!{self.passphrase}'
         try:
             p = launch_scrypt('dec', fullname, fulloutput, passphrase)
         except OSError as err:
-            raise QubesException('failed to decrypt {}: {!s}'.format(
-                fullname, err))
+            raise QubesException(f'failed to decrypt {fullname}: {err!s}')
         (_, stderr) = p.communicate()
         if pty := getattr(p, 'pty', None):
             pty.close()
         if p.returncode != 0:
             with contextlib.suppress(FileNotFoundError):
                 os.unlink(fulloutput)
-            raise QubesException('failed to decrypt {}: {}'.format(
-                fullname, stderr))
+            raise QubesException(f'failed to decrypt {fullname}: {stderr}')
         # encrypted file is no longer needed
         os.unlink(fullname)
         return origname
@@ -1438,8 +1429,7 @@ class BackupRestore:
             backup_app = Core3Qubes(qubes_xml_path)
         else:
             raise QubesException(
-                'Unsupported qubes.xml format version: {}'.format(
-                    self.header_data.version))
+                f'Unsupported qubes.xml format version: {self.header_data.version}')
         # Not needed anymore - all the data stored in backup_app
         os.unlink(qubes_xml_path)
         return backup_app
@@ -1532,8 +1522,7 @@ class BackupRestore:
                 else:  # self.header_data.version == 4
                     if not filename.endswith('.enc'):
                         raise qubesadmin.exc.QubesException(
-                            'Invalid file extension found in archive: {}'.
-                            format(filename))
+                            f'Invalid file extension found in archive: {filename}')
 
                 if not any(filename.startswith(x) for x in vms_dirs):
                     self.log.debug("Ignoring VM not selected for restore")
@@ -1590,7 +1579,7 @@ class BackupRestore:
 
             if filename and filename != "EOF":
                 raise QubesException(
-                    "Premature end of archive, the last file was %s" % filename)
+                    f"Premature end of archive, the last file was {filename}")
         except:
             with contextlib.suppress(ProcessLookupError):
                 retrieve_proc.terminate()
@@ -1627,7 +1616,7 @@ class BackupRestore:
         while (new_name in restore_info.keys() or
                new_name in [x.name for x in restore_info.values()] or
                new_name in self.app.domains):
-            new_name = str('{}-{}'.format(orig_name, number))
+            new_name = str(f'{orig_name}-{number}')
             number += 1
             if number == 100:
                 # give up
@@ -1823,17 +1812,17 @@ class BackupRestore:
         # Display the header
         for field in fields_to_display:
             # noinspection PyTypeChecker
-            fmt = "{{0:-^{0}}}-+".format(fields[field]["max_width"] + 1)
+            fmt = f"{{0:-^{fields[field]['max_width'] + 1}}}-+"
             summary += fmt.format('-')
         summary += "\n"
         for field in fields_to_display:
             # noinspection PyTypeChecker
-            fmt = "{{0:>{0}}} |".format(fields[field]["max_width"] + 1)
+            fmt = f"{{0:>{fields[field]['max_width'] + 1}}} |"
             summary += fmt.format(field)
         summary += "\n"
         for field in fields_to_display:
             # noinspection PyTypeChecker
-            fmt = "{{0:-^{0}}}-+".format(fields[field]["max_width"] + 1)
+            fmt = f"{{0:-^{fields[field]['max_width'] + 1}}}-+"
             summary += fmt.format('-')
         summary += "\n"
 
@@ -1846,7 +1835,7 @@ class BackupRestore:
             summary_line = ""
             for field in fields_to_display:
                 # noinspection PyTypeChecker
-                fmt = "{{0:>{0}}} |".format(fields[field]["max_width"] + 1)
+                fmt = f"{{0:>{fields[field]['max_width'] + 1}}} |"
                 summary_line += fmt.format(fields[field]["func"](vm_info.vm))
 
             if BackupRestore.VMToRestore.EXCLUDED in vm_info.problems:
@@ -1868,11 +1857,9 @@ class BackupRestore:
                 summary_line += " <-- username in backup and dom0 mismatch"
             else:
                 if vm_info.template != vm_info.vm.template:
-                    summary_line += " <-- Template change to '{}'".format(
-                        vm_info.template)
+                    summary_line += f" <-- Template change to '{vm_info.template}'"
                 if vm_info.name != vm_info.vm.name:
-                    summary_line += " <-- Will be renamed to '{}'".format(
-                        vm_info.name)
+                    summary_line += f" <-- Will be renamed to '{vm_info.name}'"
 
             summary += summary_line + "\n"
 
@@ -1902,8 +1889,7 @@ class BackupRestore:
         except KeyError:
             home_dir = os.path.expanduser('~')
             local_user = getpass.getuser()
-        restore_home_backupdir = "home-restore-{0}".format(
-            time.strftime("%Y-%m-%d-%H%M%S"))
+        restore_home_backupdir = f"home-restore-{time.strftime('%Y-%m-%d-%H%M%S')}"
 
         self.log.info("Restoring home of user '%s' to '%s' directory...",
                      local_user, restore_home_backupdir)

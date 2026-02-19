@@ -71,7 +71,7 @@ def qbool(value):
         if lcvalue in ("1", "yes", "true", "on"):
             return True
         raise QubesValueError(
-            "Invalid literal for boolean property: {!r}".format(value)
+            f"Invalid literal for boolean property: {value!r}"
         )
 
     return bool(value)
