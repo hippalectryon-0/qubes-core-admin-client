@@ -26,15 +26,15 @@
 '''qvm-ls - List available domains'''
 
 
-from __future__ import print_function
 
 import argparse
 import collections.abc
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
-from typing import Callable, Iterable, Sequence, TextIO, MutableSequence, \
+from typing import TextIO, \
     TypeVar
+from collections.abc import Callable, Iterable, Sequence, MutableSequence
 
 import qubesadmin
 import qubesadmin.spinner
@@ -344,7 +344,7 @@ def calc_used(vm: QubesVM, volume_name: str) -> int | str:
     if size == 0:
         return 0
     usage = calc_usage(vm, volume_name)
-    return '{}%'.format(usage * 100 // size)
+    return f'{usage * 100 // size}%'
 
 
 # todo maxmem
@@ -723,8 +723,8 @@ def get_parser() -> QubesArgumentParser:
         help='exclude qubes having specific tag(s)')
 
     for pwstate in DOMAIN_POWER_STATES:
-        parser_filter.add_argument('--{}'.format(pwstate), action='store_true',
-        help='show {} VMs'.format(pwstate))
+        parser_filter.add_argument(f'--{pwstate}', action='store_true',
+        help=f'show {pwstate} VMs')
 
     parser_filter.add_argument('--template-source', nargs='+',
         metavar='TEMPLATE', action='store',
@@ -908,9 +908,9 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             try:
                 key, value = feature.split('=', 1)
             except ValueError:
-                parser.error("Invalid argument: --features {}".format(feature))
+                parser.error(f"Invalid argument: --features {feature}")
             if not key:
-                parser.error("Invalid argument: --features {}".format(feature))
+                parser.error(f"Invalid argument: --features {feature}")
             if value == '':
                 value = None
             elif value in ['\'\'', '""']:
@@ -923,9 +923,9 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             try:
                 key, value = pref.split('=', 1)
             except ValueError:
-                parser.error("Invalid argument: --prefs {}".format(pref))
+                parser.error(f"Invalid argument: --prefs {pref}")
             if not key:
-                parser.error("Invalid argument: --prefs {}".format(pref))
+                parser.error(f"Invalid argument: --prefs {pref}")
             if value == '':
                 value = None
             elif value in ['\'\'', '""']:

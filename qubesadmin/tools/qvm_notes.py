@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -28,7 +27,7 @@ import subprocess
 import sys
 import tempfile
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.exc

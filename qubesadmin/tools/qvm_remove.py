@@ -23,7 +23,7 @@
 
 import sys
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin.exc
 from qubesadmin.app import QubesBase
@@ -99,12 +99,12 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:  #
                     for holder, prop in dependencies:
                         if holder:
                             print(
-                                " - {} for {}".format(prop, holder.name),
+                                f" - {prop} for {holder.name}",
                                 file=sys.stderr,
                             )
                         else:
                             print(
-                                " - global property {}".format(prop),
+                                f" - global property {prop}",
                                 file=sys.stderr,
                             )
                 # Display the original message as well

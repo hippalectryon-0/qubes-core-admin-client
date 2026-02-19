@@ -41,7 +41,8 @@ import subprocess
 import sys
 import tempfile
 import typing
-from typing import Sequence, Iterable, Callable, TypeVar
+from typing import TypeVar
+from collections.abc import Sequence, Iterable, Callable
 
 import tqdm
 import xdg.BaseDirectory
@@ -69,7 +70,7 @@ TAR_HEADER_BYTES = 512
 WRAPPER_PAYLOAD_BEGIN = "###!Q!BEGIN-QUBES-WRAPPER!Q!###"
 WRAPPER_PAYLOAD_END = "###!Q!END-QUBES-WRAPPER!Q!###"
 
-UPDATEVM = str('global UpdateVM')
+UPDATEVM = 'global UpdateVM'
 
 
 class AlreadyRunning(Exception):
@@ -83,14 +84,14 @@ class SignatureVerificationError(Exception):
 def qubes_release() -> str:
     """Return the Qubes release."""
     if os.path.exists('/usr/share/qubes/marker-vm'):
-        with open('/usr/share/qubes/marker-vm', 'r', encoding='ascii') as fd:
+        with open('/usr/share/qubes/marker-vm', encoding='ascii') as fd:
             # Get the first non-comment line
             release = [l.strip() for l in fd.readlines()
                        if l.strip() and not l.startswith('#')]
             # sanity check
             if release and release[0] and release[0][0].isdigit():
                 return release[0]
-    with open('/etc/os-release', 'r', encoding='ascii') as fd:
+    with open('/etc/os-release', encoding='ascii') as fd:
         release = None
         distro_id = None
         for line in fd:
@@ -464,7 +465,7 @@ def qrexec_popen(
         args: argparse.Namespace,
         app: QubesBase,
         service: str,
-        stdout: typing.Union[int, typing.IO] = subprocess.PIPE,
+        stdout: int | typing.IO = subprocess.PIPE,
         filter_esc: bool = True) -> subprocess.Popen:
     """Return ``Popen`` object that communicates with the given qrexec call in
     ``args.updatevm``.
@@ -582,7 +583,7 @@ def qrexec_payload(args: argparse.Namespace, app: QubesBase,
 
     repo_config = ""
     for path in args.repo_files:
-        with open(path, 'r', encoding='utf-8') as fd:
+        with open(path, encoding='utf-8') as fd:
             repo_config += fd.read() + '\n'
     payload += repo_config
 
@@ -667,7 +668,7 @@ def qrexec_repoquery(
             elif buildtime.isnumeric():
                 # DNF5 provides seconds since epoch
                 buildtime = datetime.datetime.fromtimestamp(int(buildtime),
-                    tz=datetime.timezone.utc)
+                    tz=datetime.UTC)
             else:
                 raise ValueError
             # XXX: Perhaps whitelist licenses directly?
@@ -1259,11 +1260,11 @@ def install(
             tpl.features['template-buildtime'] = \
                 datetime.datetime.fromtimestamp(
                         int(package_hdr[rpm.RPMTAG_BUILDTIME]), #type:ignore
-                        tz=datetime.timezone.utc) \
+                        tz=datetime.UTC) \
                     .strftime(DATE_FMT)
             tpl.features['template-installtime'] = \
                 datetime.datetime.now(
-                    tz=datetime.timezone.utc).strftime(DATE_FMT)
+                    tz=datetime.UTC).strftime(DATE_FMT)
             tpl.features['template-license'] = \
                 package_hdr[rpm.RPMTAG_LICENSE] #type:ignore
             tpl.features['template-url'] = \
@@ -1525,7 +1526,7 @@ def search(args: argparse.Namespace, app: QubesBase) -> None:
         keywords = set(args.templates)
         idxs = list(search_res_by_idx.keys())
         for idx in idxs:
-            if keywords != set(x[1] for x in search_res_by_idx[idx]):
+            if keywords != {x[1] for x in search_res_by_idx[idx]}:
                 del search_res_by_idx[idx]
 
     def key_func(x: tuple[int, list[tuple[int, str, bool]]]) -> tuple:
@@ -1539,13 +1540,13 @@ def search(args: argparse.Namespace, app: QubesBase) -> None:
 
     def gen_header(needles: Iterable) -> str:
         fields = []
-        weight_types = set(x[0] for x in needles)
+        weight_types = {x[0] for x in needles}
         for weight, field in WEIGHT_TO_FIELD:
             if weight in weight_types:
                 fields.append(field)
         exact = all(x[-1] for x in needles)
         match = 'Exactly Matched' if exact else 'Matched'
-        keywords = sorted(list(set(x[1] for x in needles)))
+        keywords = sorted(list({x[1] for x in needles}))
         return ' & '.join(fields) + ' ' + match + ': ' + ', '.join(keywords)
 
     last_header = ''
@@ -1773,12 +1774,12 @@ def migrate_from_rpmdb(app: QubesBase) -> None:
             vm.features['template-buildtime'] = \
                 datetime.datetime.fromtimestamp(
                     pkg[rpm.RPMTAG_BUILDTIME]#type:ignore
-                    , tz=datetime.timezone.utc).\
+                    , tz=datetime.UTC).\
                 strftime(DATE_FMT)
             vm.features['template-installtime'] = \
                 datetime.datetime.fromtimestamp(
                     pkg[rpm.RPMTAG_INSTALLTIME]#type:ignore
-                    , tz=datetime.timezone.utc).\
+                    , tz=datetime.UTC).\
                 strftime(DATE_FMT)
             vm.features['template-license'] = (
                 pkg)[rpm.RPMTAG_LICENSE]#type:ignore
@@ -1791,7 +1792,7 @@ def migrate_from_rpmdb(app: QubesBase) -> None:
                  .replace('\n', '|'))
             vm.installed_by_rpm = False
         except Exception as e:  # pylint: disable=broad-except
-            print('Failed to set template {} metadata: {}'.format(vm.name, e))
+            print(f'Failed to set template {vm.name} metadata: {e}')
             continue
         pkgs_to_remove.append(pkg)
     subprocess.check_call(

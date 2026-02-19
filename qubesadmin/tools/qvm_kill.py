@@ -1,4 +1,3 @@
-# encoding=utf-8
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
@@ -23,7 +22,7 @@
 
 import sys
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin.exc
 import qubesadmin.tools
@@ -47,7 +46,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             domain.kill()
         except qubesadmin.exc.QubesVMNotStartedError:
             pass
-        except (IOError, OSError, qubesadmin.exc.QubesException) as e:
+        except (OSError, qubesadmin.exc.QubesException) as e:
             exit_code = 1
             parser.print_error("Failed to kill '{}': {}".format(
                 domain.name, e))

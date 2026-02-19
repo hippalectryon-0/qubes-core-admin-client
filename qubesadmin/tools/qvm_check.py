@@ -25,7 +25,8 @@
 import sys
 from argparse import Namespace, ArgumentParser
 from logging import Logger
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 import qubesadmin.tools
 import qubesadmin.vm

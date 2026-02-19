@@ -24,7 +24,7 @@
 
 import sys
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin.exc
 from qubesadmin.app import QubesBase

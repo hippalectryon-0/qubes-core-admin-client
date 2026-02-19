@@ -1,4 +1,3 @@
-# -*- encoding: utf8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -277,7 +276,7 @@ class TC_06_Expire(qubesadmin.tests.QubesTestCase):
         self.assertEqual(
             instance.datetime,
             datetime.datetime(2016, 5, 15, 6, 7,
-                              32, tzinfo=datetime.timezone.utc))
+                              32, tzinfo=datetime.UTC))
         self.assertEqual(instance.rule, 'expire=1463292452')
 
     def test_001_str(self):
@@ -286,7 +285,7 @@ class TC_06_Expire(qubesadmin.tests.QubesTestCase):
         self.assertEqual(str(instance), '1463292452')
         self.assertEqual(instance.datetime,
             datetime.datetime(2016, 5, 15, 6, 7,
-                              32, tzinfo=datetime.timezone.utc))
+                              32, tzinfo=datetime.UTC))
         self.assertEqual(instance.rule, 'expire=1463292452')
 
     def test_002_invalid(self):

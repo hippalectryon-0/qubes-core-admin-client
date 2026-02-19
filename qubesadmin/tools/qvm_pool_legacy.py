@@ -20,12 +20,11 @@
 
 '''Manages Qubes pools and their options'''
 
-from __future__ import print_function
 
 import argparse
 from argparse import ArgumentParser, Namespace
 import sys
-from typing import Sequence, Iterable
+from collections.abc import Sequence, Iterable
 
 import qubesadmin
 import qubesadmin.exc
@@ -204,14 +203,14 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             args.app.add_pool(name=args.name, driver=args.driver,
                 **args.options)
         except qubesadmin.exc.QubesException as e:
-            parser.error('failed to add pool %s: %s\n' % (args.name, str(e)))
+            parser.error(f'failed to add pool {args.name}: {str(e)}\n')
     elif args.command == 'remove':
         try:
             args.app.remove_pool(args.name)
         except KeyError:
             parser.print_error('no such pool %s\n' % args.name)
         except qubesadmin.exc.QubesException as e:
-            parser.error('failed to remove pool %s: %s\n' % (args.name, str(e)))
+            parser.error(f'failed to remove pool {args.name}: {str(e)}\n')
     elif args.command == 'info':
         for pool in args.pools:
             pool_info(pool)
@@ -224,7 +223,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             try:
                 setattr(pool, opt, value)
             except qubesadmin.exc.QubesException as e:
-                parser.error('failed to set pool %s option %s: %s\n' % (
+                parser.error('failed to set pool {} option {}: {}\n'.format(
                     pool.name, opt, str(e)))
     return 0
 

@@ -1,4 +1,3 @@
-# -*- encoding: utf8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -20,7 +19,7 @@
 
 '''VM tags interface'''
 from __future__ import annotations
-from typing import Iterator
+from collections.abc import Iterator
 
 import typing
 if typing.TYPE_CHECKING:

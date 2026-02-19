@@ -1,4 +1,3 @@
-# -*- encoding: utf8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -22,7 +21,8 @@
 from __future__ import annotations
 
 import typing
-from typing import BinaryIO, Any, Generator, TypeAlias, TypeVar, Generic
+from typing import BinaryIO, Any, TypeAlias, TypeVar, Generic
+from collections.abc import Generator
 
 import qubesadmin.exc
 
@@ -221,7 +221,7 @@ class PropertyHolder:
         (prop_type, value) = property_str.split(b' ', 1)
         return self._parse_type_value(prop_type, value)
 
-    def clone_properties(self, src: "PropertyHolder",
+    def clone_properties(self, src: PropertyHolder,
                          proplist: list[str] | None=None) -> None:
         '''Clone properties from other object.
 
@@ -298,7 +298,7 @@ class PropertyHolder:
         prop_type: str = prop_type.decode('ascii')
         if not prop_type.startswith('type='):
             raise qubesadmin.exc.QubesDaemonCommunicationError(
-                'Invalid type prefix received: {}'.format(prop_type))
+                f'Invalid type prefix received: {prop_type}')
         (_, prop_type) = prop_type.split('=', 1)
         value: str = value.decode()
         if prop_type == 'str':
@@ -323,7 +323,7 @@ class PropertyHolder:
                 return None
             return self.app.labels.get_blind(value)
         raise qubesadmin.exc.QubesDaemonCommunicationError(
-            'Received invalid value type: {}'.format(prop_type))
+            f'Received invalid value type: {prop_type}')
 
     def _fetch_all_properties(self) -> None:
         """
@@ -335,7 +335,7 @@ class PropertyHolder:
         :return: None
         """
 
-        def unescape(line: bytes) -> Generator[int, None, None]:
+        def unescape(line: bytes) -> Generator[int]:
             """Handle \\-escaped values, generates a list of character codes"""
             escaped = False
             for char in line:
@@ -503,7 +503,7 @@ class WrapperObjectsCollection(Generic[T]):
         assert self._names_list is not None
         return item in self._names_list
 
-    def __iter__(self) -> Generator[WrapperObjectsCollectionKey, None, None]:
+    def __iter__(self) -> Generator[WrapperObjectsCollectionKey]:
         self.refresh_cache()
         assert self._names_list is not None
         yield from self._names_list

@@ -1,4 +1,3 @@
-# encoding=utf-8
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
@@ -30,7 +29,8 @@ import fcntl
 import os
 import re
 import typing
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 import qubesadmin.exc
 
@@ -59,7 +59,7 @@ def parse_size(size: str) -> int:
             size = size[:-len(unit)].strip()
             return int(size) * multiplier
 
-    raise qubesadmin.exc.QubesException("Invalid size: {0}.".format(size))
+    raise qubesadmin.exc.QubesException(f"Invalid size: {size}.")
 
 
 def mbytes_to_kmg(size: float | int) -> str:
@@ -105,7 +105,7 @@ def get_entry_point_one(group: str, name: str) -> Any:  # noqa:ANN401
     if len(epoints) > 1:
         raise TypeError('more than 1 implementation of {!r} found: {}'.format(
             # TODO see https://github.com/QubesOS/qubes-issues/issues/10680
-            name, ', '.join('{}.{}'.format(ep.module, ep.attr)
+            name, ', '.join(f'{ep.module}.{ep.attr}'
                             for ep in epoints)))
     return epoints[0].load()
 
@@ -186,7 +186,7 @@ def encode_for_vmexec(args: Iterable[str]) -> str:
     def encode(part: re.Match) -> bytes:
         if part.group(0) == b'-':
             return b'--'
-        return '-{:02X}'.format(ord(part.group(0))).encode('ascii')
+        return f'-{ord(part.group(0)):02X}'.encode('ascii')
 
     parts = []
     for arg in args:
@@ -204,7 +204,7 @@ class LockFile:
         self.file = open(path, "w", encoding='ascii')
         self.nonblock = nonblock
 
-    def __enter__(self, *args, **kwargs) -> "LockFile":
+    def __enter__(self, *args, **kwargs) -> LockFile:
         self.acquire()
         return self
 

@@ -27,13 +27,12 @@
 # TODO list labels (maybe in qvm-prefs)
 # TODO features, devices, tags
 
-from __future__ import print_function
 
 import argparse
 from argparse import Namespace
 import os
 import sys
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.tools
@@ -157,7 +156,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     try:
         args.app.get_vm_class(args.cls)
     except KeyError:
-        parser.error('no such domain class: {!r}'.format(args.cls))
+        parser.error(f'no such domain class: {args.cls!r}')
 
     try:
         if args.cls == 'StandaloneVM' and 'template' in args.properties:
@@ -177,7 +176,7 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
                 pool=pool,
                 pools=pools)
     except qubesadmin.exc.QubesException as e:
-        args.app.log.error('Error creating VM: {!s}'.format(e))
+        args.app.log.error(f'Error creating VM: {e!s}')
         return 1
 
     retcode = 0

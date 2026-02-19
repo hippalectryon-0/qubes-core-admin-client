@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -20,7 +19,8 @@
 
 """Storage subsystem."""
 from __future__ import annotations
-from typing import BinaryIO, Generator, TYPE_CHECKING, IO
+from typing import BinaryIO, TYPE_CHECKING, IO
+from collections.abc import Generator
 
 import qubesadmin.exc
 if TYPE_CHECKING:
@@ -313,7 +313,7 @@ class Volume:
         """ Clear existing volume content. """
         self._qubesd_call('Clear')
 
-    def clone(self, source: "Volume") -> None:
+    def clone(self, source: Volume) -> None:
         """ Clone data from sane volume of another VM.
 
         This function override existing volume content.
@@ -453,7 +453,7 @@ class Pool:
         self._config = None
 
     @property
-    def volumes(self) -> Generator[Volume, None, None]:
+    def volumes(self) -> Generator[Volume]:
         """ Volumes managed by this pool """
         try:
             volumes_data = self.app.qubesd_call(

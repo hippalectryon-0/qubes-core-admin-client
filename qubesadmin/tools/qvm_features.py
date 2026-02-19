@@ -1,4 +1,3 @@
-# coding=utf-8
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
@@ -24,11 +23,10 @@
 
 '''qvm-features - Manage domain's features'''
 
-from __future__ import print_function
 
 import sys
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.tools

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -28,7 +27,8 @@ import typing
 import warnings
 from logging import Logger
 from subprocess import Popen
-from typing import Literal, AnyStr, Generator
+from typing import Literal, AnyStr
+from collections.abc import Generator
 
 import qubesadmin.utils
 import qubesadmin.exc
@@ -95,7 +95,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
     def __str__(self) -> str:
         return self._method_dest
 
-    def __lt__(self, other: "QubesVM") -> bool:
+    def __lt__(self, other: QubesVM) -> bool:
         if isinstance(other, QubesVM):
             return self.name < other.name
         # TODO shouldn't we raise a NotImplementedError instead ?
@@ -412,10 +412,10 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 e.cmd = str(args)
                 raise
 
-        return self.run(" ".join(shlex.quote(arg) for arg in args), **kwargs)
+        return self.run(shlex.join(args), **kwargs)
 
     @property
-    def appvms(self) -> Generator["QubesVM", None, None]:
+    def appvms(self) -> Generator[QubesVM]:
         """Returns a generator containing all domains based on the current
         TemplateVM.
 
@@ -430,7 +430,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
                 pass
 
     @property
-    def derived_vms(self) -> list["QubesVM"]:
+    def derived_vms(self) -> list[QubesVM]:
         """
         Return list of all domains based on the current TemplateVM
         at any level of inheritance.
@@ -438,7 +438,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return list(QubesVM._get_derived_vms(self))
 
     @staticmethod
-    def _get_derived_vms(vm: "QubesVM") -> set["QubesVM"]:
+    def _get_derived_vms(vm: QubesVM) -> set[QubesVM]:
         """
         Return `set` of all domains based on the current TemplateVM
         at any level of inheritance.
@@ -449,7 +449,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return result
 
     @property
-    def connected_vms(self) -> Generator["QubesVM", None, None]:
+    def connected_vms(self) -> Generator[QubesVM]:
         """Return a generator containing all domains connected to the current
         NetVM.
         """
@@ -528,7 +528,7 @@ class DispVMWrapper(QubesVM):
             self.create_disposable()
         super().start()
 
-    def create_disposable(self) -> "DispVMWrapper":
+    def create_disposable(self) -> DispVMWrapper:
         """Create disposable."""
         if self._method_dest.startswith("@dispvm"):
             if self._method_dest.startswith("@dispvm:"):

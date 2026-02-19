@@ -21,11 +21,10 @@
 
 '''qvm-tags - Manage domain's tags'''
 
-from __future__ import print_function
 
 import sys
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.exc

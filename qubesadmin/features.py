@@ -1,4 +1,3 @@
-# -*- encoding: utf8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -22,7 +21,8 @@
 from __future__ import annotations
 
 import typing
-from typing import Iterator, Generator, TypeVar
+from typing import TypeVar
+from collections.abc import Iterator, Generator
 
 if typing.TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
@@ -69,7 +69,7 @@ class Features:
 
     keys = __iter__
 
-    def items(self) -> Generator[tuple[str, str], None, None]:
+    def items(self) -> Generator[tuple[str, str]]:
         '''Return iterable of pairs (feature, value)'''
         for key in self:
             yield key, self[key]

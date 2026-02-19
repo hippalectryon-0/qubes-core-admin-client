@@ -1,4 +1,3 @@
-# encoding=utf-8
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -20,12 +19,11 @@
 
 ''' Manipulate VM properties.'''
 
-from __future__ import print_function
 
 import sys
 import textwrap
 from argparse import Namespace
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.tools
@@ -132,7 +130,7 @@ def process_actions(parser: QubesArgumentParser, args: Namespace,
         try:
             setattr(target, args.property, args.value)
         except qubesadmin.exc.QubesNoSuchPropertyError:
-            parser.error('no such property: {!r}'.format(args.property))
+            parser.error(f'no such property: {args.property!r}')
         except qubesadmin.exc.QubesException as e:
             parser.error_runtime(str(e))
         return 0
@@ -141,7 +139,7 @@ def process_actions(parser: QubesArgumentParser, args: Namespace,
         try:
             delattr(target, args.property)
         except qubesadmin.exc.QubesNoSuchPropertyError:
-            parser.error('no such property: {!r}'.format(args.property))
+            parser.error(f'no such property: {args.property!r}')
         except qubesadmin.exc.QubesException as e:
             parser.error_runtime(str(e))
         return 0
@@ -154,7 +152,7 @@ def process_actions(parser: QubesArgumentParser, args: Namespace,
             if value is not None:
                 print(str(value))
     except qubesadmin.exc.QubesNoSuchPropertyError:
-        parser.error('no such property: {!r}'.format(args.property))
+        parser.error(f'no such property: {args.property!r}')
     except qubesadmin.exc.QubesException as e:
         parser.error_runtime(str(e))
 

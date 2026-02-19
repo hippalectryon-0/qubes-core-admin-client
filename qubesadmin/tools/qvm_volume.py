@@ -1,4 +1,3 @@
-# encoding=utf-8
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -22,7 +21,6 @@
 
 """Qubes volume management"""
 
-from __future__ import print_function
 
 import argparse
 from argparse import _SubParsersAction, Namespace
@@ -30,7 +28,7 @@ import os
 import sys
 
 import collections
-from typing import Iterable
+from collections.abc import Iterable
 
 import qubesadmin
 import qubesadmin.exc
@@ -94,7 +92,7 @@ class VolumeData:
         return NotImplemented
 
     def __str__(self) -> str:
-        return "{!s}:{!s}".format(self.pool, self.vid)
+        return f"{self.pool!s}:{self.vid!s}"
 
 
 def info_volume(args: Namespace) -> None:
@@ -117,7 +115,7 @@ def info_volume(args: Namespace) -> None:
             print(value)
         else:
             raise qubesadmin.exc.StoragePoolException(
-                'No such property: {}'.format(args.property))
+                f'No such property: {args.property}')
     else:
         info = collections.OrderedDict()
         for item in info_items:
@@ -144,7 +142,7 @@ def config_volume(args: Namespace) -> None:
     volume = args.volume
     if args.property not in ('rw', 'revisions_to_keep', 'ephemeral'):
         raise qubesadmin.exc.QubesNoSuchPropertyError(
-            'Invalid property: {}'.format(args.property))
+            f'Invalid property: {args.property}')
     setattr(volume, args.property, args.value)
 
 
