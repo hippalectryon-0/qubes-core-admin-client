@@ -100,8 +100,7 @@ def import_root_img(vm, source_dir):
         rpm_symlink = os.path.join(source_dir, 'template.rpm')
         if not os.path.exists(rpm_symlink) or not os.path.islink(rpm_symlink):
             raise qubesadmin.exc.QubesException(
-                'template.rpm symlink not found for multi-part image, ' +
-                'using up-to-date `qvm-template install ...` should help')
+                "template.rpm symlink not found for multi-part image, using up-to-date `qvm-template install ...` should help")
         with open(rpm_symlink, 'rb') as pkg_f:
             # note: part files assumed to be in proper order, which is OK
             #    (generated using an RPM spec file with a glob pattern

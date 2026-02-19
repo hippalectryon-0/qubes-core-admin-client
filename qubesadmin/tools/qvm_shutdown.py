@@ -97,8 +97,7 @@ def main(args=None, app=None):  # pylint: disable=missing-docstring
         if not args.wait:
             if remaining_domains:
                 parser.error_runtime(
-                    'Failed to shut down: ' +
-                    ', '.join(vm.name for vm in remaining_domains),
+                    f"Failed to shut down: {', '.join((vm.name for vm in remaining_domains))}",
                     len(remaining_domains))
             return
         this_round_domains.difference_update(remaining_domains)

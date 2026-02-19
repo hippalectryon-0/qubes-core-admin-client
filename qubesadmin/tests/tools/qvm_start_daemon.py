@@ -63,9 +63,7 @@ class TC_00_qvm_start_gui(qubesadmin.tests.QubesTestCase):
         args = self.launcher.kde_guid_args(self.app.domains['test-vm'])
         self.launcher.kde = True
         self.assertEqual(args, ['-T', '-p',
-                                '_KDE_NET_WM_COLOR_SCHEME=s:' +
-                                os.path.expanduser(
-                                    '~/.local/share/qubes-kde/red.colors')])
+                                f"_KDE_NET_WM_COLOR_SCHEME=s:{os.path.expanduser('~/.local/share/qubes-kde/red.colors')}"])
 
         self.assertAllCalled()
 
