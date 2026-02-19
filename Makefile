@@ -38,5 +38,5 @@ clean:
 	rm -rf build/ dist/ .eggs/ pkgs/ .coverage
 	rm -rf debian/changelog.*
 	find . -type f -name *.pyc -delete
-	find . -type d -name '*.egg-info' -delete
-	find . -type d -name __pycache__ -delete
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	find . -type d -name "__pycache__" -exec rm -rf {} +

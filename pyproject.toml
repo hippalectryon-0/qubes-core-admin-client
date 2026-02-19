@@ -9,7 +9,7 @@ authors = [
     {name = "Invisible Things Lab", email = "marmarek@invisiblethingslab.com"}
 ]
 description = "Qubes Admin API package"
-license = {text = "LGPL2.1+"}
+license = "LGPL-2.1-only"
 urls = {Homepage = "https://www.qubes-os.org/"}
 requires-python = ">=3.10"
 dependencies = [
