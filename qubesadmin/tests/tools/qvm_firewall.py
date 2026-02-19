@@ -163,8 +163,7 @@ class TC_10_qvm_firewall(qubesadmin.tests.QubesTestCase):
         in_1h = int(time.time()) + 3600
         self.app.expected_calls[('test-vm', 'admin.vm.firewall.Get',
                 None, None)] = \
-            '0\0action=accept dsthost=qubes-os.org proto=tcp ' \
-            'dstports=443-443 expire={}\n'.format(in_1h).encode()
+            f'0\x00action=accept dsthost=qubes-os.org proto=tcp dstports=443-443 expire={in_1h}\n'.encode()
         with qubesadmin.tests.tools.StdoutBuffer() as stdout:
             qubesadmin.tools.qvm_firewall.main(['test-vm'], app=self.app)
             line = stdout.getvalue().splitlines()[-1]

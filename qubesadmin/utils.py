@@ -95,9 +95,7 @@ def get_entry_point_one(group, name):
     if not epoints:
         raise KeyError(name)
     if len(epoints) > 1:
-        raise TypeError('more than 1 implementation of {!r} found: {}'.format(
-            name, ', '.join('{}.{}'.format(ep.module_name, '.'.join(ep.attrs))
-                            for ep in epoints)))
+        raise TypeError(f"more than 1 implementation of {name!r} found: {', '.join(('{}.{}'.format(ep.module_name, '.'.join(ep.attrs)) for ep in epoints))}")
     return epoints[0].load()
 
 

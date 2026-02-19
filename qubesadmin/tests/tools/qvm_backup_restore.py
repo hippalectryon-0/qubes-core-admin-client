@@ -138,15 +138,12 @@ class TC_00_qvm_backup_restore(qubesadmin.tests.QubesTestCase):
         if action == 'skip_broken':
             expected_calls.append(
                 mock.call.warning(
-                    'Skipping broken entries: VMs that depend on missing {}s '
-                    'will NOT be restored.'.format(missing_name))
+                    f'Skipping broken entries: VMs that depend on missing {missing_name}s will NOT be restored.')
             )
         elif action == 'ignore_missing':
             expected_calls.append(
                 mock.call.warning(
-                    'Ignoring missing entries: VMs that depend on missing '
-                    '{}s will have default value assigned.'.format(
-                        missing_name))
+                    f'Ignoring missing entries: VMs that depend on missing {missing_name}s will have default value assigned.')
             )
         self.assertEqual(self.app.log.mock_calls, expected_calls)
 

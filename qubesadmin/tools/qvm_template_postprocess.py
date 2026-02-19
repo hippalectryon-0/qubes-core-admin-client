@@ -211,8 +211,7 @@ def import_appmenus(vm, source_dir, skip_generate=True):
     # implemented
     try:
         subprocess.check_call(cmd_prefix + ['qvm-appmenus',
-            '--set-default-whitelist={!s}'.format(
-                source_dir / 'vm-whitelisted-appmenus.list'), vm.name])
+            f"--set-default-whitelist={source_dir / 'vm-whitelisted-appmenus.list'!s}", vm.name])
         subprocess.check_call(cmd_prefix + ['qvm-appmenus',
             f"--set-whitelist={source_dir / 'whitelisted-appmenus.list'!s}", vm.name])
     except subprocess.CalledProcessError as e:

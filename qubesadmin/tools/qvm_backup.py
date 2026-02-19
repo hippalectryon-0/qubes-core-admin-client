@@ -152,10 +152,7 @@ def main(args=None, app=None):
                     'Cannot save backup profile when running not in dom0')
                 # unreachable - parser.error terminate the process
                 return 1
-            print('To perform the backup according to selected options, '
-                'create backup profile ({}) in dom0 with following '
-                  'content:'.format(
-                    os.path.join(backup_profile_dir, 'profile_name.conf')))
+            print(f"To perform the backup according to selected options, create backup profile ({os.path.join(backup_profile_dir, 'profile_name.conf')}) in dom0 with following content:")
             write_backup_profile(sys.stdout, args)
             print('# specify backup passphrase below')
             print('passphrase_text: ...')
@@ -168,8 +165,7 @@ def main(args=None, app=None):
                 "save_profile"):
             if getattr(args, no_profile_option):
                 parser.error(
-                    "--{} option could not be used together with --profile"
-                    .format(no_profile_option.replace("_", "-"))
+                    f"--{no_profile_option.replace('_', '-')} option could not be used together with --profile"
                 )
         profile_name = args.profile
 

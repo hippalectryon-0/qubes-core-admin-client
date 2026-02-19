@@ -141,8 +141,7 @@ class RestoreInDisposableVM:
         self.backup_log_path = '/var/tmp/backup-restore.log'
         self.terminal_app = ('xterm', '-hold', '-title', 'Backup restore', '-e',
                              '/bin/sh', '-c',
-                             '("$0" "$@" 2>&1; echo exit code: $?) | tee {}'.
-                             format(self.backup_log_path))
+                             f'("$0" "$@" 2>&1; echo exit code: $?) | tee {self.backup_log_path}')
         if args.auto_close:
             # filter-out '-hold'
             self.terminal_app = tuple(a for a in self.terminal_app
@@ -179,11 +178,7 @@ class RestoreInDisposableVM:
             ['qvm-copy-to-vm', self.dispvm_name, path],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL)
-        return '/home/{}/QubesIncoming/{}/{}'.format(
-            self.dispvm.default_user,
-            os.uname()[1],
-            os.path.basename(path)
-        )
+        return f'/home/{self.dispvm.default_user}/QubesIncoming/{os.uname()[1]}/{os.path.basename(path)}'
 
     def register_backup_source(self) -> None:
         """Tell backup archive holding VM we want this content.
@@ -255,8 +250,7 @@ class RestoreInDisposableVM:
                                  'restored-from-backup-* tag',
                                  domain.name)
                 # add fallback tag
-                domain.tags.add('restored-from-backup-at-{}'.format(
-                    datetime.date.strftime(datetime.date.today(), '%F')))
+                domain.tags.add(f"restored-from-backup-at-{datetime.date.strftime(datetime.date.today(), '%F')}")
             domain.tags.discard('backup-restore-in-progress')
 
     @staticmethod
@@ -293,12 +287,7 @@ class RestoreInDisposableVM:
                 self.dispvm.run("command -v qvm-backup-restore")
             except subprocess.CalledProcessError:
                 raise qubesadmin.exc.QubesException(
-                    'qvm-backup-restore tool '
-                    'missing in {} template, install qubes-core-admin-client '
-                    'package there'.format(
-                        getattr(self.dispvm.template,
-                                'template',
-                                self.dispvm.template).name)
+                    f"qvm-backup-restore tool missing in {getattr(self.dispvm.template, 'template', self.dispvm.template).name} template, install qubes-core-admin-client package there"
                 )
             self.app.log.info("When operation completes, close its window "
                               "manually.")
@@ -326,12 +315,7 @@ class RestoreInDisposableVM:
                     backup_log=backup_log)
             if exit_code == 127:
                 raise qubesadmin.exc.QubesException(
-                    'qvm-backup-restore tool '
-                    'missing in {} template, install qubes-core-admin-client '
-                    'package there'.format(
-                        getattr(self.dispvm.template,
-                                'template',
-                                self.dispvm.template).name)
+                    f"qvm-backup-restore tool missing in {getattr(self.dispvm.template, 'template', self.dispvm.template).name} template, install qubes-core-admin-client package there"
                 )
             if exit_code != 0:
                 raise qubesadmin.exc.BackupRestoreError(
@@ -341,9 +325,7 @@ class RestoreInDisposableVM:
         except subprocess.CalledProcessError as e:
             if e.returncode == 127:
                 raise qubesadmin.exc.QubesException(
-                    '{} missing in {} template, install it there '
-                    'package there'.format(self.terminal_app[0],
-                                           self.dispvm.template.template.name)
+                    f'{self.terminal_app[0]} missing in {self.dispvm.template.template.name} template, install it there package there'
                 )
             try:
                 backup_log = self.extract_log()

@@ -385,8 +385,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
             self.version = version
         else:
             _metadata_ = importlib.metadata.metadata('qubesadmin')
-            self.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
-                _metadata_['summary'], _metadata_['version'])
+            self.version = f"{os.path.basename(sys.argv[0])} ({_metadata_['summary']}) {_metadata_['version']}"
             self.version += f"\nCopyright (C) {_metadata_['author']}"
             self.version += f"\nLicense: {_metadata_['license']}"
         if self.version != '':

@@ -1389,8 +1389,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                 self.app.expected_calls[
                     ('dom0', f"admin.vm.CreateInPool.{vm['klass']}",
                      templates_map.get(vm['template'], vm['template']),
-                    'name={} label={} pool={}'.format(
-                        name, vm['label'], self.storage_pool).encode())] = \
+                    f"name={name} label={vm['label']} pool={self.storage_pool}".encode())] = \
                     b'0\0'
             else:
                 self.app.expected_calls[

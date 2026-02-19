@@ -508,19 +508,9 @@ def get_monitor_layout():
                         else:
                             dpi = 96
                         # now calculate dimensions based on approximate DPI
-                        phys_size = " {} {}".format(
-                            int(output_params["width"]) * 254 // dpi // 10,
-                            int(output_params["height"]) * 254 // dpi // 10,
-                        )
+                        phys_size = f" {int(output_params['width']) * 254 // dpi // 10} {int(output_params['height']) * 254 // dpi // 10}"
                     outputs.append(
-                        "%s %s %s %s%s\n"
-                        % (
-                            output_params["width"],
-                            output_params["height"],
-                            output_params["x"],
-                            output_params["y"],
-                            phys_size,
-                        )
+                        f"{output_params['width']} {output_params['height']} {output_params['x']} {output_params['y']}{phys_size}\n"
                     )
     return outputs
 
@@ -643,9 +633,7 @@ class DAEMONLauncher:
 
         guid_cmd += [
             "-p",
-            "_KDE_NET_WM_COLOR_SCHEME=s:{}".format(
-                os.path.join(data_dir, "qubes-kde", f"{vm.label.name}.colors")
-            ),
+            f"_KDE_NET_WM_COLOR_SCHEME=s:{os.path.join(data_dir, 'qubes-kde', f'{vm.label.name}.colors')}",
         ]
         return guid_cmd
 

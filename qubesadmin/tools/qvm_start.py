@@ -148,8 +148,7 @@ def get_drive_assignment(app, drive_str):
         ):
             if timeout == 0:
                 raise qubesadmin.exc.QubesException(
-                    'Timeout waiting for {}:{} device to appear'.format(
-                        backend_domain.name, port_id))
+                    f'Timeout waiting for {backend_domain.name}:{port_id} device to appear')
             timeout -= 1
             time.sleep(1)
 
