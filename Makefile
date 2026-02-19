@@ -6,7 +6,8 @@ PIP ?= pip3
 
 .PHONY: build
 build:
-	$(PYTHON) -m build
+    # --no-isolation to use distro packages instead of downloading missing ones
+	$(PYTHON) -m build --no-isolation
 
 .PHONY: install
 install:
@@ -25,17 +26,17 @@ install:
 
 .PHONY: install-pip
 install-pip:
+	# /!\ will download deps from the internet if not present
 	$(PIP) install .
 
 .PHONY: install-editable
 install-editable:
+	# /!\ will download deps from the internet if not present
 	$(PIP) install -e .
 
 clean:
-	rm -rf test-packages/__pycache__ qubesadmin/__pycache__
-	rm -rf qubesadmin/*/__pycache__ qubesadmin/tests/*/__pycache__
-	rm -rf test-packages/*.egg-info
-	rm -f .coverage
+	rm -rf build/ dist/ .eggs/ pkgs/ .coverage
 	rm -rf debian/changelog.*
-	rm -rf pkgs
-	rm -rf build/ dist/ *.egg-info .eggs/
+	find . -type f -name *.pyc -delete
+	find . -type d -name '*.egg-info' -delete
+	find . -type d -name __pycache__ -delete
