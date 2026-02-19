@@ -120,8 +120,7 @@ class EventsDispatcher:
                 except ProcessLookupError:
                     pass
         else:
-            raise NotImplementedError('Unsupported qubesd connection type: '
-                                      + self.app.qubesd_connection_type)
+            raise NotImplementedError(f"Unsupported qubesd connection type: {self.app.qubesd_connection_type}")
         return reader, cleanup_func
 
     async def listen_for_events(self, vm=None, reconnect=True):
@@ -176,8 +175,7 @@ class EventsDispatcher:
                     event_header = await reader.readuntil(b'\0')
                     if event_header != b'1\0':
                         raise qubesadmin.exc.QubesDaemonCommunicationError(
-                            'Non-event received on events connection: '
-                            + repr(event_header))
+                            f"Non-event received on events connection: {event_header!r}")
                     subject = (await reader.readuntil(b'\0'))[:-1].decode(
                         'utf-8')
                     event = (await reader.readuntil(b'\0'))[:-1].decode(

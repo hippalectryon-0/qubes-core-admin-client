@@ -269,10 +269,8 @@ class TC_00_qvm_template_postprocess(qubesadmin.tests.QubesTestCase):
                 vm, self.source_dir.name, skip_generate=False)
         self.assertEqual(mock_proc.mock_calls, [
             mock.call(['qvm-appmenus',
-                '--set-default-whitelist=' + os.path.join(self.source_dir.name,
-                    'vm-whitelisted-appmenus.list'), 'test-vm']),
-            mock.call(['qvm-appmenus', '--set-whitelist=' + os.path.join(
-                self.source_dir.name, 'whitelisted-appmenus.list'), 'test-vm']),
+                f"--set-default-whitelist={os.path.join(self.source_dir.name, 'vm-whitelisted-appmenus.list')}", 'test-vm']),
+            mock.call(['qvm-appmenus', f"--set-whitelist={os.path.join(self.source_dir.name, 'whitelisted-appmenus.list')}", 'test-vm']),
         ])
         self.assertAllCalled()
 
@@ -335,11 +333,9 @@ class TC_00_qvm_template_postprocess(qubesadmin.tests.QubesTestCase):
         self.assertEqual(mock_proc.mock_calls, [
             mock.call(['runuser', '-u', 'user', '--', 'env', 'DISPLAY=:0',
                 'qvm-appmenus',
-                '--set-default-whitelist=' + os.path.join(self.source_dir.name,
-                    'vm-whitelisted-appmenus.list'), 'test-vm']),
+                f"--set-default-whitelist={os.path.join(self.source_dir.name, 'vm-whitelisted-appmenus.list')}", 'test-vm']),
             mock.call(['runuser', '-u', 'user', '--', 'env', 'DISPLAY=:0',
-                'qvm-appmenus', '--set-whitelist=' + os.path.join(
-                self.source_dir.name, 'whitelisted-appmenus.list'), 'test-vm']),
+                'qvm-appmenus', f"--set-whitelist={os.path.join(self.source_dir.name, 'whitelisted-appmenus.list')}", 'test-vm']),
         ])
         self.assertAllCalled()
 

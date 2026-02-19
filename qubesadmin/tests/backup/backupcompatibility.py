@@ -906,8 +906,7 @@ class TC_10_BackupCompatibility(qubesadmin.tests.backup.BackupTestCase):
                              appmenus_list)
         os.mkdir(self.fullpath("appvms/test-standalonevm/kernels"))
         for k_file in ["initramfs", "vmlinuz", "modules.img"]:
-            self.fill_image(self.fullpath("appvms/test-standalonevm/kernels/"
-            + k_file), 1024*1024)
+            self.fill_image(self.fullpath(f"appvms/test-standalonevm/kernels/{k_file}"), 1024*1024)
 
         # VM based on custom template
         subprocess.check_call(
