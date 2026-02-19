@@ -205,7 +205,7 @@ def _frontend_desc(vm, assignment, virtual=False):
     if not virtual:
         mode = "attached"
     if assignment.options:
-        return f"{vm!s} ({mode}: {', '.join(('{}={}'.format(key, value) for (key, value) in assignment.options.items()))})"
+        return f"{vm!s} ({mode}: {', '.join((f'{key}={value}' for (key, value) in assignment.options.items()))})"
     return f"{vm} ({mode})"
 
 
