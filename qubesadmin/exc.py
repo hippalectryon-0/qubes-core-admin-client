@@ -229,7 +229,7 @@ class QubesPropertyAccessError(QubesDaemonAccessError, AttributeError):
     permissions, no such property, invalid value, other)"""
 
     def __init__(self, prop):
-        super().__init__("Failed to access '%s' property" % prop)
+        super().__init__(f"Failed to access '{prop}' property")
 
 
 

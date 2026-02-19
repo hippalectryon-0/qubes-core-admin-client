@@ -80,7 +80,7 @@ class Core3Qubes(qubesadmin.backup.BackupApp):
         Object can be any PropertyHolder serialized to XML - in practice
         :py:class:`BaseVM` or :py:class:`Qubes`.
         '''
-        xml_prop = xml_obj.findall('./property[@name=\'{}\']'.format(prop))
+        xml_prop = xml_obj.findall(f'./property[@name=\'{prop}\']')
         if not xml_prop:
             raise KeyError(prop)
         return xml_prop[0].text

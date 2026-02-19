@@ -76,10 +76,10 @@ def remove_pools(args):
         try:
             args.app.remove_pool(pool_name)
         except KeyError:
-            errors.append('No such pool %s\n' % pool_name)
+            errors.append(f'No such pool {pool_name}\n')
         except qubesadmin.exc.QubesException as e:
             errors.append(
-                'Failed to remove pool %s: %s\n' % (pool_name, str(e)))
+                f'Failed to remove pool {pool_name}: {e!s}\n')
     if errors:
         raise qubesadmin.exc.QubesException('\n'.join(errors))
 
@@ -92,13 +92,11 @@ def set_pool(args):
     for opt, value in options:
         if not hasattr(type(pool), opt):
             errors.append(
-                'Setting option %s is not supported for pool %s\n' % (
-                    opt, pool.name))
+                f'Setting option {opt} is not supported for pool {pool.name}\n')
         try:
             setattr(pool, opt, value)
         except qubesadmin.exc.QubesException as e:
-            errors.append('Failed to set option %s for pool %s: %s\n' % (
-                opt, pool.name, str(e)))
+            errors.append(f'Failed to set option {opt} for pool {pool.name}: {e!s}\n')
     if errors:
         raise qubesadmin.exc.QubesException('\n'.join(errors))
 

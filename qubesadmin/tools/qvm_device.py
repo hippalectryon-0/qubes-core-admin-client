@@ -90,7 +90,7 @@ class Line:
 
     # pylint: disable=too-few-public-methods
     def __init__(self, device: DeviceInfo, assignment=False):
-        self.ident = "{!s}:{!s}".format(device.backend_domain, device.port_id)
+        self.ident = f"{device.backend_domain!s}:{device.port_id!s}"
         self.description = device.description
         self.assignment = assignment
         self.frontends = []

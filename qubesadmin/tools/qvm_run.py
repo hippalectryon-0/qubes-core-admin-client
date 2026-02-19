@@ -218,7 +218,7 @@ def print_no_color(msg, file, color):
     Namely reset to base color first, print a message, then restore color.
     """
     if color:
-        print("\033[0m{}\033[0;{}m".format(msg, color), file=file)
+        print(f"\x1b[0m{msg}\x1b[0;{color}m", file=file)
     else:
         print(msg, file=file)
 
@@ -394,10 +394,10 @@ def main(args=None, app=None):
             assert len(domains) == 1
             args.gui = has_gui(domains[0])
     if args.color_output:
-        sys.stdout.write("\033[0;{}m".format(args.color_output))
+        sys.stdout.write(f"\x1b[0;{args.color_output}m")
         sys.stdout.flush()
     if args.color_stderr:
-        sys.stderr.write("\033[0;{}m".format(args.color_stderr))
+        sys.stderr.write(f"\x1b[0;{args.color_stderr}m")
         sys.stderr.flush()
     copy_proc = None
     try:
@@ -406,7 +406,7 @@ def main(args=None, app=None):
             if not args.autostart and not vm.is_running():
                 if verbose > 0:
                     print_no_color(
-                        "Qube '{}' not started".format(vm.name),
+                        f"Qube '{vm.name}' not started",
                         file=sys.stderr,
                         color=args.color_stderr,
                     )
@@ -416,7 +416,7 @@ def main(args=None, app=None):
                 if not args.autostart:
                     if verbose > 0:
                         print_no_color(
-                            "Qube '{}' is paused".format(vm.name),
+                            f"Qube '{vm.name}' is paused",
                             file=sys.stderr,
                             color=args.color_stderr,
                         )
@@ -427,7 +427,7 @@ def main(args=None, app=None):
                 except qubesadmin.exc.QubesException:
                     if verbose > 0:
                         print_no_color(
-                            "Qube '{}' cannot be unpaused".format(vm.name),
+                            f"Qube '{vm.name}' cannot be unpaused",
                             file=sys.stderr,
                             color=args.color_stderr,
                         )
@@ -436,7 +436,7 @@ def main(args=None, app=None):
             try:
                 if verbose > 0:
                     print_no_color(
-                        "Running '{}' on {}".format(args.cmd, vm.name),
+                        f"Running '{args.cmd}' on {vm.name}",
                         file=sys.stderr,
                         color=args.color_stderr,
                     )
@@ -469,9 +469,7 @@ def main(args=None, app=None):
                 this_retcode = proc.wait()
                 if this_retcode and verbose > 0:
                     print_no_color(
-                        "{}: command failed with code: {}".format(
-                            vm.name, this_retcode
-                        ),
+                        f"{vm.name}: command failed with code: {this_retcode}",
                         file=sys.stderr,
                         color=args.color_stderr,
                     )

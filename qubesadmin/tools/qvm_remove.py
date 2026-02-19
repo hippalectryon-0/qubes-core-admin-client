@@ -88,20 +88,18 @@ def main(args=None, app=None):  # pylint: disable=missing-docstring
                 dependencies = list(set(dependencies) - set(preloads))
                 if dependencies:
                     print(
-                        "VM {} cannot be removed. It is in use as:".format(
-                            vm.name
-                        ),
+                        f"VM {vm.name} cannot be removed. It is in use as:",
                         file=sys.stderr,
                     )
                     for holder, prop in dependencies:
                         if holder:
                             print(
-                                " - {} for {}".format(prop, holder.name),
+                                f" - {prop} for {holder.name}",
                                 file=sys.stderr,
                             )
                         else:
                             print(
-                                " - global property {}".format(prop),
+                                f" - global property {prop}",
                                 file=sys.stderr,
                             )
                 # Display the original message as well

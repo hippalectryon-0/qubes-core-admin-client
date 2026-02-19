@@ -80,7 +80,7 @@ def parse_bool(value):
         if lcvalue in ('1', 'yes', 'true', 'on'):
             return True
         raise qubesadmin.exc.QubesValueError(
-            'Invalid literal for boolean value: {!r}'.format(value))
+            f'Invalid literal for boolean value: {value!r}')
 
     return bool(value)
 

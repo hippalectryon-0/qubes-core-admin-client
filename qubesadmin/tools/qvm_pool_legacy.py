@@ -179,14 +179,14 @@ def main(args=None, app=None):
             args.app.add_pool(name=args.name, driver=args.driver,
                 **args.options)
         except qubesadmin.exc.QubesException as e:
-            parser.error('failed to add pool %s: %s\n' % (args.name, str(e)))
+            parser.error(f'failed to add pool {args.name}: {e!s}\n')
     elif args.command == 'remove':
         try:
             args.app.remove_pool(args.name)
         except KeyError:
-            parser.print_error('no such pool %s\n' % args.name)
+            parser.print_error(f'no such pool {args.name}\n')
         except qubesadmin.exc.QubesException as e:
-            parser.error('failed to remove pool %s: %s\n' % (args.name, str(e)))
+            parser.error(f'failed to remove pool {args.name}: {e!s}\n')
     elif args.command == 'info':
         for pool in args.pools:
             pool_info(pool)
@@ -194,13 +194,11 @@ def main(args=None, app=None):
         pool = args.pool[0]
         for opt, value in args.options.items():
             if not hasattr(type(pool), opt):
-                parser.error('setting pool option %s is not supported' % (
-                    pool.name))
+                parser.error(f'setting pool option {pool.name} is not supported')
             try:
                 setattr(pool, opt, value)
             except qubesadmin.exc.QubesException as e:
-                parser.error('failed to set pool %s option %s: %s\n' % (
-                    pool.name, opt, str(e)))
+                parser.error(f'failed to set pool {pool.name} option {opt}: {e!s}\n')
     return 0
 
 

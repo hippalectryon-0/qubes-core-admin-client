@@ -1725,7 +1725,7 @@ def migrate_from_rpmdb(app):
                 pkg[rpm.RPMTAG_DESCRIPTION].replace('\n', '|')
             vm.installed_by_rpm = False
         except Exception as e:  # pylint: disable=broad-except
-            print('Failed to set template {} metadata: {}'.format(vm.name, e))
+            print(f'Failed to set template {vm.name} metadata: {e}')
             continue
         pkgs_to_remove.append(pkg)
     subprocess.check_call(

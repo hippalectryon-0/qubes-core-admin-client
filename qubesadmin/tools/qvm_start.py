@@ -132,8 +132,7 @@ def get_drive_assignment(app, drive_str):
                 allowed_chars = allowed_chars.encode('ascii')
                 if not all(c in allowed_chars for c in untrusted_loop_name):
                     raise qubesadmin.exc.QubesException(
-                        'Invalid loop device name received from {}'.format(
-                            backend_domain.name))
+                        f'Invalid loop device name received from {backend_domain.name}')
                 loop_name = untrusted_loop_name
                 del untrusted_loop_name
         except subprocess.CalledProcessError:
@@ -181,7 +180,7 @@ def main(args=None, app=None):
                 continue
             exit_code = 1
             parser.print_error(
-                    'domain {} is already running'.format(domain.name))
+                    f'domain {domain.name} is already running')
             return exit_code
         drive_assignment = None
         try:

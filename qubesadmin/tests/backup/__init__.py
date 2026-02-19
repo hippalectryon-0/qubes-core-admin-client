@@ -252,8 +252,7 @@ class BackupTestCase(qubesadmin.tests.QubesTestCase):
                     continue
                 self.assertEqual(
                     getattr(vm, prop), getattr(restored_vm, prop),
-                    "VM {} - property {} not properly restored".format(
-                        vm.name, prop))
+                    f"VM {vm.name} - property {prop} not properly restored")
             for prop in ('netvm', 'template', 'label'):
                 if not hasattr(vm, prop):
                     continue
@@ -261,20 +260,16 @@ class BackupTestCase(qubesadmin.tests.QubesTestCase):
                 restored_value = getattr(restored_vm, prop)
                 if orig_value and restored_value:
                     self.assertEqual(orig_value.name, restored_value.name,
-                        "VM {} - property {} not properly restored".format(
-                            vm.name, prop))
+                        f"VM {vm.name} - property {prop} not properly restored")
                 else:
                     self.assertEqual(orig_value, restored_value,
-                        "VM {} - property {} not properly restored".format(
-                            vm.name, prop))
+                        f"VM {vm.name} - property {prop} not properly restored")
             for dev_class in vm.devices.keys():
                 for dev in vm.devices[dev_class]:
                     self.assertIn(dev, restored_vm.devices[dev_class],
-                        "VM {} - {} device not restored".format(
-                            vm.name, dev_class))
+                        f"VM {vm.name} - {dev_class} device not restored")
 
             if orig_hashes:
                 hashes = self.vm_checksum([restored_vm])[restored_vm.name]
                 self.assertEqual(orig_hashes[vm.name], hashes,
-                    "VM {} - disk images are not properly restored".format(
-                        vm.name))
+                    f"VM {vm.name} - disk images are not properly restored")

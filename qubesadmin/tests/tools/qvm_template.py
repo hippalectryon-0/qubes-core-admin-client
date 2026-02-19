@@ -3735,7 +3735,7 @@ test-vm : Qubes template for fedora-31
                               key, dlsize=None, refresh=False):
         # pylint: disable=unused-argument
         self.assertFalse(os.path.exists(path),
-            '{} should not exist before'.format(path))
+            f'{path} should not exist before')
         # just create an empty file
         with open(path, 'wb') as f_template:
             f_template.truncate(dlsize)
@@ -4216,7 +4216,7 @@ test-vm : Qubes template for fedora-31
                               key, dlsize=None, refresh=False):
         # pylint: disable=unused-argument
         self.assertFalse(os.path.exists(path),
-            '{} should not exist before'.format(path))
+            f'{path} should not exist before')
         # just create an empty file
         with open(path, 'wb') as f_pkg:
             f_pkg.truncate(dlsize // 2)
@@ -5618,17 +5618,15 @@ sslclientkey = {}
             ssl_cert.flush()
             ssl_key.write(b"CDE")
             ssl_key.flush()
-            wrapper = '''
+            wrapper = f'''
 ###!Q!BEGIN-QUBES-WRAPPER!Q!###
-#{}
+#{ssl_cert.name}
 #QkNE
-#{}
+#{ssl_key.name}
 #Q0RF
-#{}
+#{gpg_key_primary.name}
 #QUJD
-###!Q!END-QUBES-WRAPPER!Q!###'''.format(ssl_cert.name,
-                                        ssl_key.name,
-                                        gpg_key_primary.name)
+###!Q!END-QUBES-WRAPPER!Q!###'''
             args = argparse.Namespace(
                 repos=[('enablerepo', 'repo1'), ('enablerepo', 'repo2'),
                        ('disablerepo', 'repo3'), ('disablerepo', 'repo4'),

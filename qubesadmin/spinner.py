@@ -97,7 +97,7 @@ class QubesSpinner(AbstractSpinner):
 
     def show(self, prompt):
         self.hidelen = len(prompt) + 2
-        self.stream.write('{} {}'.format(prompt, next(self.charset)))
+        self.stream.write(f'{prompt} {next(self.charset)}')
         self.stream.flush()
 
     def hide(self):

@@ -133,8 +133,7 @@ class TC_00_qvm_backup_restore(qubesadmin.tests.QubesTestCase):
             mock.call.info(
                 'Existing VMs will NOT be removed.'),
             mock.call.warning(
-                '*** One or more {}s are missing on the host! ***'.format(
-                    missing_name)),
+                f'*** One or more {missing_name}s are missing on the host! ***'),
         ]
         if action == 'skip_broken':
             expected_calls.append(
