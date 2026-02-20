@@ -34,7 +34,7 @@ def get_parser() -> QubesArgumentParser:
     """Prepare argument parser"""
     return qubesadmin.tools.qvm_prefs.get_parser(None)
 
-
+# TODO is that just not a test stub ? Where is it actually used in a prod context ? (rather than qubesadmin.tools.qvm_prefs)
 def main(args: Iterable[str] | None=None, app: QubesBase | None = None) -> int:  # pylint: disable=missing-docstring
     parser = get_parser()
     args: Namespace = parser.parse_args(args, app=app)
