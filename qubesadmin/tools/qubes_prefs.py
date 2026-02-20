@@ -17,8 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-''' Manipulate global properties.'''
+"""Manipulate global properties."""
+from argparse import Namespace
+from collections.abc import Iterable
 
+from qubesadmin.app import QubesBase
 
 import sys
 
@@ -28,15 +31,16 @@ from qubesadmin.tools import QubesArgumentParser
 
 
 def get_parser() -> QubesArgumentParser:
-    '''Prepare argument parser'''
+    """Prepare argument parser"""
     return qubesadmin.tools.qvm_prefs.get_parser(None)
 
 
-def main(args: object = None, app: object = None) -> int:  # pylint: disable=missing-docstring
+def main(args: Iterable[str] | None=None, app: QubesBase | None = None) -> int:  # pylint: disable=missing-docstring
     parser = get_parser()
-    args = parser.parse_args(args, app=app)
+    args: Namespace = parser.parse_args(args, app=app)
     target = args.app
     return qubesadmin.tools.qvm_prefs.process_actions(parser, args, target)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())
