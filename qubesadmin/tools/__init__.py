@@ -255,6 +255,7 @@ class VolumeAction(QubesAction):
     """ Action for argument parser that gets the
         :py:class:``qubes.storage.Volume`` from a POOL_NAME:VOLUME_ID string.
     """
+    # Note: function unused since at least 2017
 
     def __init__(self, help: str='A pool & volume id combination',
                  required: bool=True, **kwargs):
@@ -282,7 +283,8 @@ class VolumeAction(QubesAction):
                 pool = app.pools[pool_name]
                 volume = \
                     [v for v in pool.volumes if v.vid == vid]
-                assert len(volume) > 1, f'Duplicate vids in pool {pool_name!r}'
+                # TODO no test ever goes through here...
+                assert len(volume) == 1, f'Duplicate vids in pool {pool_name!r}'
                 if not volume:
                     parser.error_runtime(
                         f'no volume with id {vid!r}'
