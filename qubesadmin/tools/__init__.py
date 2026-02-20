@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-'''Qubes' command line tools
-'''
+"""Qubes' command line tools"""
 
 
 import argparse
@@ -31,8 +30,8 @@ import subprocess
 import sys
 import typing
 from argparse import Namespace
-from typing import TextIO, NoReturn, Literal, Iterator
-from collections.abc import Iterable, Sequence, Generator
+from typing import TextIO, NoReturn, Literal
+from collections.abc import Iterable, Sequence
 
 import qubesadmin.log
 import qubesadmin.exc
@@ -299,29 +298,28 @@ class VolumeAction(QubesAction):
 
 
 class VMVolumeAction(QubesAction):
-    ''' Action for argument parser that gets the
+    """ Action for argument parser that gets the
         :py:class:``qubes.storage.Volume`` from a VM:VOLUME string.
-    '''
+    """
 
     def __init__(self, help: str='A pool & volume id combination',
                  required: bool=True, **kwargs):
         # pylint: disable=redefined-builtin
-        super().__init__(help=help, required=required,
-                                           **kwargs)
+        super().__init__(help=help, required=required, **kwargs)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: typing.Any,  # noqa:ANN401
+                 values: str | Sequence | None,
                  option_string: str | None=None) -> None:
-        ''' Set ``namespace.vmname`` to ``values`` '''
+        """ Set ``namespace.vmname`` to ``values`` """
         setattr(namespace, self.dest, values)
 
     def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
-        ''' Acquire the :py:class:``qubes.storage.Volume`` object from
+        """ Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
-        '''
+        """
         assert hasattr(namespace, 'app')
-        app = namespace.app
+        app = typing.cast(QubesBase, namespace.app)
 
         try:
             vm_name, vol_name = getattr(namespace, self.dest).split(':')
@@ -331,68 +329,67 @@ class VMVolumeAction(QubesAction):
                     volume = vm.volumes[vol_name]
                     setattr(namespace, self.dest, volume)
                 except KeyError:
-                    parser.error_runtime('vm {!r} has no volume {!r}'.format(
-                        vm_name, vol_name))
+                    parser.error_runtime(
+                        f'vm {vm_name!r} has no volume {vol_name!r}')
             except KeyError:
                 parser.error_runtime(f'no vm {vm_name!r}')
         except ValueError:
-            parser.error('expected a vm & volume combination like foo:bar')
+            parser.error('expected a vm & volume '
+                         'combination like foo:bar')
 
 
 class PoolsAction(QubesAction):
-    ''' Action for argument parser to gather multiple pools '''
+    """ Action for argument parser to gather multiple pools """
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: object,
-                 option_string: str | None=None) -> None:
-        ''' Set ``namespace.vmname`` to ``values`` '''
-        if hasattr(namespace, self.dest) and getattr(namespace, self.dest):
-            names = getattr(namespace, self.dest)
-        else:
-            names = []
-        names += [values]
+                 values: str | Sequence | None, option_string: str | None=None)\
+            -> None:
+        """ Set ``namespace.vmname`` to ``values`` """
+        assert isinstance(values, str)
+        names = (
+                getattr(namespace, self.dest, []) or [])
+        names.append(values)
         setattr(namespace, self.dest, names)
 
     def parse_qubes_app(self,parser: argparse.ArgumentParser,
                         namespace: Namespace) -> None:
-        app = namespace.app
-        pool_names = getattr(namespace, self.dest)
+        app = typing.cast(QubesBase, namespace.app)
+        pool_names = typing.cast(list[str],
+                                 getattr(namespace, self.dest))
         if pool_names:
             try:
-                pools = [app.pools[name] for name in pool_names]
+                pools = \
+                    [app.pools[name] for name in pool_names]
                 setattr(namespace, self.dest, pools)
             except qubesadmin.exc.QubesException as e:
                 parser.error(str(e))
-                sys.exit(2)
             except KeyError:
-                parser.error('No such pools: %s' % pool_names)
-                sys.exit(2)
+                parser.error(f'No such pools: {pool_names}')
 
 
 class QubesArgumentParser(argparse.ArgumentParser):
-    '''Parser preconfigured for use in most of the Qubes command-line tools.
+    """Parser preconfigured for use in most of the Qubes command-line tools.
 
-    :param mixed vmname_nargs: The number of ``VMNAME`` arguments that should be
+    :param vmname_nargs: The number of ``VMNAME`` arguments that should be
         consumed. Values include:
         * N (an integer) consumes N arguments (and produces a list)
         * '?' consumes zero or one arguments
         * '*' consumes zero or more arguments (and produces a list)
         * '+' consumes one or more arguments (and produces a list)
 
-    :param show_forceroot: don't hide --force-root parameter, prevent running
-        as root unless it is given
+    :param show_forceroot: expose the --force-root parameter in the --help.
+     (By default running as root is disabled, unless --force-root)
 
     *kwargs* are passed to :py:class:`argparser.ArgumentParser`.
 
     Currenty supported options:
         ``--force-root`` (optional, ignored, help is suppressed)
-        ``--offline-mode`` do not talk to hypervisor (help is suppressed)
         ``--verbose`` and ``--quiet``
 
     Calling program should set the ``version`` argument for ``--version`` option
         The default is extracted from `qubesadmin` package information.
         Setting ``version`` argument to '' will disable ``--version`` option.
-    '''
+    """
 
     def __init__(self, vmname_nargs: int | Literal["?", "*", "+"] | None=None,
                  show_forceroot: bool=False, version: str | None=None,
@@ -418,15 +415,20 @@ class QubesArgumentParser(argparse.ArgumentParser):
                               default=False, help=argparse.SUPPRESS)
         self._complain_if_root = show_forceroot
 
-        self.add_argument('--help', '-h', action=SubParsersHelpAction,
+        self.add_argument('--help', '-h',
+                          action=SubParsersHelpAction,
                           help='show this help message and exit')
 
         if version is not None:
             self.version = version
         else:
-            _metadata_ = importlib.metadata.metadata('qubesadmin')
-            self.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
-                _metadata_['summary'], _metadata_['version'])
+            _metadata_ = importlib.metadata.metadata(
+                'qubesadmin')
+            self.version = '{} ({}) {}'.format(
+                os.path.basename(sys.argv[0]),
+                _metadata_['summary'],
+                _metadata_['version']
+            )
             self.version += '\nCopyright (C) {}'.format(_metadata_['author'])
             self.version += '\nLicense: {}'.format(_metadata_['license'])
         if self.version != '':
@@ -434,8 +436,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
         if self._vmname_nargs in [argparse.ZERO_OR_MORE, argparse.ONE_OR_MORE]:
             vm_name_group = VmNameGroup(self,
-                required=(self._vmname_nargs
-                          not in [argparse.ZERO_OR_MORE, argparse.OPTIONAL]))
+                required=(self._vmname_nargs == argparse.ONE_OR_MORE))
             self._mutually_exclusive_groups.append(vm_name_group)
         elif self._vmname_nargs is not None:
             self.add_argument('VMNAME', nargs=self._vmname_nargs,
@@ -452,11 +453,12 @@ class QubesArgumentParser(argparse.ArgumentParser):
         if self._complain_if_root and \
                 os.getuid() == 0 and \
                 not namespace.force_root:
-            self.error('refusing to run as root; add --force-root to override')
+            self.error('refusing to run as root;'
+                       ' add --force-root to override')
 
         self.set_qubes_verbosity(namespace)
         if app is not None:
-            namespace.app = app
+            namespace.app = typing.cast(QubesBase, app)
         else:
             namespace.app = qubesadmin.Qubes()
 
@@ -470,8 +472,9 @@ class QubesArgumentParser(argparse.ArgumentParser):
                 command = namespace.command
                 if command is None:
                     continue
-                subparser = typing.cast(argparse.ArgumentParser,
-                                        action._name_parser_map[command])
+                subparser = (
+                    typing.cast(argparse.ArgumentParser,
+                                        action._name_parser_map[command]))
                 for subaction in subparser._actions:
                     if isinstance(subaction, QubesAction):
                         subaction.parse_qubes_app(self, namespace)
@@ -480,27 +483,26 @@ class QubesArgumentParser(argparse.ArgumentParser):
 
 
     def error_runtime(self, message: str, exit_code: int=1) -> NoReturn:
-        '''Runtime error, without showing usage.
+        """Runtime error, without showing usage.
 
         :param str message: message to show
-        '''
-        self.exit(exit_code, f'{self.prog}: error: {message}\n')
+        """
+        self.exit(exit_code,
+                  f'{self.prog}: error: {message}\n')
 
 
     @staticmethod
     def get_loglevel_from_verbosity(namespace: Namespace) -> int:
-        ''' Return loglevel calculated from quiet and verbose arguments '''
+        """ Return loglevel calculated from quiet and verbose arguments """
         return (namespace.quiet - namespace.verbose) * 10 + logging.WARNING
 
 
     @staticmethod
     def set_qubes_verbosity(namespace: Namespace) -> None:
-        '''Apply a verbosity setting.
+        """Apply a verbosity setting.
 
         This is done by configuring global logging.
-        TODO wrong docstring below
-        :param argparse.Namespace args: args as parsed by parser
-        '''
+        """
 
         verbose = namespace.verbose - namespace.quiet
 
@@ -509,7 +511,8 @@ class QubesArgumentParser(argparse.ArgumentParser):
         elif verbose >= 1:
             qubesadmin.log.enable()
 
-    def print_error(self, *args, **kwargs) -> None:
+    @staticmethod
+    def print_error(*args, **kwargs) -> None:
         """ Print to ``sys.stderr``"""
         print("Error:", *args, file=sys.stderr, **kwargs)
 
