@@ -39,7 +39,6 @@ import qubesadmin.exc
 import qubesadmin.vm
 from qubesadmin.app import QubesBase
 
-
 class QubesAction(argparse.Action):
     """
     Custom Action for Qubes
@@ -120,6 +119,17 @@ class SinglePropertyAction(argparse.Action):
                  namespace: Namespace, values: str | Sequence | None,
                  option_string: str | None=None)\
             -> None:
+        if not values:
+            # If we omit the argument and it's optional, __call__ will
+            #  not be called.
+            # If we omit it and it's positional, `values` will be either
+            #  `None` or `[]` depending on `nargs`.
+            # We don't want to modify `propertie` in either case, unless
+            #  `const` is set.
+            if not self.const:
+                return
+            values = self.const
+
         properties = getattr(namespace, self.dest)
         if properties is None:
             properties = {}
