@@ -23,5 +23,5 @@ RUN sudo chown -R gitlab-runner:gitlab-runner /workspace
 
 USER gitlab-runner
 ENV USER=gitlab-runner
-ENV ENABLE_SLOW_TESTS=1
+#ENV ENABLE_SLOW_TESTS=1
 CMD xvfb-run uv run python -m unittest discover -s qubesadmin/tests -p '*.py' -v

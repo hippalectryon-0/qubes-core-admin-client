@@ -58,18 +58,18 @@ class QubesAction(argparse.Action):
 
 class PropertyAction(argparse.Action):
     """Action for argument parser that stores a property.
-    Format: `--... property=value`
+    Format: `--<option_name> property=value`
     """
     # pylint: disable=redefined-builtin
     def __init__(self,
             option_strings: list[str],
-            _dest: str,
+            dest: str,
             *,
             metavar: str='NAME=VALUE',
-            _required: bool=False,
+            required: bool=False,
             help: str='set property to a value'):
         super().__init__(option_strings, 'properties',
-            metavar=metavar, help=help)
+            metavar=metavar, help=help, required=required)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
@@ -89,16 +89,18 @@ class PropertyAction(argparse.Action):
 
 
 class SinglePropertyAction(argparse.Action):
-    '''Action for argument parser that stores a property.'''
+    """Action for argument parser that stores a property.
+    Format: `--property_name value` or `--property_name`
+    """
 
-    # pylint: disable=redefined-builtin,too-few-public-methods
+    # pylint: disable=redefined-builtin
     def __init__(self,
             option_strings: list[str],
             dest: str,
             *,
             metavar: str='VALUE',
-            const: typing.Any=None,  # noqa: ANN401
-            nargs: int | None=None,
+            const: object=None,
+            nargs: int | str | None=None,
             required: bool=False,
             help: str | None=None):
         if help is None:
@@ -106,29 +108,23 @@ class SinglePropertyAction(argparse.Action):
             if const is not None:
                 help += f' {const!r}'
 
-        if const is not None:
-            nargs = 0
+        if const is not None and nargs is None:
+            nargs = "?"
 
-        super().__init__(option_strings, 'properties',
-            metavar=metavar, help=help, default={}, const=const,
-            nargs=nargs)
+        super().__init__(option_strings, 'properties', required=required,
+            metavar=metavar, help=help, const=const, nargs=nargs)
 
         self.name = dest
 
 
     def __call__(self, parser: argparse.ArgumentParser,
-                 namespace: Namespace, values: typing.Any, # noqa: ANN401
+                 namespace: Namespace, values: str | Sequence | None,
                  option_string: str | None=None)\
             -> None:
-        if values is self.default and self.default == {}:
-            return
-
         properties = getattr(namespace, self.dest)
-        # copy it, to not modify _mutable_ self.default
-        if not properties:
-            properties = properties.copy()
-        properties[self.name] = values \
-            if self.const is None else self.const
+        if properties is None:
+            properties = {}
+        properties[self.name] = values or self.const
         setattr(namespace, self.dest, properties)
 
 
