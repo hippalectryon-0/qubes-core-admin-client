@@ -21,7 +21,6 @@
 
 
 import sys
-from argparse import Namespace
 
 import qubesadmin
 import qubesadmin.tools.qvm_prefs
@@ -35,7 +34,7 @@ def get_parser() -> QubesArgumentParser:
 
 def main(args: object = None, app: object = None) -> int:  # pylint: disable=missing-docstring
     parser = get_parser()
-    args: Namespace = parser.parse_args(args, app=app)
+    args = parser.parse_args(args, app=app)
     target = args.app
     return qubesadmin.tools.qvm_prefs.process_actions(parser, args, target)
 

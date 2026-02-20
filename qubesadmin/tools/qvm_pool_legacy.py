@@ -41,7 +41,7 @@ class _Info(qubesadmin.tools.PoolsAction):
         # pylint: disable=redefined-builtin
         super().__init__(option_strings, help=help, **kwargs)
 
-    def __call__(self, parser: ArgumentParser,#type:ignore #legacy stuff
+    def __call__(self, parser: ArgumentParser,
                  namespace: Namespace,
                  values:  str | Sequence | None,
                  option_string: str | None=None)\
@@ -119,7 +119,7 @@ class _Set(qubesadmin.tools.PoolsAction):
                               'modifications)')
 
     def __call__(self, parser: ArgumentParser, namespace: Namespace,
-                 values: object,
+                 values: str | Sequence | None,
                  option_string: str | None=None) -> None:
         setattr(namespace, 'command', 'set')
         super().__call__(parser, namespace, values, option_string)
