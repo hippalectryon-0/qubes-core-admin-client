@@ -106,7 +106,7 @@ class SinglePropertyAction(argparse.Action):
                 help += f' {const!r}'
 
         if const is not None and nargs is None:
-            nargs = "?"
+            nargs = argparse.OPTIONAL
 
         super().__init__(option_strings, 'properties', required=required,
             metavar=metavar, help=help, const=const, nargs=nargs)
