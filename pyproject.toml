@@ -11,7 +11,7 @@ authors = [
 description = "Qubes Admin API package"
 license = "LGPL-2.1-only"
 urls = {Homepage = "https://www.qubes-os.org/"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "lxml>=5.3",
     "pyxdg>=0.27",

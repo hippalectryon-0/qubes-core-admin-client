@@ -42,46 +42,48 @@ import qubesadmin.vm
 VM_ALL = object()
 
 class QubesAction(argparse.Action):
-    ''' Interface providing a convinience method to be called, after
-        `namespace.app` is instantiated.
-    '''
-    # pylint: disable=too-few-public-methods
+    """
+    Custom Action for Qubes
+    """
     def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
-        ''' This method is called by :py:class:`qubes.tools.QubesArgumentParser`
-            after the `namespace.app` is instantiated. Oerwrite this method when
-            extending :py:class:`qubes.tools.QubesAction` to initialized values
-            based on the `namespace.app`
-        '''
+        """
+        This method is called by :py:class:`qubes.tools.QubesArgumentParser`
+        after `namespace.app` is instantiated.
+
+        Used to initialize values based on `namespace.app`.
+        """
         raise NotImplementedError
 
 
 class PropertyAction(argparse.Action):
-    '''Action for argument parser that stores a property.'''
-    # pylint: disable=redefined-builtin,too-few-public-methods
+    """Action for argument parser that stores a property.
+    Format: `--... property=value`
+    """
+    # pylint: disable=redefined-builtin
     def __init__(self,
             option_strings: list[str],
-            dest: str,
+            _dest: str,
             *,
             metavar: str='NAME=VALUE',
-            required: bool=False,
+            _required: bool=False,
             help: str='set property to a value'):
         super().__init__(option_strings, 'properties',
-            metavar=metavar, default={}, help=help)
+            metavar=metavar, help=help)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
                  values: str | Sequence | None,
                  option_string: str | None=None) -> None:
-        assert isinstance(values, str)
+        if not isinstance(values, str):
+            parser.error(f'Invalid property token: {values!r}')
         try:
             prop, value = values.split('=', 1)
         except ValueError:
-            parser.error(f'invalid property token: {values!r}')
+            parser.error(f'Invalid property token: {values!r}')
 
         properties = getattr(namespace, self.dest)
-        # copy it, to not modify _mutable_ self.default
-        if not properties:
-            properties = properties.copy()
+        if properties is None:
+            properties = {}
         properties[prop] = value
         setattr(namespace, self.dest, properties)
 
