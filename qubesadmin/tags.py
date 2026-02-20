@@ -33,7 +33,6 @@ class Tags:
     simple string consisting of ASCII alphanumeric characters, plus `_` and
     `-`.
     '''
-    # pylint: disable=too-few-public-methods
 
     def __init__(self, vm: QubesVM):
         super().__init__()

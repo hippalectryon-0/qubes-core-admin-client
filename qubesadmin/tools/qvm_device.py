@@ -92,7 +92,6 @@ def prepare_table(dev_list: Iterable["Line"],
 class Line:
     """Helper class to hold single device info for listing"""
 
-    # pylint: disable=too-few-public-methods
     def __init__(self, device: DeviceInfo, assignment: bool=False):
         self.ident = f"{device.backend_domain!s}:{device.port_id!s}"
         self.description = device.description
@@ -498,7 +497,7 @@ class DeviceAction(qubesadmin.tools.QubesAction):
     """Action for argument parser that gets the
     :py:class:``qubesadmin.device_protocol.VirtualDevice`` from a
     BACKEND:PORT_ID:DEVICE_ID string.
-    """  # pylint: disable=too-few-public-methods
+    """
 
     def __init__(
         self,

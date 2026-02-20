@@ -36,7 +36,7 @@ import qubesadmin.tools
 class DriveAction(argparse.Action):
     '''Action for argument parser that stores drive image path.'''
 
-    # pylint: disable=redefined-builtin,too-few-public-methods
+    # pylint: disable=redefined-builtin
     def __init__(self,
             option_strings: Sequence[str],
             dest: str='drive',

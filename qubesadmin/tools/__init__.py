@@ -128,7 +128,7 @@ class SinglePropertyAction(argparse.Action):
 class VmNameAction(QubesAction):
     """ Action for parsing one or multiple domains from provided VMNAMEs """
 
-    # pylint: disable=too-few-public-methods,redefined-builtin
+    # pylint: disable=redefined-builtin
     def __init__(self, option_strings: list[str], nargs: int=1,
                  dest: str='vmnames', help: str | None=None,
                  **kwargs):
@@ -204,7 +204,6 @@ class VmNameAction(QubesAction):
 
 class RunningVmNameAction(VmNameAction):
     ''' Action for argument parser that gets a running domain from VMNAME '''
-    # pylint: disable=too-few-public-methods
 
     def __init__(self, option_strings: list[str], nargs: int=1,
                  dest: str='vmnames', help: str | None=None,
@@ -241,7 +240,6 @@ class VolumeAction(QubesAction):
     ''' Action for argument parser that gets the
         :py:class:``qubes.storage.Volume`` from a POOL_NAME:VOLUME_ID string.
     '''
-    # pylint: disable=too-few-public-methods
 
     def __init__(self, help: str='A pool & volume id combination',
                  required: bool=True, **kwargs):
@@ -286,7 +284,6 @@ class VMVolumeAction(QubesAction):
     ''' Action for argument parser that gets the
         :py:class:``qubes.storage.Volume`` from a VM:VOLUME string.
     '''
-    # pylint: disable=too-few-public-methods
 
     def __init__(self, help: str='A pool & volume id combination',
                  required: bool=True, **kwargs):
@@ -326,7 +323,6 @@ class VMVolumeAction(QubesAction):
 
 class PoolsAction(QubesAction):
     ''' Action for argument parser to gather multiple pools '''
-    # pylint: disable=too-few-public-methods
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
                  values: object,
@@ -503,7 +499,7 @@ class QubesArgumentParser(argparse.ArgumentParser):
 class SubParsersHelpAction(argparse._HelpAction):
     ''' Print help for all options and all subparsers '''
     # source https://stackoverflow.com/a/24122778
-    # pylint: disable=protected-access,too-few-public-methods
+    # pylint: disable=protected-access
 
     @staticmethod
     def _indent(indent: int, text: str) -> str:
@@ -537,7 +533,7 @@ class SubParsersHelpAction(argparse._HelpAction):
 class AliasedSubParsersAction(argparse._SubParsersAction):
     '''SubParser with support for action aliases'''
     # source https://gist.github.com/sampsyo/471779
-    # pylint: disable=protected-access,too-few-public-methods,missing-docstring
+    # pylint: disable=protected-access,missing-docstring
     class _AliasedPseudoAction(argparse.Action):
         # pylint: disable=redefined-builtin
         def __init__(self, name: str, aliases: list[str],

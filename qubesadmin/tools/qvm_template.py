@@ -330,7 +330,7 @@ class VersionSelector(enum.Enum):
     """Upgrade to the highest version that is higher than the current one."""
 
 
-# pylint: disable=too-few-public-methods,inherit-non-class
+# pylint: disable=inherit-non-class
 class Template(typing.NamedTuple):
     """Details of a template."""
     name: str
@@ -358,7 +358,7 @@ class DlEntry(typing.NamedTuple):
     dlsize: int
 
 
-# pylint: enable=too-few-public-methods,inherit-non-class
+# pylint: enable=inherit-non-class
 
 
 def build_version_str(evr: tuple[str, str, str]) -> str:
