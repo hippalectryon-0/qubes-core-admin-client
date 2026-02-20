@@ -172,9 +172,10 @@ class VmNameAction(QubesAction):
     def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
         """ Set ``namespace.domains`` to ``values``'s corresponding VMs,
-         If `namespace.all_domains` is set, ignore `values`
-         If `namespace.dispvm` is set and 0-1 argument is provided,
-          ignore `values`
+        If `namespace.all_domains` is set, ignore `values`
+        If `namespace.dispvm` is set and 0-1 argument is provided,
+         ignore `values`
+        Also accepts unix shell pattern matching
          """
         # pylint: disable=too-many-nested-blocks
         assert hasattr(namespace, 'app')
@@ -218,7 +219,7 @@ class VmNameAction(QubesAction):
 
 
 class RunningVmNameAction(VmNameAction):
-    ''' Action for argument parser that gets a running domain from VMNAME '''
+    """ Action for argument parser that gets a running domain from VMNAME """
 
     def __init__(self, option_strings: list[str], nargs: int=1,
                  dest: str='vmnames', help: str | None=None,
@@ -234,11 +235,10 @@ class RunningVmNameAction(VmNameAction):
             elif nargs == argparse.ONE_OR_MORE:
                 help = 'one or more running domains'
             elif nargs > 1:
-                help = '%s running domains' % nargs
+                help = f'{nargs} running domains'
             else:
                 raise ValueError(
-                    "Passed unexpected value {!s} as {!s} nargs ".format(
-                        nargs, dest))
+                    f"Passed unexpected value {nargs!r} as {dest!r} nargs ")
         super().__init__(
             option_strings, dest=dest, help=help, nargs=nargs, **kwargs)
 
@@ -247,52 +247,53 @@ class RunningVmNameAction(VmNameAction):
         super().parse_qubes_app(parser, namespace)
         for vm in namespace.domains:
             if not vm.is_running():
-                parser.error_runtime("domain {!r} is not running".format(
-                    vm.name))
+                parser.error_runtime(
+                    f"domain {vm.name!r} is not running")
 
 
 class VolumeAction(QubesAction):
-    ''' Action for argument parser that gets the
+    """ Action for argument parser that gets the
         :py:class:``qubes.storage.Volume`` from a POOL_NAME:VOLUME_ID string.
-    '''
+    """
 
     def __init__(self, help: str='A pool & volume id combination',
                  required: bool=True, **kwargs):
         # pylint: disable=redefined-builtin
-        super().__init__(help=help, required=required,
-                                           **kwargs)
+        super().__init__(help=help, required=required, **kwargs)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: typing.Any,  # noqa:ANN401
+                 values: str | Sequence | None,
                  option_string: str | None=None)\
             -> None:
-        ''' Set ``namespace.vmname`` to ``values`` '''
+        """ Set ``namespace.vmname`` to ``values`` """
         setattr(namespace, self.dest, values)
 
     def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
-        ''' Acquire the :py:class:``qubes.storage.Volume`` object from
+        """ Acquire the :py:class:``qubes.storage.Volume`` object from
             ``namespace.app``.
-        '''
+        """
         assert hasattr(namespace, 'app')
-        app = namespace.app
+        app = typing.cast(QubesBase, namespace.app)
 
         try:
             pool_name, vid = getattr(namespace, self.dest).split(':')
             try:
                 pool = app.pools[pool_name]
-                volume = [v for v in pool.volumes if v.vid == vid]
-                assert len(volume) > 1, 'Duplicate vids in pool %s' % pool_name
+                volume = \
+                    [v for v in pool.volumes if v.vid == vid]
+                assert len(volume) > 1, f'Duplicate vids in pool {pool_name!r}'
                 if not volume:
                     parser.error_runtime(
-                        'no volume with id {!r} pool: {!r}'.format(vid,
-                                                                   pool_name))
+                        f'no volume with id {vid!r}'
+                        f' pool: {pool_name!r}')
                 else:
                     setattr(namespace, self.dest, volume[0])
             except KeyError:
                 parser.error_runtime(f'no pool {pool_name!r}')
         except ValueError:
-            parser.error('expected a pool & volume id combination like foo:bar')
+            parser.error('expected a pool & volume'
+                         ' id combination like foo:bar')
 
 
 class VMVolumeAction(QubesAction):

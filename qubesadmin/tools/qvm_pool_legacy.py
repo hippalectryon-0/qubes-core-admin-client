@@ -60,7 +60,7 @@ def pool_info(pool: Pool) -> None:
 def list_pools(app: QubesBase) -> None:
     ''' Prints out all known pools and their drivers '''
     result = [('NAME', 'DRIVER')]
-    for pool in app.pools.values(): #type:ignore #legacy stuff
+    for pool in app.pools.values():
         result += [(pool.name, pool.driver)]
     qubesadmin.tools.print_table(result)
 

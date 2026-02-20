@@ -40,7 +40,6 @@ import qubesadmin.exc
 import qubesadmin.tools
 import qubesadmin.config
 from qubesadmin.app import QubesBase
-from qubesadmin.storage import Pool
 from qubesadmin.vm import QubesVM
 
 try:
@@ -154,7 +153,7 @@ def import_root_img(vm: QubesVM, source_dir: str) -> None:
             # check if root.img was already overwritten, i.e. if the source
             # and destination paths are the same
             vid = vm.volumes['root'].vid
-            pool = typing.cast(Pool, vm.app.pools[vm.volumes['root'].pool])
+            pool = vm.app.pools[vm.volumes['root'].pool]
             if (pool.driver in ('file', 'file-reflink')
                     and root_path == os.path.join(pool.config['dir_path'],
                                                   vid + '.img')):
