@@ -31,12 +31,14 @@ import subprocess
 import sys
 import typing
 from argparse import Namespace
-from typing import TextIO, NoReturn, Literal
-from collections.abc import Iterable, Sequence
+from typing import TextIO, NoReturn, Literal, Iterator
+from collections.abc import Iterable, Sequence, Generator
 
 import qubesadmin.log
 import qubesadmin.exc
 import qubesadmin.vm
+from qubesadmin.app import QubesBase
+
 
 class QubesAction(argparse.Action):
     """
@@ -142,30 +144,33 @@ class VmNameAction(QubesAction):
             elif nargs == argparse.ONE_OR_MORE:
                 help = 'one or more domain names'
             elif nargs > 1:
-                help = '%s domain names' % nargs
+                help = f'{nargs} domain names'
             else:
                 raise ValueError(
-                    "Passed unexpected value {!s} as {!s} nargs ".format(
-                        nargs, dest))
+                    f"Passed unexpected value {nargs!r} as {dest!r} nargs")
 
         super().__init__(option_strings, dest=dest, help=help,
                                            nargs=nargs, **kwargs)
 
     def __call__(self, parser: argparse.ArgumentParser, namespace: Namespace,
-                 values: typing.Any,# noqa: ANN401
+                 values: str | Sequence | None,
                  option_string: str | None=None) \
             -> None:
-        ''' Set ``namespace.vmname`` to ``values`` '''
+        """ Set ``namespace.vmname`` to ``values`` """
         setattr(namespace, self.dest, values)
 
     def parse_qubes_app(self, parser: "QubesArgumentParser",
                         namespace: Namespace) -> None:
-        ''' Set ``namespace.domains`` to ``values`` '''
+        """ Set ``namespace.domains`` to ``values``'s corresponding VMs,
+         If `namespace.all_domains` is set, ignore `values`
+         If `namespace.dispvm` is set and 0-1 argument is provided,
+          ignore `values`
+         """
         # pylint: disable=too-many-nested-blocks
         assert hasattr(namespace, 'app')
         setattr(namespace, 'domains', [])
-        app = namespace.app
-        if hasattr(namespace, 'all_domains') and namespace.all_domains:
+        app = typing.cast(QubesBase, namespace.app)
+        if getattr(namespace, 'all_domains', False):
             namespace.domains = [
                 vm
                 for vm in app.domains
@@ -173,7 +178,7 @@ class VmNameAction(QubesAction):
                    vm.name not in namespace.exclude
             ]
         else:
-            if hasattr(namespace, 'exclude') and namespace.exclude:
+            if getattr(namespace, 'exclude', False):
                 parser.error('--exclude can only be used with --all')
 
             if self.nargs == argparse.OPTIONAL:
@@ -182,7 +187,7 @@ class VmNameAction(QubesAction):
                 vm_name = getattr(namespace, self.dest, None)
                 if vm_name is not None:
                     try:
-                        namespace.domains += [app.domains[vm_name]]
+                        namespace.domains.append(app.domains[vm_name])
                     except KeyError:
                         parser.error(f'no such domain: {vm_name!r}')
             else:
@@ -197,7 +202,7 @@ class VmNameAction(QubesAction):
 
                 for vm_name in destinations:
                     try:
-                        namespace.domains += [app.domains[vm_name]]
+                        namespace.domains.append(app.domains[vm_name])
                     except KeyError:
                         parser.error(f'no such domain: {vm_name!r}')
 
