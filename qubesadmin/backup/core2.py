@@ -183,7 +183,6 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
                 if clockvm != "None" else None
 
         default_template = element.get("default_template")
-        # TODO or should it be `if is not None: ... ?`
         assert default_template is not None
         self.globals['default_template'] = self.qid_map[int(default_template)] \
             if default_template.lower() != "none" else None
@@ -267,7 +266,6 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
             vm.klass = "AdminVM"
         else:
             template_qid = element.get('template_qid')
-            # TODO should that be a .get(..., 'none') ?
             assert template_qid is not None
             if template_qid.lower() == "none":
                 kwargs['dir_path'] = element.get('dir_path')
@@ -363,7 +361,7 @@ class Core2Qubes(qubesadmin.backup.BackupApp):
                 tree = lxml.etree.parse(fh)
             except (OSError, xml.parsers.expat.ExpatError) as err:
                 self.log.error(err)
-                return False
+                raise err
 
         self.globals['default_kernel'] = tree.getroot().get("default_kernel")
 

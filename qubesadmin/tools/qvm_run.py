@@ -294,15 +294,19 @@ def run_command_single(args: Namespace,
             service = "qubes.VMShell"
             if args.gui and args.dispvm:
                 service += "+WaitForSession"
-            elif args.user == "root":
-                service = "qubes.VMRootShell"
-                args.user = None
+            # if there is no vmexec, surely qubes.VMRootShell is also too old
+            # - see comment below
             shell_cmd = shlex.join(all_args)
     else:
         service = "qubes.VMShell"
         if args.gui and args.dispvm:
             service += "+WaitForSession"
-        elif args.user == "root":
+        elif args.user == "root" and vm.features.check_with_template(
+                "supported-rpc.qubes.VMRootExec", False
+        ):
+            # The above intentionally checks for VMRootExec, not VMRootShell.
+            # When VMRootExec was introduced, both VMRootExec and VMRootShell
+            # got also force-user=root setting necessary for the below to work.
             service = "qubes.VMRootShell"
             args.user = None
         shell_cmd = args.cmd
@@ -402,8 +406,10 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
             for qube in domains:
                 gui_per_domain[qube] = has_gui(qube)
     else:
+        if len(domains) != 1:
+            parser.print_usage(sys.stderr)
+            sys.exit(2)
         if args.gui is None:
-            assert len(domains) == 1
             args.gui = has_gui(domains[0])
     if args.color_output:
         sys.stdout.write(f"\033[0;{args.color_output}m")

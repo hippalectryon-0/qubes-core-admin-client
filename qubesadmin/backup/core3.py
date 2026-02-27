@@ -159,7 +159,7 @@ class Core3Qubes(qubesadmin.backup.BackupApp):
 
         self.domains[vm.name] = vm
 
-    def load(self) -> bool | None:
+    def load(self) -> None:
         assert self.store is not None
         with open(self.store, encoding='utf-8') as fh:
             try:
@@ -167,7 +167,7 @@ class Core3Qubes(qubesadmin.backup.BackupApp):
                 tree = lxml.etree.parse(fh)
             except (OSError, xml.parsers.expat.ExpatError) as err:
                 self.log.error(err)
-                return False
+                raise err
 
         labels = tree.find('./labels')
         assert labels is not None

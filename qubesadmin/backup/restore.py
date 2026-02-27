@@ -178,6 +178,7 @@ class BackupHeader:
 
         if header_data is not None:
             self.load(header_data)
+        self.validate()
 
     def load(self, untrusted_header_text: bytes) -> None:
         """Parse backup header file.
@@ -234,8 +235,6 @@ class BackupHeader:
                             f=value))
                 raise QubesException(f"Invalid value for header: {key}")
             setattr(self, header.field, value)
-
-        self.validate()
 
     def validate(self) -> None:
         '''Validate header data, according to header version'''
@@ -519,8 +518,8 @@ class ExtractWorker3(Process):
             return
         if terminate:
             if self.import_process is not None:
-                self.tar2_process.terminate()
                 self.import_process.terminate()
+                self.tar2_process.terminate()
         if wait:
             self.tar2_process.wait()
             if self.import_process is not None:
@@ -1151,6 +1150,8 @@ class BackupRestore:
         if algorithm is None:
             assert self.header_data.hmac_algorithm is not None
             algorithm = self.header_data.hmac_algorithm
+        assert algorithm is not None
+
         passphrase = self.passphrase.encode('utf-8')
         self.log.debug("Verifying file %s", filename)
 
@@ -1387,21 +1388,20 @@ class BackupRestore:
             self.tmpdir, repr(handlers))
         format_version = self.header_data.version
         if format_version in [3, 4]:
-            # TODO see comment below
-            assert self.header_data.compressed is not None  # TODO same
+            # asserts Handled by BackupHeader.validate() called by .load()
+            assert self.header_data.compressed is not None
+            assert self.header_data.encrypted is not None
+
             encrypted = self.header_data.encrypted
             if format_version == 4:
                 # encryption already handled
                 encrypted=False
-            assert encrypted is not None  # TODO same
             if encrypted:
                 assert self.header_data.crypto_algorithm is not None
             extract_proc = ExtractWorker3(queue, self.tmpdir,
                   self.passphrase, encrypted,
                   progress_callback=self.progress_callback,
                   compressed=self.header_data.compressed,
-# TODO what guarantees that crypto_algorithm is not None at this point in time ?
-# TODO ExtractWorker3 expects a non-None argument here.
                   crypto_algorithm=self.header_data.crypto_algorithm,
                   compression_filter=self.header_data.compression_filter,
                   verify_only=self.options.verify_only, handlers=handlers)
