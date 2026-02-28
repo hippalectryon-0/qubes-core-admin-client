@@ -83,7 +83,6 @@ class PropertyHolder:
         :param payload_stream: file-like object to read payload from
         :return: Data returned by qubesd (string)
         '''
-        # TODO I removed this because self.app should never be None
         dest: str = dest or self._method_dest
         if (
             getattr(self, "_redirect_dispvm_calls", False)
@@ -363,9 +362,6 @@ class PropertyHolder:
             return
         for line in properties_str.splitlines():
             # decode newlines
-            # TODO this will fail if unescape returns some `str` ??
-            #  Did we maybe copy-paste `unescape` from somewhere else
-            #  but we only use it for ints ?
             line_bytes = bytes(list(unescape(line)))
             name, property_str = line_bytes.split(b' ', 1)
             name = name.decode()
@@ -478,8 +474,7 @@ class WrapperObjectsCollection(Generic[T]):
         assert list_data[-1] == '\n'
         self._names_list = [str(name) for name in list_data[:-1].splitlines()]
 
-        # TODO why cast to list here ?
-        for name, obj in list(self._objects.items()):
+        for name, obj in self._objects.items():
             assert hasattr(obj, "name")
             if obj.name not in self._names_list:
                 # Object no longer exists
