@@ -61,6 +61,9 @@ Python%{python3_pkgversion} module qubesadmin.
 %build
 make -C doc PYTHON=%{__python3} SPHINXBUILD=sphinx-build-%{python3_version} man
 %pyproject_wheel
+
+%install
+%pyproject_install
 make install-misc DESTDIR=%{buildroot}
 
 # Install man pages
