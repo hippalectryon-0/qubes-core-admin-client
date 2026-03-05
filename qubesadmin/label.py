@@ -83,8 +83,7 @@ class Label:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Label):
             return self.name == other.name
-        # TODO should be raise ?
-        raise NotImplementedError
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash(self.name)

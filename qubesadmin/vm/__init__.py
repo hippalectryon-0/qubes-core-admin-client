@@ -98,8 +98,6 @@ class QubesVM(qubesadmin.base.PropertyHolder):
     def __lt__(self, other: QubesVM) -> bool:
         if isinstance(other, QubesVM):
             return self.name < other.name
-        # TODO shouldn't we raise a NotImplementedError instead ?
-        #  Nowhere in the code do we handle `NotImplemented`
         return NotImplemented
 
     def __eq__(self, other: object) -> bool:
@@ -107,7 +105,6 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             return self.name == other.name
         if isinstance(other, str):
             return self.name == other
-        # TODO same as above
         return NotImplemented
 
     def __hash__(self) -> int:
@@ -140,15 +137,6 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         :return:
         """
         self.qubesd_call(self._method_dest, "admin.vm.Kill")
-
-    def force_shutdown(self) -> None:
-        """Deprecated alias for :py:meth:`kill`"""
-        warnings.warn(
-            "Call to deprecated function force_shutdown(), use kill() instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.kill()  # TODO why return here ?
 
     def pause(self) -> None:
         """
