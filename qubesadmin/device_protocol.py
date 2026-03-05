@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import string
 import sys
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, TYPE_CHECKING
 from collections.abc import Callable
 
@@ -1241,7 +1241,7 @@ class UnknownDevice(DeviceInfo):
         return UnknownDevice(device.port, device_id=device.device_id)
 
 
-class AssignmentMode(Enum):
+class AssignmentMode(StrEnum):
     """
     Device assignment modes
     """
@@ -1268,10 +1268,7 @@ class DeviceAssignment:
             device = VirtualDevice(device.port, device.device_id)
         self.virtual_device = device
         self.__options = options or {}
-        if isinstance(mode, AssignmentMode):
-            self.mode = mode
-        else:
-            self.mode = AssignmentMode(mode)
+        self.mode = AssignmentMode(mode)
         self.frontend_domain = frontend_domain
 
     @classmethod

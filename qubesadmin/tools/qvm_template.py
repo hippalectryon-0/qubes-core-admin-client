@@ -299,14 +299,14 @@ def get_parser() -> ArgumentParser:
 parser = get_parser()
 
 
-class TemplateState(enum.Enum):
+class TemplateState(enum.StrEnum):
     """Enum representing the state of a template."""
     INSTALLED = 'installed'
     AVAILABLE = 'available'
     EXTRA = 'extra'
     UPGRADABLE = 'upgradable'
 
-    def title(self) -> str:
+    def heading(self) -> str:
         """Return a long description of the state. Can be used as headings."""
         # pylint: disable=invalid-name
         TEMPLATE_TITLES = {
@@ -1464,7 +1464,7 @@ def list_templates(args: argparse.Namespace,
         elif command == 'list':
             tpl_list = list_to_human_output(tpl_list)
         for status, grp in tpl_list:
-            print(status.title(), flush=True)
+            print(status.heading(), flush=True)
             qubesadmin.tools.print_table(grp)
 
 T_it = TypeVar("T_it", bound=Iterable)#pylint: disable=invalid-name

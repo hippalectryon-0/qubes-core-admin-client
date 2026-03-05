@@ -320,8 +320,9 @@ def launch_scrypt(action: str, input_name: str, output_name: str,
         prompts = (b'Please enter passphrase: ', b'Please confirm passphrase: ')
     else:
         prompts = (b'Please enter passphrase: ',)
+    assert p.stderr is not None
     for prompt in prompts:
-        actual_prompt = typing.cast(IO, p.stderr).read(len(prompt))
+        actual_prompt = p.stderr.read(len(prompt))
         if actual_prompt != prompt:
             raise QubesException(
                 f'Unexpected prompt from scrypt: {actual_prompt}')
@@ -557,9 +558,11 @@ class ExtractWorker3(Process):
         This is to prevent holding write end of a pipe in subprocess,
         preventing EOF transfer.
         '''
+        assert tar2_process.stdout is not None
+        assert tar2_process.stderr is not None
         for fd in close_fds:
-            if fd in (typing.cast(IO, tar2_process.stdout).fileno(),
-                    typing.cast(IO, tar2_process.stderr).fileno()):
+            if fd in (tar2_process.stdout.fileno(),
+                    tar2_process.stderr.fileno()):
                 continue
             try:
                 os.close(fd)
@@ -581,7 +584,7 @@ class ExtractWorker3(Process):
             # size (at this point nothing is retrieving data from tar stdout
             # yet, so it will hang on write() when the output pipe fill up).
             while True:
-                line = typing.cast(IO, tar2_process.stderr).readline()
+                line = tar2_process.stderr.readline()
                 if not line:
                     self.log.warning('EOF from tar before got file size info')
                     break
@@ -732,17 +735,20 @@ class ExtractWorker3(Process):
                         stdin=self.decryptor_process.stdout,
                         stdout=redirect_stdout,
                         stderr=subprocess.PIPE)
-                    typing.cast(IO, self.decryptor_process.stdout).close()
-                    input_pipe = typing.cast(IO, self.decryptor_process.stdin)
+                    assert self.decryptor_process.stdout is not None
+                    self.decryptor_process.stdout.close()
+                    assert self.decryptor_process.stdin is not None
+                    input_pipe = self.decryptor_process.stdin
                 else:
                     self.tar2_process = subprocess.Popen(
                         tar2_cmdline,
                         stdin=subprocess.PIPE,
                         stdout=redirect_stdout,
                         stderr=subprocess.PIPE)
+                    assert self.tar2_process.stdin is not None
                     input_pipe = self.tar2_process.stdin
 
-                self.feed_tar2(filename, typing.cast(IO, input_pipe))
+                self.feed_tar2(filename, input_pipe)
 
                 if inner_name in self.handlers:
                     assert redirect_stdout is subprocess.PIPE
@@ -754,7 +760,8 @@ class ExtractWorker3(Process):
                         data_func, self.tar2_process))
 
                     self.import_process.start()
-                    typing.cast(IO, self.tar2_process.stdout).close()
+                    assert self.tar2_process.stdout is not None
+                    self.tar2_process.stdout.close()
 
                 self.tar2_stderr = []
             elif not self.tar2_process:
@@ -834,7 +841,8 @@ def get_supported_hmac_algo(hmac_algorithm: str | None=None)\
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL) as proc:
-        for algo in typing.cast(IO, proc.stdout).readlines():
+        assert proc.stdout is not None
+        for algo in proc.stdout.readlines():
             algo = algo.decode('ascii')
             if '=>' in algo:
                 continue
@@ -859,7 +867,8 @@ def get_supported_crypto_algo(crypto_algorithm: str | None=None)\
                           shell=True,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.DEVNULL) as proc:
-        for algo in typing.cast(IO, proc.stdout).readlines():
+        assert proc.stdout is not None
+        for algo in proc.stdout.readlines():
             algo = algo.decode('ascii')
             if '=>' in algo:
                 continue
@@ -1045,18 +1054,20 @@ class BackupRestore:
                 vmproc = self.backup_vm.run_service(self.backup_location)
             else:
                 vmproc = self.backup_vm.run_service('qubes.Restore')
-                typing.cast(IO, vmproc.stdin).write(
+                assert vmproc.stdin is not None
+                vmproc.stdin.write(
                     (self.backup_location.replace("\r", "").replace("\n",
                         "") + "\n").encode())
-                typing.cast(IO, vmproc.stdin).flush()
+                vmproc.stdin.flush()
 
             # Send to tar2qfile the VMs that should be extracted
-            typing.cast(IO, vmproc.stdin).write((" ".join(filelist) + "\n")
-                                                .encode())
-            typing.cast(IO, vmproc.stdin).flush()
+            assert vmproc.stdin is not None
+            vmproc.stdin.write((" ".join(filelist) + "\n").encode())
+            vmproc.stdin.flush()
             self.processes_to_kill_on_cancel.append(vmproc)
 
-            backup_stdin = typing.cast(IO, typing.cast(IO, vmproc.stdout))
+            assert vmproc.stdout is not None
+            backup_stdin = vmproc.stdout
             if isinstance(self.app, qubesadmin.app.QubesRemote):
                 qfile_unpacker_path = '/usr/lib/qubes/qfile-unpacker'
             else:
@@ -1100,18 +1111,25 @@ class BackupRestore:
         # and have stdout connected to the VM), while tar output filelist
         # on stdout
         if self.backup_vm:
-            filelist_pipe = typing.cast(IO, command.stderr)
+            assert command.stderr is not None
+            filelist_pipe = command.stderr
             # let qfile-dom0-unpacker hold the only open FD to the write end of
             # pipe, otherwise qrexec-client will not receive EOF when
             # qfile-dom0-unpacker terminates
-            typing.cast(IO, typing.cast(Popen, vmproc).stdin).close()
+            assert vmproc is not None
+            assert vmproc.stdin is not None
+            vmproc.stdin.close()
         else:
-            filelist_pipe = typing.cast(IO, command.stdout)
+            assert command.stdout is not None
+            filelist_pipe = command.stdout
 
         if self.backup_vm:
-            error_pipe = typing.cast(IO, typing.cast(Popen, vmproc).stderr)
+            assert vmproc is not None
+            assert vmproc.stderr is not None
+            error_pipe = vmproc.stderr
         else:
-            error_pipe = typing.cast(IO, command.stderr)
+            assert command.stderr is not None
+            error_pipe = command.stderr
         return command, filelist_pipe, error_pipe
 
     def _verify_hmac(self, filename: str, hmacfile: str,

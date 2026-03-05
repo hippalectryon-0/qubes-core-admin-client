@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-'''Event handling implementation, require Python >=3.5.2 for asyncio.'''
+"""Event handling implementation"""
 
 import asyncio
 import fnmatch

@@ -586,9 +586,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                 subprocess.check_output(
                     runas + appmenus_cmd, stderr=subprocess.STDOUT
                 )
-            except OSError as e:
-                # this file needs to be python 2.7 compatible,
-                # so no FileNotFoundError
+            except FileNotFoundError as e:
                 self.log.error("Failed to clone appmenus, qvm-appmenus missing")
                 if not ignore_errors:
                     raise qubesadmin.exc.QubesException(

@@ -27,7 +27,7 @@ import typing
 import warnings
 from logging import Logger
 from subprocess import Popen
-from typing import Literal, AnyStr
+from typing import Literal
 from collections.abc import Generator
 
 import qubesadmin.utils
@@ -328,7 +328,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
         return self.app.run_service(self._method_dest, service, **kwargs)
 
     def run_service_for_stdio(
-        self, service: str, input: AnyStr | None=None,
+        self, service: str, input: bytes | str | None = None,
             timeout: float | None=None, **kwargs
     ) -> tuple[bytes, bytes]:
         """Run a service, pass an optional input and return (stdout, stderr).
@@ -349,7 +349,6 @@ class QubesVM(qubesadmin.base.PropertyHolder):
 
         if p.returncode:
             exc = subprocess.CalledProcessError(p.returncode, service)
-            # Python < 3.5 didn't have those
             exc.output, exc.stderr = stdouterr
             raise exc
 

@@ -200,12 +200,14 @@ class RestoreInDisposableVM:
         self.storage_access_proc = self.backup_storage_vm.run_service(
             'qubes.RegisterBackupLocation', stdin=subprocess.PIPE,
             stdout=subprocess.PIPE)
-        typing.cast(IO, self.storage_access_proc.stdin).write(
+        assert self.storage_access_proc.stdin is not None
+        assert self.storage_access_proc.stdout is not None
+        self.storage_access_proc.stdin.write(
             (self.args.backup_location.
              replace("\r", "").replace("\n", "") + "\n").encode())
-        typing.cast(IO, self.storage_access_proc.stdin).flush()
+        self.storage_access_proc.stdin.flush()
         storage_access_id = (
-            typing.cast(IO, self.storage_access_proc.stdout).readline().strip())
+            self.storage_access_proc.stdout.readline().strip())
         allowed_chars = (string.ascii_letters + string.digits).encode()
         if not storage_access_id or \
                 not all(c in allowed_chars for c in storage_access_id):
@@ -225,7 +227,8 @@ class RestoreInDisposableVM:
         assert self.storage_access_proc is not None
 
         self.backup_storage_vm.tags.discard(self.storage_tag)
-        typing.cast(typing.IO, self.storage_access_proc.stdin).close()
+        assert self.storage_access_proc.stdin is not None
+        self.storage_access_proc.stdin.close()
         self.storage_access_proc.wait()
 
     def prepare_inner_args(self) -> list:
