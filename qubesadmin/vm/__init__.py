@@ -480,7 +480,7 @@ class QubesVM(qubesadmin.base.PropertyHolder):
             except qubesadmin.exc.QubesDaemonAccessError:
                 # `getattr` since `klass` is not an explicit member
                 self._klass = getattr(super(), "klass")
-        return self._klass
+        return typing.cast(Klass, self._klass)
 
     def get_notes(self) -> str:
         """Get qube notes"""
