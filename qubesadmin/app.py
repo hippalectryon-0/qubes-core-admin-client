@@ -49,9 +49,7 @@ from qubesadmin.vm import Klass, PowerState
 import qubesadmin.config
 import qubesadmin.device_protocol
 from qubesadmin.vm import QubesVM
-
-if typing.TYPE_CHECKING:
-    from qubesadmin.devices import DeviceClass
+from qubesadmin.devices import DeviceClass
 
 try:
     import qubesdb  # type: ignore
