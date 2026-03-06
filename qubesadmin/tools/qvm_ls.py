@@ -689,18 +689,6 @@ def get_parser() -> QubesArgumentParser:
     parser_format.add_argument('--raw-list', action='store_true',
         help='Same as --raw-data --fields=name')
 
-    parser_format_exclusive.add_argument('--disk', '-d',
-        action='store_const', dest='format', const='disk',
-        help='Same as --format=disk')
-
-    parser_format_exclusive.add_argument('--network', '-n',
-        action='store_const', dest='format', const='network',
-        help='Same as --format=network')
-
-    parser_format_exclusive.add_argument('--kernel', '-k',
-        action='store_const', dest='format', const='kernel',
-        help='Same as --format=kernel')
-
     parser_format.add_argument('--help-formats', action=_HelpFormatsAction)
     parser_format.add_argument('--help-columns', action=_HelpColumnsAction)
 
