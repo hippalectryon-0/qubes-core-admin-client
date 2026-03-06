@@ -594,8 +594,6 @@ class VmNameGroup(argparse._MutuallyExclusiveGroup):
 def print_table(table: Iterable[Iterable[str]],
                 stream: TextIO | None=None) -> None:
     ''' Uses the unix column command to print pretty table.
-        TODO below: obsolete docstring
-        :param str text: list of lists/sets
     '''
     unit_separator = chr(31)
     cmd = ['column', '-t', '-s', unit_separator]

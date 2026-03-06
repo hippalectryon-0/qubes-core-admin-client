@@ -407,7 +407,7 @@ class Rule:
             return self.rule == other.rule
         if isinstance(other, str):
             return self.rule == str
-        raise NotImplementedError  # TODO should be raise
+        return NotImplemented
 
     def __repr__(self) -> str:
         return f'Rule(\'{self.rule}\')'

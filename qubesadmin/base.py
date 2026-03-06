@@ -477,8 +477,7 @@ class WrapperObjectsCollection(Generic[T]):
         assert list_data[-1] == '\n'
         self._names_list = [str(name) for name in list_data[:-1].splitlines()]
 
-        # TODO why cast to list here ?
-        for name, obj in list(self._objects.items()):
+        for name, obj in self._objects.items():
             assert hasattr(obj, "name")
             if obj.name not in self._names_list:
                 # Object no longer exists
