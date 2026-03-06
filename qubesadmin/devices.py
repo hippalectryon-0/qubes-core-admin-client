@@ -32,6 +32,7 @@ is :py:class:`str`.
 """
 from __future__ import annotations
 import itertools
+import typing
 from typing import TYPE_CHECKING
 from collections.abc import Iterable, Iterator
 
@@ -46,6 +47,8 @@ from qubesadmin.device_protocol import (
 )
 if TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
+
+DeviceClass = typing.Literal["mic", "block", "pci", "usb", "webcam"]
 
 
 class DeviceCollection:
@@ -334,15 +337,14 @@ class DeviceManager(dict):
         super().__init__()
         self._vm = vm
 
-    def __missing__(self, key: str) -> DeviceCollection:
+    def __missing__(self, key: DeviceClass) -> DeviceCollection:
         self[key] = DeviceCollection(self._vm, key)
         return self[key]
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[DeviceClass]:
         return iter(self._vm.app.list_deviceclass())
 
-
-    def keys(self) -> list[str]: # type: ignore[override]
+    def keys(self) -> list[DeviceClass]: # type: ignore[override]
         return self._vm.app.list_deviceclass()
 
     def deny(self, *interfaces: Iterable[DeviceInterface]) -> None:

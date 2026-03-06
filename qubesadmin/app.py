@@ -48,15 +48,15 @@ import qubesadmin.config
 import qubesadmin.device_protocol
 from qubesadmin.vm import QubesVM
 
+if typing.TYPE_CHECKING:
+    from qubesadmin.devices import DeviceClass
+
 try:
     import qubesdb  # type: ignore
 
     has_qubesdb = True
 except ImportError:
     has_qubesdb = False
-
-DeviceClass = typing.Literal["mic", "block", "pci", "usb", "webcam"]
-
 
 class VMCollection:
     """Collection of VMs objects"""
