@@ -470,6 +470,7 @@ class Table:
             -> list[tuple[int, QubesVM]]:
         '''Sort the domains as a network tree. It returns a list of sets. Each
         tuple stores the insertion of the cell name and the vm object.
+        Note: mutates `domains` to an empty list
 
         :param list() domains: The domains which will be sorted
         :return list(tuple()) tree: returns a list of tuple(insertion, vm)
@@ -551,13 +552,12 @@ class Table:
                     continue
 
 
-#: Available formats. Feel free to plug your own one.
+# Available formats
 formats = {
     'simple': ('name', 'state', 'class', 'label', 'template', 'netvm'),
     'network': ('name', 'state', 'netvm', 'ip', 'ipback', 'gateway'),
     'kernel': ('name', 'state', 'class', 'template', 'kernel', 'kernelopts'),
     'full': ('name', 'state', 'class', 'label', 'qid', 'xid', 'uuid'),
-#   'perf': ('name', 'state', 'cpu', 'memory'),
     'prefs': ('name', 'label', 'template', 'netvm',
         'vcpus', 'initialmem', 'maxmem', 'virt_mode'),
     'disk': ('name', 'state', 'disk',
@@ -664,7 +664,7 @@ def get_parser() -> QubesArgumentParser:
         epilog='available formats (see --help-formats):\n{}\n\n'
                'available columns (see --help-columns):\n{}'.format(
                 wrapper.fill(', '.join(sorted(formats.keys()))),
-                wrapper.fill(', '.join(sorted(sorted(Column.columns.keys()))))))
+                wrapper.fill(', '.join(sorted(Column.columns.keys())))))
 
     parser_format = parser.add_argument_group(title='formatting options')
     parser_format_exclusive = parser_format.add_mutually_exclusive_group()
@@ -684,10 +684,6 @@ def get_parser() -> QubesArgumentParser:
     parser_format.add_argument('--raw-data', action='store_true',
         help='Display specify data of specified VMs. Intended for '
              'bash-parsing.')
-
-    # shortcuts, compatibility with Qubes 3.2
-    parser_format.add_argument('--raw-list', action='store_true',
-        help='Same as --raw-data --fields=name')
 
     parser_format.add_argument('--help-formats', action=_HelpFormatsAction)
     parser_format.add_argument('--help-columns', action=_HelpColumnsAction)
@@ -759,10 +755,6 @@ def get_parser() -> QubesArgumentParser:
 
     parser.set_defaults(spinner=True)
 
-#   parser.add_argument('--conf', '-c',
-#       action='store', metavar='CFGFILE',
-#       help='Qubes config file')
-
     return parser
 
 
@@ -784,10 +776,6 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     # fetch all the properties with one Admin API call, instead of issuing
     # one call per property
     args.app.cache_enabled = True
-
-    if args.raw_list:
-        args.raw_data = True
-        args.fields = 'name'
 
     if args.fields:
         columns = [col.strip() for col in args.fields.split(',')]

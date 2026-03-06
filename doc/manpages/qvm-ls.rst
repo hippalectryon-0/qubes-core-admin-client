@@ -9,7 +9,7 @@ Synopsis
 :command:`qvm-ls` [--verbose] [--quiet] [--help] [--all]
                   [--exclude *EXCLUDE*] [--no-spinner]
                   [--format *FORMAT* | --fields *FIELD*[,*FIELD* ...]]
-                  [--tree] [--raw-data] [--raw-list] [--help-formats]
+                  [--tree] [--raw-data] [--help-formats]
                   [--help-columns] [--class *CLASS* [*CLASS* ...]]
                   [--label *LABEL* [*LABEL* ...]] [--tags *TAG* [*TAG* ...]]
                   [--exclude-tags *TAG* [*TAG* ...]] [--running] [--paused]
@@ -85,11 +85,6 @@ Formatting options
 
    Output data in easy to parse format. Table header is skipped and columns are
    separated by `|` character.
-
-.. option:: --raw-list
-
-   Give plain list of VM names, without header or separator. Useful in scripts.
-   Same as --raw-data --fields=name
 
 .. option:: --help-columns
 
