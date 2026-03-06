@@ -24,7 +24,6 @@ import shlex
 
 import subprocess
 import typing
-import warnings
 from logging import Logger
 from subprocess import Popen
 from typing import Literal

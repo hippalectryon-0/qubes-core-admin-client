@@ -56,29 +56,6 @@ class UnexpectedDeviceProperty(qubesadmin.exc.QubesException, ValueError):
     """
 
 
-# TODO should be moved somewhere else, not used here
-def qbool(value: str | int | bool) -> bool:
-    """
-    Property setter for boolean properties.
-
-    It accepts (case-insensitive) ``'0'``, ``'no'`` and ``false`` as
-    :py:obj:`False` and ``'1'``, ``'yes'`` and ``'true'`` as
-    :py:obj:`True`.
-    """
-
-    if isinstance(value, str):
-        lcvalue = value.lower()
-        if lcvalue in ("0", "no", "false", "off"):
-            return False
-        if lcvalue in ("1", "yes", "true", "on"):
-            return True
-        raise QubesValueError(
-            f"Invalid literal for boolean property: {value!r}"
-        )
-
-    return bool(value)
-
-
 class DeviceSerializer:
     """
     Group of method for serialization of device properties.
@@ -295,7 +272,7 @@ class Port:
     def __hash__(self) -> int:
         return hash((self.backend_name, self.port_id, self.devclass))
 
-    def __eq__(self, other: object) -> bool:  # noqa: ANN401
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Port):
             return (
                 self.backend_name == other.backend_name
@@ -304,7 +281,7 @@ class Port:
             )
         return False
 
-    def __lt__(self, other: object) -> bool:  # noqa: ANN401
+    def __lt__(self, other: object) -> bool:
         if isinstance(other, Port):
             return (self.backend_name, self.devclass, self.port_id) < (
                 other.backend_name,

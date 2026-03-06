@@ -82,7 +82,6 @@ class PropertyHolder:
         :param payload_stream: file-like object to read payload from
         :return: Data returned by qubesd (string)
         '''
-        # TODO I removed this because self.app should never be None
         dest: str = dest or self._method_dest
         if (
             getattr(self, "_redirect_dispvm_calls", False)
@@ -91,10 +90,7 @@ class PropertyHolder:
             if dest.startswith("@dispvm:"):
                 dest = dest[len("@dispvm:") :]
             else:
-                # TODO what if `dest` remains None here ?
-                #  qubesd_call expects a non-None `dest` arg
                 dest: QubesVM | None = getattr(self.app, "default_dispvm", None)
-                assert dest is not None
                 if dest:
                     dest: str = dest.name
         assert isinstance(dest, str)
@@ -308,10 +304,13 @@ class PropertyHolder:
             return str(value)
         if prop_type == 'bool':
             if value == '':
+                # TODO shouldn't that at least be ValueError ?
+                #  but then we need to properly propagate that modification
                 return AttributeError
             return value == "True"
         if prop_type == 'int':
             if value == '':
+                # TODO same as above
                 return AttributeError
             return int(value)
         if prop_type == 'vm':
@@ -362,9 +361,6 @@ class PropertyHolder:
             return
         for line in properties_str.splitlines():
             # decode newlines
-            # TODO this will fail if unescape returns some `str` ??
-            #  Did we maybe copy-paste `unescape` from somewhere else
-            #  but we only use it for ints ?
             line_bytes = bytes(list(unescape(line)))
             name, property_str = line_bytes.split(b' ', 1)
             name = name.decode()
@@ -404,7 +400,7 @@ class PropertyHolder:
                     qubesadmin.exc.QubesVMNotFoundError):
                 raise qubesadmin.exc.QubesPropertyAccessError(key)
         else:
-            # Dynamic import because qubesadmin.vm import base.py
+            # Dynamic import because qubesadmin.vm imports base.py
             from qubesadmin.vm import QubesVM
             if isinstance(value, QubesVM):
                 value = value.name

@@ -149,11 +149,9 @@ class QubesTest(qubesadmin.app.QubesBase):
     expected_calls: dict
     actual_calls: list
     service_calls: list
-    # used to be None. casting to "none" for type correctness
-    # but outside of tests, this value is not valid
-    # TODO should likely update tests to avoid
-    #  this hacky choice
-    qubesd_connection_type: str = "none"
+    # This is a special value used only for tests
+    # This is not valid / expected outside of tests
+    qubesd_connection_type: str = "none"  # type: ignore
 
     def __init__(self):
         super().__init__()
