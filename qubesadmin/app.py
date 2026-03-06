@@ -21,6 +21,8 @@
 """
 Main Qubes() class and related classes.
 """
+from __future__ import annotations
+
 import grp
 import os
 import shlex
