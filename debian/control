@@ -26,14 +26,6 @@ Package: qubes-core-admin-client
 Architecture: all
 Depends:
  python3-qubesadmin,
- qubes-repo-templates,
- scrypt,
- zstd,
- qubes-rpm-oxide (>= 0.2.3),
- python3-xlib,
- ${python:Depends},
- ${python3:Depends},
- ${misc:Depends},
 Conflicts:
  qubes-core-agent (<< 4.1.9),
  qubes-gui-daemon (<< 4.1.7),
@@ -44,11 +36,17 @@ Package: python3-qubesadmin
 Architecture: all
 Depends:
  hwdata,
+ qubes-repo-templates,
+ qubes-rpm-oxide (>= 0.2.3),
+ ${misc:Depends},
+ python3-xlib,
  python3-docutils,
  python3-lxml,
- python3-qubesdb,
  python3-rpm,
  python3-tqdm,
+ python3-qubesdb,
+ scrypt,
+ zstd,
  ${python3:Depends},
 Description: Python 3 bindings for Qubes Admin API
  Python 3 client side module for Qubes Admin API
