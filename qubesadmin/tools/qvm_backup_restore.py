@@ -21,6 +21,7 @@
 '''Console frontend for backup restore code'''
 
 import getpass
+import io
 import os
 import sys
 from argparse import Namespace
@@ -217,11 +218,15 @@ def handle_broken(app: QubesBase, args: Namespace, restore_info: dict) -> None:
 
 def print_backup_log(backup_log: bytes) -> None:
     """Print a log on stdout, coloring it red if it's a terminal"""
-    if os.isatty(sys.stdout.fileno()):
+    try:
+        stdout_isatty = os.isatty(sys.stdout.fileno())
+    except io.UnsupportedOperation:
+        stdout_isatty = False
+    if stdout_isatty:
         sys.stdout.write('\033[0;31m')
         sys.stdout.flush()
     sys.stdout.buffer.write(backup_log)
-    if os.isatty(sys.stdout.fileno()):
+    if stdout_isatty:
         sys.stdout.write('\033[0m')
         sys.stdout.flush()
 
