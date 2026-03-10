@@ -29,7 +29,6 @@ import string
 import subprocess
 import typing
 from typing import TypeAlias
-from typing import IO
 from argparse import Namespace
 
 import qubesadmin

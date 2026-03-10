@@ -646,7 +646,9 @@ class ExtractWorker3(Process):
                 self.tar2_current_file, details)
             self.cleanup_tar2(wait=True, terminate=True)
 
+
     def __run__(self) -> None:
+        # pylint: disable=too-many-statements
         assert self.handlers is not None
         self.log.debug("Started sending thread")
         self.log.debug("Moving to dir %s", self.base_dir)

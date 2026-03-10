@@ -18,12 +18,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 """Manipulate global properties."""
+import sys
 from argparse import Namespace
 from collections.abc import Iterable
 
 from qubesadmin.app import QubesBase
-
-import sys
 
 import qubesadmin
 import qubesadmin.tools.qvm_prefs
