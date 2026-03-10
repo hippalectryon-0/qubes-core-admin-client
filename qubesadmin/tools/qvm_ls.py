@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-'''qvm-ls - List available domains'''
+"""qvm-ls - List available domains"""
 
 
 
@@ -30,8 +30,7 @@ import collections.abc
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
-from typing import TextIO, \
-    TypeVar
+from typing import TextIO, TypeVar
 from collections.abc import Callable, Iterable, Sequence, MutableSequence
 
 import qubesadmin
@@ -759,12 +758,18 @@ def get_parser() -> QubesArgumentParser:
 
 
 def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
-    '''Main routine of :program:`qvm-ls`.
+    """Main routine of :program:`qvm-ls`.
 
     :param list args: Optional arguments to override those delivered from \
         command line.
     :param app: Operate on given app object instead of instantiating new one.
-    '''
+    """
+
+    if app is None:
+        app = qubesadmin.Qubes()
+    # fetch all the properties with one Admin API call, instead of issuing
+    # one call per property
+    app.cache_enabled = True
 
     parser = get_parser()
     try:
@@ -772,10 +777,6 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> int:
     except qubesadmin.exc.QubesException as e:
         parser.print_error(str(e))
         return 1
-
-    # fetch all the properties with one Admin API call, instead of issuing
-    # one call per property
-    args.app.cache_enabled = True
 
     if args.fields:
         columns = [col.strip() for col in args.fields.split(',')]
