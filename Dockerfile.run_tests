@@ -9,6 +9,8 @@ RUN dnf install -y \
     python3-rpm \
     sequoia-sqv \
     python3-xlib \
+    python3-tqdm \
+    python3-xcffib \
     libnotify \
     zstd \
     xorg-x11-server-Xvfb \
@@ -31,3 +33,4 @@ USER gitlab-runner
 ENV USER=gitlab-runner
 #ENV ENABLE_SLOW_TESTS=1
 CMD PYTHONPATH=test-packages:. xvfb-run uv run python -m unittest discover -s qubesadmin/tests -p '*.py' -v
+CMD PYTHONPATH=test-packages:. xvfb-run python3 -m unittest discover -s qubesadmin/tests -p '*.py' -v
