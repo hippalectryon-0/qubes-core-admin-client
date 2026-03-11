@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import re
+import subprocess
 import sys
+from collections import defaultdict
 
 import qubesadmin
 import qubesadmin.exc
@@ -25,6 +28,12 @@ KLASS_SHAPES: dict[str, str] = {
 }
 DEFAULT_SHAPE = 'ellipse'
 DEFAULT_FILL_COLOR = '#cccccc'
+
+# Matches a DOT edge line: "src" -> "dst" [attrs]
+_EDGE_RE = re.compile(
+    r'^\s*"([^"]+)"\s*->\s*"([^"]+)"\s*(?:\[([^\]]*)\])?'
+)
+_LABEL_RE = re.compile(r'label="([^"]*)"')
 
 
 @dataclasses.dataclass
@@ -40,7 +49,8 @@ class VMNode:
 class Edge:
     src_id: str
     dst_id: str
-    style: str  # 'network' | 'template'
+    style: str   # 'network' | 'template' | 'policy'
+    label: str = ''
 
 
 def _get_property(vm, attr, default=None):
@@ -104,17 +114,81 @@ def collect_graph_data(
                 style='network',
             ))
 
-        # Template edge: vm -> template
+        # Template edge: template -> vm (template is the source)
         if show_templates:
             template = _get_property(vm, 'template', None)
             if template is not None:
                 edges.append(Edge(
-                    src_id=_dot_id(vm.name),
-                    dst_id=_dot_id(template.name),
+                    src_id=_dot_id(template.name),
+                    dst_id=_dot_id(vm.name),
                     style='template',
                 ))
 
     return nodes, edges
+
+
+def parse_policy_graph(known_vm_names: set[str]) -> list[Edge]:
+    """Run qrexec-policy-graph and return policy edges between known VMs.
+
+    Wildcard endpoints (@anyvm, @type:X, etc.) are skipped — only edges
+    where both source and destination are real VM names are included.
+    Multiple policies between the same pair are grouped into one edge.
+    """
+    try:
+        result = subprocess.run(
+            ['qrexec-policy-graph'],
+            capture_output=True, text=True, check=True,
+        )
+    except FileNotFoundError:
+        print(
+            'warning: qrexec-policy-graph not found; skipping RPC edges',
+            file=sys.stderr,
+        )
+        return []
+    except subprocess.CalledProcessError as exc:
+        print(
+            f'warning: qrexec-policy-graph failed (exit {exc.returncode}); '
+            'skipping RPC edges',
+            file=sys.stderr,
+        )
+        return []
+
+    # Accumulate policies grouped by (src_name, dst_name)
+    policy_map: dict[tuple[str, str], list[str]] = defaultdict(list)
+
+    for line in result.stdout.splitlines():
+        m = _EDGE_RE.match(line)
+        if not m:
+            continue
+        src, dst, attrs = m.group(1), m.group(2), m.group(3) or ''
+
+        # Skip wildcard/special endpoints — they explode the graph
+        if src not in known_vm_names or dst not in known_vm_names:
+            continue
+        # Skip self-loops
+        if src == dst:
+            continue
+
+        label_m = _LABEL_RE.search(attrs)
+        policy = label_m.group(1) if label_m else ''
+        if policy:
+            policy_map[(src, dst)].append(policy)
+        else:
+            # Edge exists but no label; record the pair without a policy name
+            policy_map.setdefault((src, dst), [])
+
+    edges: list[Edge] = []
+    for (src, dst), policies in policy_map.items():
+        # Deduplicate and sort; join with newlines for DOT label
+        unique = sorted(set(policies))
+        label = r'\n'.join(unique)
+        edges.append(Edge(
+            src_id=_dot_id(src),
+            dst_id=_dot_id(dst),
+            style='policy',
+            label=label,
+        ))
+    return edges
 
 
 def filter_isolated(
@@ -136,7 +210,6 @@ def _is_dark(color: str) -> bool:
         r = int(color[1:3], 16)
         g = int(color[3:5], 16)
         b = int(color[5:7], 16)
-        # Standard luminance formula
         luminance = 0.299 * r + 0.587 * g + 0.114 * b
         return luminance < 128
     except Exception:  # pylint: disable=broad-except
@@ -148,6 +221,7 @@ def write_dot(nodes: list[VMNode], edges: list[Edge], stream) -> None:
     stream.write('digraph qubes_network {\n')
     stream.write('    rankdir=LR;\n')
     stream.write('    node [style=filled, fontname="sans-serif"];\n')
+    stream.write('    edge [fontname="sans-serif", fontsize=8];\n')
 
     for node in nodes:
         attrs = [
@@ -164,8 +238,11 @@ def write_dot(nodes: list[VMNode], edges: list[Edge], stream) -> None:
     for edge in edges:
         if edge.style == 'network':
             attr_str = 'style=bold'
-        else:
+        elif edge.style == 'template':
             attr_str = 'style=dashed, color=gray'
+        else:  # policy
+            label_part = f', label="{edge.label}"' if edge.label else ''
+            attr_str = f'style=dotted, color=steelblue{label_part}'
         stream.write(f'    {edge.src_id} -> {edge.dst_id} [{attr_str}];\n')
 
     stream.write('}\n')
@@ -187,6 +264,12 @@ def get_parser() -> argparse.ArgumentParser:
         help='include template relationships as dashed edges',
     )
     parser.add_argument(
+        '-R', '--rpc',
+        action='store_true',
+        default=False,
+        help='include qrexec RPC policy edges (requires qrexec-policy-graph)',
+    )
+    parser.add_argument(
         '-n', '--no-isolated',
         action='store_true',
         default=False,
@@ -200,9 +283,16 @@ def main() -> int:
     app = qubesadmin.Qubes()
     app.cache_enabled = True
     args = get_parser().parse_args()
+
     nodes, edges = collect_graph_data(app, args.templates)
+
+    if args.rpc:
+        known = {n.name for n in nodes}
+        edges.extend(parse_policy_graph(known))
+
     if args.no_isolated:
         nodes, edges = filter_isolated(nodes, edges)
+
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             write_dot(nodes, edges, f)
