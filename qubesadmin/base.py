@@ -285,7 +285,7 @@ class PropertyHolder:
         Parse `type=... ...` qubesd response format. Return a value of
         appropriate type.
 
-        Returns AttributeError instead of ValueError since this used
+        Returns AttributeError instead of ValueError since this is used
         to access named field <prop_type>
 
         :param bytes prop_type: 'type=...' part of the response (including
