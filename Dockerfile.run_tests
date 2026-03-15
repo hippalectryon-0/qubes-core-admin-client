@@ -34,5 +34,5 @@ RUN echo "gitlab-runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
 USER gitlab-runner
 ENV USER=gitlab-runner
 #ENV ENABLE_SLOW_TESTS=1
-CMD PYTHONPATH=test-packages:. xvfb-run uv run python -m unittest discover -s qubesadmin/tests -p '*.py' -v
-#CMD PYTHONPATH=test-packages:. xvfb-run python3 -m unittest discover -s qubesadmin/tests -p '*.py' -v
+CMD xvfb-run uv run python -m unittest discover -s qubesadmin/tests -p '*.py' -v
+#CMD xvfb-run python3 -m unittest discover -s qubesadmin/tests -p '*.py' -v

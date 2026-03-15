@@ -26,8 +26,8 @@ import subprocess
 import typing
 from logging import Logger
 from subprocess import Popen
-from typing import Literal
 from collections.abc import Generator
+from typing import Literal
 
 import qubesadmin.utils
 import qubesadmin.exc
@@ -35,14 +35,17 @@ import qubesadmin.features
 import qubesadmin.devices
 import qubesadmin.tags
 import qubesadmin.firewall
-import qubesadmin.storage
+import qubesadmin.tags
 
 if typing.TYPE_CHECKING:
     from qubesadmin.app import QubesBase
     import qubesadmin.base
     from qubesadmin.storage import Volume
 
-Klass = Literal["AppVM", "AdminVM", "TemplateVM", "DispVM", "StandaloneVM"]
+
+# ["AppVM", "AdminVM", "TemplateVM", "DispVM", "StandaloneVM"]
+# but can be extended
+Klass = str
 PowerState = Literal["Transient", "Running", "Halted", "Paused",
 "Suspended", "Halting", "Dying", "Crashed", "NA"]
 

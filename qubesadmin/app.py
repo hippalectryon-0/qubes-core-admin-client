@@ -35,8 +35,8 @@ import sys
 import logging
 import typing
 from logging import Logger
+from typing import TypeVar, IO
 from subprocess import Popen
-from typing import IO
 from collections.abc import Generator, Iterable
 
 import qubesadmin.base
@@ -58,6 +58,11 @@ try:
     has_qubesdb = True
 except ImportError:
     has_qubesdb = False
+
+# ["mic", "block", "pci", "usb", "webcam"]
+# but can be extended
+DeviceClass = str
+
 
 class VMCollection:
     """A lazily-loaded, cached view of the VMs known to qubesd.
@@ -148,8 +153,10 @@ class VMCollection:
             self._vms[item] = QubesVM(self.app, item)
         return self._vms[item]
 
-    def get(self, item: str | QubesVM, default: QubesVM | None=None)\
-            -> QubesVM | None:
+    T = TypeVar("T")
+
+    def get(self, item: str | QubesVM, default: QubesVM | T=None) \
+            -> QubesVM | T:
         """
         Get a VM object, or return *default* if it can't be found.
         """
@@ -239,6 +246,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             .decode()
             .splitlines()
         )
+
         for e in deviceclasses:
             assert e in typing.get_args(DeviceClass)
 
@@ -336,7 +344,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
                 if i.index == int(label):
                     return i
         assert isinstance(label, str)
-        raise qubesadmin.exc.QubesLabelNotFoundError(label)
+        raise qubesadmin.exc.QubesLabelNotFoundError(str(label))
 
     @staticmethod
     def get_vm_class(clsname: str) -> str:
@@ -887,7 +895,6 @@ class QubesLocal(QubesBase):
                 raise qubesadmin.exc.QubesDaemonCommunicationError(
                     f"{method_path} not found"
                 )
-            assert arg is not None
             assert dest is not None
             command = [
                 "env",
