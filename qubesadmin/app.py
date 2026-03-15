@@ -59,10 +59,6 @@ try:
 except ImportError:
     has_qubesdb = False
 
-# ["mic", "block", "pci", "usb", "webcam"]
-# but can be extended
-DeviceClass = str
-
 
 class VMCollection:
     """A lazily-loaded, cached view of the VMs known to qubesd.
@@ -118,7 +114,7 @@ class VMCollection:
             vm_name, props = vm_data.decode("ascii").split(" ", 1)
             props_dict = dict(vm_prop.split("=", 1)
                               for vm_prop in props.split(" "))
-            klass = typing.cast(Klass, props_dict["class"])
+            klass = props_dict["class"]
             power_state = typing.cast(PowerState, props_dict.get("state"))
             new_known_names.add(vm_name)
             existing_vm = self._vms.get(vm_name) or\
@@ -155,8 +151,13 @@ class VMCollection:
 
     T = TypeVar("T")
 
-    def get(self, item: str | QubesVM, default: QubesVM | T=None) \
-            -> QubesVM | T:
+    @typing.overload
+    def get(self, item: str | QubesVM) -> QubesVM | None: ...
+    @typing.overload
+    def get(self, item: str | QubesVM, default: T) -> QubesVM | T:
+        ...
+    # Overloaded to handle default None return type
+    def get(self, item: str | QubesVM, default: object=None) -> object:
         """
         Get a VM object, or return *default* if it can't be found.
         """
@@ -235,9 +236,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
         vmclass = (
             self.qubesd_call("dom0", "admin.vmclass.List").decode().splitlines()
         )
-        for e in vmclass:
-            assert e in typing.get_args(Klass)
-        return typing.cast(list[Klass], sorted(vmclass))
+        return sorted(vmclass)
 
     def list_deviceclass(self) -> list[DeviceClass]:
         """Call Qubesd in order to obtain the device classes list"""
@@ -247,10 +246,7 @@ class QubesBase(qubesadmin.base.PropertyHolder):
             .splitlines()
         )
 
-        for e in deviceclasses:
-            assert e in typing.get_args(DeviceClass)
-
-        return typing.cast(list[DeviceClass], sorted(deviceclasses))
+        return sorted(deviceclasses)
 
     def _refresh_pool_drivers(self) -> None:
         """

@@ -35,7 +35,7 @@ import qubesadmin.features
 import qubesadmin.devices
 import qubesadmin.tags
 import qubesadmin.firewall
-import qubesadmin.tags
+import qubesadmin.storage
 
 if typing.TYPE_CHECKING:
     from qubesadmin.app import QubesBase

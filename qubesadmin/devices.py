@@ -32,7 +32,6 @@ is :py:class:`str`.
 """
 from __future__ import annotations
 import itertools
-import typing
 from typing import TYPE_CHECKING
 from collections.abc import Iterable, Iterator
 
@@ -48,7 +47,9 @@ from qubesadmin.device_protocol import (
 if TYPE_CHECKING:
     from qubesadmin.vm import QubesVM
 
-DeviceClass = typing.Literal["mic", "block", "pci", "usb", "webcam"]
+# ["mic", "block", "pci", "usb", "webcam"]
+# but can be extended
+DeviceClass = str
 
 
 class DeviceCollection:
