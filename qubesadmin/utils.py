@@ -95,22 +95,6 @@ def size_to_human(size: int) -> str:
     return str(round(size / (1024.0 * 1024 * 1024), 1)) + ' GiB'
 
 
-def get_entry_point_one(group: str, name: str) -> Any:  # noqa:ANN401
-    """Get a single entry point of given type,
-    raise TypeError when there are multiple.
-    """
-    import importlib.metadata
-    epoints = tuple(importlib.metadata.entry_points(group=group, name=name))
-    if not epoints:
-        raise KeyError(name)
-    if len(epoints) > 1:
-        raise TypeError('more than 1 implementation of {!r} found: {}'.format(
-            # TODO see https://github.com/QubesOS/qubes-issues/issues/10680
-            name, ', '.join(f'{ep.module}.{ep.attr}'
-                            for ep in epoints)))
-    return epoints[0].load()
-
-
 UPDATES_DEFAULT_VM_DISABLE_FLAG = \
     '/var/lib/qubes/updates/vm-default-disable-updates'
 
