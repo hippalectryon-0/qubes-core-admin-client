@@ -152,12 +152,14 @@ class VMCollection:
     T = TypeVar("T")
 
     @typing.overload
-    def get(self, item: str | QubesVM) -> QubesVM | None: ...
+    def get(self, item: str | QubesVM) -> QubesVM:
+        ...
     @typing.overload
     def get(self, item: str | QubesVM, default: T) -> QubesVM | T:
         ...
     # Overloaded to handle default None return type
-    def get(self, item: str | QubesVM, default: object=None) -> object:
+    def get(self, item: str | QubesVM, default: object=None)\
+            -> object:
         """
         Get a VM object, or return *default* if it can't be found.
         """

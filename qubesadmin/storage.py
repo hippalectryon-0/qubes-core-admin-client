@@ -77,7 +77,6 @@ class Volume:
             method = 'admin.pool.volume.' + func_name
             dest = 'dom0'
             arg = self._pool
-            # TODO is the assert safe ?
             assert self._vid is not None
             if payload is not None:
                 payload = self._vid.encode('ascii') + b' ' + payload
@@ -111,10 +110,12 @@ class Volume:
             # TODO this will fail if self/other._vm_name is None
             assert self._vm_name is not None and other._vm_name is not None
             if self._vm and other._vm:
+                assert self._vm_name is not None and other._vm_name is not None
                 return (self._vm, self._vm_name) < (other._vm, other._vm_name)
             # TODO this will fail if self/other._pool is None
             assert self._pool is not None and other._pool is not None
-            if self._vid and other._vid:
+            if self._pool and other._pool:
+                assert self._vid is not None and other._vid is not None
                 return (self._pool, self._vid) < (other._pool, other._vid)
         return NotImplemented
 
@@ -281,9 +282,6 @@ class Volume:
 
         :param str revision: Revision identifier to revert to
         """
-        # TODO is that necessary ? Shouldn't it be checked upstream ?
-        if not isinstance(revision, str):
-            raise TypeError('revision must be a str')
         self._qubesd_call('Revert', revision.encode('ascii'))
 
     def import_data(self, stream: BinaryIO) -> None:
@@ -335,7 +333,7 @@ class Pool:
     """ A Pool is used to manage different kind of volumes (File
         based/LVM/Btrfs/...).
     """
-    def __init__(self, app: QubesBase, name: str | None=None):
+    def __init__(self, app: QubesBase, name: str):
         """ Initialize storage pool wrapper
 
         :param app: Qubes() object
@@ -346,8 +344,6 @@ class Pool:
         self._config = None
 
     def __str__(self) -> str:
-        # TODO __str__ should not return None
-        assert self.name is not None
         return self.name
 
     def __eq__(self, other: object) -> bool:
@@ -359,8 +355,6 @@ class Pool:
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Pool):
-            # TODO this will fail if one of the names is None
-            assert self.name is not None and other.name is not None
             return self.name < other.name
         return NotImplemented
 
