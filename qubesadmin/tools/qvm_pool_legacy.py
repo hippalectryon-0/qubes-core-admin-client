@@ -54,7 +54,7 @@ def pool_info(pool: Pool) -> None:
     ''' Prints out pool name and config '''
     data = [("name", pool.name)]
     data += [i for i in sorted(pool.config.items()) if i[0] != 'name']
-    qubesadmin.tools.print_table(data) #type:ignore #legacy stuff
+    qubesadmin.tools.print_table(data)
 
 
 def list_pools(app: QubesBase) -> None:

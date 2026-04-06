@@ -135,7 +135,7 @@ def list_devices(args: Namespace) -> None:
 
 def _load_lines(app: QubesBase, domains: Iterable[QubesVM] | None,
                 devclass: str, actual_devices: bool)\
-        -> dict[object, Line]:
+        -> dict[DeviceInfo, Line]:
     # pylint: disable=missing-function-docstring
     devices = _load_devices(app, domains, devclass, actual_devices)
     result = {dev: Line(dev, not actual_devices) for dev in devices}

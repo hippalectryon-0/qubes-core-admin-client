@@ -724,10 +724,16 @@ wheels = [
 ]
 
 [[package]]
-name = "python3-xlib"
-version = "0.15"
+name = "python-xlib"
+version = "0.33"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ef/c6/2c5999de3bb1533521f1101e8fe56fd9c266732f4d48011c7c69b29d12ae/python3-xlib-0.15.tar.gz", hash = "sha256:dc4245f3ae4aa5949c1d112ee4723901ade37a96721ba9645f2bfa56e5b383f8", size = 132828, upload-time = "2014-05-31T12:28:59.603Z" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/86/f5/8c0653e5bb54e0cbdfe27bf32d41f27bc4e12faa8742778c17f2a71be2c0/python-xlib-0.33.tar.gz", hash = "sha256:55af7906a2c75ce6cb280a584776080602444f75815a7aff4d287bb2d7018b32", size = 269068, upload-time = "2022-12-25T18:53:00.824Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/b8/ff33610932e0ee81ae7f1269c890f697d56ff74b9f5b2ee5d9b7fa2c5355/python_xlib-0.33-py2.py3-none-any.whl", hash = "sha256:c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398", size = 182185, upload-time = "2022-12-25T18:52:58.662Z" },
+]
 
 [[package]]
 name = "pytokens"
@@ -832,8 +838,10 @@ name = "qubesadmin"
 source = { editable = "." }
 dependencies = [
     { name = "lxml" },
+    { name = "python-xlib" },
     { name = "pyxdg" },
     { name = "pyyaml" },
+    { name = "rpm" },
     { name = "tqdm" },
     { name = "xcffib" },
 ]
@@ -849,8 +857,6 @@ dev = [
     { name = "mock" },
     { name = "mypy" },
     { name = "pylint" },
-    { name = "python3-xlib" },
-    { name = "rpm" },
     { name = "setuptools" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -862,8 +868,6 @@ future-dev = [
     { name = "mock" },
     { name = "mypy" },
     { name = "pylint" },
-    { name = "python3-xlib" },
-    { name = "rpm" },
     { name = "ruff" },
     { name = "setuptools" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -875,8 +879,10 @@ future-dev = [
 [package.metadata]
 requires-dist = [
     { name = "lxml", specifier = ">=5.3" },
+    { name = "python-xlib", specifier = ">=0.33" },
     { name = "pyxdg", specifier = ">=0.27" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "rpm", specifier = ">=0.4.0" },
     { name = "tqdm", specifier = ">=4.67" },
     { name = "xcffib", specifier = ">=1.5" },
 ]
@@ -892,8 +898,6 @@ dev = [
     { name = "mock", specifier = ">=5.2.0" },
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "pylint", specifier = ">=4.0.4" },
-    { name = "python3-xlib", specifier = ">=0.15" },
-    { name = "rpm", specifier = ">=0.4.0" },
     { name = "setuptools", specifier = ">=82.0.0" },
     { name = "sphinx", specifier = ">=3.5.3" },
     { name = "types-lxml", specifier = ">=2026.1.1" },
@@ -904,8 +908,6 @@ future-dev = [
     { name = "mock", specifier = ">=5.2.0" },
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "pylint", specifier = ">=4.0.4" },
-    { name = "python3-xlib", specifier = ">=0.15" },
-    { name = "rpm", specifier = ">=0.4.0" },
     { name = "ruff", specifier = ">=0.15.1" },
     { name = "setuptools", specifier = ">=82.0.0" },
     { name = "sphinx", specifier = ">=3.5.3" },
@@ -978,6 +980,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/82/f3/748f4d6f65d1756b9ae577f329c951cda23fb900e4de9f70900ced962085/setuptools-82.0.0.tar.gz", hash = "sha256:22e0a2d69474c6ae4feb01951cb69d515ed23728cf96d05513d36e42b62b37cb", size = 1144893, upload-time = "2026-02-08T15:08:40.206Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/c6/76dc613121b793286a3f91621d7b75a2b493e0390ddca50f11993eadf192/setuptools-82.0.0-py3-none-any.whl", hash = "sha256:70b18734b607bd1da571d097d236cfcfacaf01de45717d59e6e04b96877532e0", size = 1003468, upload-time = "2026-02-08T15:08:38.723Z" },
+]
+
+[[package]]
+name = "six"
+version = "1.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]

@@ -160,7 +160,7 @@ def get_drive_assignment(app: QubesBase, drive_str: str) -> DeviceAssignment:
             timeout -= 1
             time.sleep(1)
 
-    options = {
+    options: dict[str, object] = {
         'devtype': devtype,
         'read-only': devtype == 'cdrom'
     }
