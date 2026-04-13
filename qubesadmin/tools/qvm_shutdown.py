@@ -28,6 +28,7 @@ import asyncio
 from argparse import Namespace
 from collections.abc import Iterable
 
+import qubesadmin.events.utils
 from qubesadmin.app import QubesBase
 from qubesadmin.vm import QubesVM
 
@@ -51,7 +52,9 @@ parser.add_argument('--timeout',
 parser.add_argument(
     '--force',
     action='store_true', default=False,
-    help='force shutdown regardless of connected domains; use with caution')
+    help='shut down even if other qubes depend on this one (e.g. as NetVM'
+         ' or AudioVM); does not affect how the qube itself is shut down;'
+         ' use with caution')
 
 parser.add_argument(
     '--dry-run',
@@ -90,7 +93,11 @@ def main(args: Iterable[str] | None=None, app: QubesBase | None=None) -> None:  
                         vm.log.error(f'Shutdown error: {e}')
                     shutdown_failed.add(vm)
         if not args.wait:
-            assert not shutdown_failed
+            if shutdown_failed:
+                parser.error_runtime(
+                    'Failed to shut down: ' +
+                    ', '.join(vm.name for vm in shutdown_failed),
+                    len(shutdown_failed))
             return
         awaiting = remaining_domains - shutdown_failed
         remaining_domains = shutdown_failed

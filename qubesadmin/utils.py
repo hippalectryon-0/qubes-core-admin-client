@@ -29,6 +29,7 @@ import fcntl
 import os
 import re
 import typing
+from collections.abc import Iterable
 from typing import Any
 from collections.abc import Iterable
 
