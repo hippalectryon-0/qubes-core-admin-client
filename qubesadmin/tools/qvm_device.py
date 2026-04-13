@@ -370,7 +370,7 @@ def assign_device(args: Namespace) -> None:
         _print_attach_hint(assignment, vm)
 
 
-def _build_options_str(options):
+def _build_options_str(options: dict) -> str:
     """Build CLI option flags string from assignment options dict."""
     parts = [f"-o {key}={value}" for key, value in options.items()]
     return (" " + " ".join(parts)) if parts else ""

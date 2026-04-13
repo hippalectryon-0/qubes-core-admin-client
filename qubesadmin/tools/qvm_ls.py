@@ -30,7 +30,7 @@ import collections.abc
 import sys
 import textwrap
 from argparse import ArgumentParser, Namespace
-from typing import TextIO, TypeVar
+from typing import TextIO
 from collections.abc import Callable, Iterable, Sequence, MutableSequence
 
 import qubesadmin
@@ -119,7 +119,7 @@ class PropertyColumn(Column):
     :param name: Name of VM property.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         super().__init__(head=name.replace('_', '-').upper(), attr=name)
 
     def __repr__(self) -> str:

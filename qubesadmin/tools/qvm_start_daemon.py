@@ -713,7 +713,7 @@ class DAEMONLauncher:
         return f"/var/run/qubes/pacat.{xid}"
 
     @staticmethod
-    def pacat_domid(vm: QubesVM) -> object:
+    def pacat_domid(vm: QubesVM) -> int:
         """Determine target domid for an AUDIO daemon"""
         xid = (
             vm.stubdom_xid

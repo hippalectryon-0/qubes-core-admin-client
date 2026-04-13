@@ -32,7 +32,6 @@ import qubesadmin.events.utils
 from qubesadmin.app import QubesBase
 from qubesadmin.vm import QubesVM
 
-import qubesadmin.events.utils
 import qubesadmin.tools
 import qubesadmin.exc
 
